@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+
+    <!-- Meta-package: bundles runtime library + source generator into a single NuGet id -->
+    <AssemblyName>DesignPatterns.Package</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+
+    <PackageId>DesignPatterns</PackageId>
+    <Title>DesignPatterns</Title>
+    <Description>Design patterns toolkit for .NET with compile-time source generators.</Description>
+    <PackageTags>design-patterns;roslyn;source-generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" PrivateAssets="all" />
+    <!-- Build the generator project, but pack its DLL explicitly (avoid running generators on this project) -->
+    <ProjectReference Include="..\DesignPatterns.SourceGenerators\DesignPatterns.SourceGenerators.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <Target Name="_IncludeRuntimeInPackage">
+    <PropertyGroup>
+      <_RuntimeDll>$(MSBuildThisFileDirectory)..\DesignPatterns\bin\$(Configuration)\netstandard2.0\DesignPatterns.dll</_RuntimeDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_RuntimeDll)')"
+           Text="Runtime assembly not found at '$(_RuntimeDll)'. Build DesignPatterns first." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_RuntimeDll)" PackagePath="lib/netstandard2.0" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_IncludeSourceGeneratorInPackage">
+    <PropertyGroup>
+      <_SourceGeneratorDll>$(MSBuildThisFileDirectory)..\DesignPatterns.SourceGenerators\bin\$(Configuration)\netstandard2.0\DesignPatterns.SourceGenerators.dll</_SourceGeneratorDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_SourceGeneratorDll)')"
+           Text="Source generator assembly not found at '$(_SourceGeneratorDll)'. Build DesignPatterns.SourceGenerators first." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_SourceGeneratorDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+</Project>

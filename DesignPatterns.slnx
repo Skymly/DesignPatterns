@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="DesignPatterns/DesignPatterns.csproj" />
+  <Project Path="DesignPatterns.SourceGenerators/DesignPatterns.SourceGenerators.csproj" />
+  <Project Path="DesignPatterns.Package/DesignPatterns.Package.csproj" />
+  <Project Path="samples/GenerateSingleton.Sample/GenerateSingleton.Sample.csproj" />
+</Solution>

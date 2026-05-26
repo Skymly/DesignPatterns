@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>DesignPatterns</AssemblyName>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <!-- Avoid NuGet project-name clash with DesignPatterns.Package (PackageId=DesignPatterns) -->
+    <PackageId>DesignPatterns.Runtime</PackageId>
+  </PropertyGroup>
+
+</Project>
