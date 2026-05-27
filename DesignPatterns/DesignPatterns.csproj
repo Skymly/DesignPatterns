@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <AssemblyName>DesignPatterns</AssemblyName>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -9,5 +9,9 @@
     <!-- Avoid NuGet project-name clash with DesignPatterns.Package (PackageId=DesignPatterns) -->
     <PackageId>DesignPatterns.Runtime</PackageId>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+  </ItemGroup>
 
 </Project>

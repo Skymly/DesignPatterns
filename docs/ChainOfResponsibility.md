@@ -1,0 +1,102 @@
+# Chain of Responsibility — 设计与实现文档
+
+## 概述
+
+责任链模式将请求沿 handler 链传递，每个 handler 决定是处理请求还是转发给下一个。本库提供 **中间件式管道 primitives**，不替代 MediatR 或 ASP.NET Core 完整管道框架。
+
+## 设计目标
+
+1. 与 ASP.NET Core 中间件一致的 **onion 调用模型**（先注册先执行 inbound）
+2. 通过 **是否调用 `next`** 实现短路，不强制业务 context 实现额外接口
+3. **异步一等**：`ValueTask` + `CancellationToken`
+4. 不依赖 DI；handler 由调用方手动组装
+
+## 运行时 API（`DesignPatterns/Behavioral/`）
+
+| 类型 | 说明 |
+|------|------|
+| `HandlerDelegate<TContext>` | 调用链中下一阶段的委托 |
+| `IHandler<TContext>` | 单个 handler：`InvokeAsync(context, next, ct)` |
+| `HandlerPipelineBuilder<TContext>` | `Use(handler)` / `Use(delegate)`，`Build()` |
+| `HandlerPipeline<TContext>` | 不可变管道，`InvokeAsync(context, ct)` |
+
+## 用法
+
+```csharp
+var pipeline = new HandlerPipelineBuilder<RequestContext>()
+    .Use(new LoggingHandler())
+    .Use(new AuthorizationHandler())   // 未授权时不调用 next → 短路
+    .Use(new ResourceHandler())
+    .Build();
+
+await pipeline.InvokeAsync(new RequestContext("/api/orders", isAuthenticated: true));
+```
+
+### 短路语义
+
+- Handler **调用** `await next(context, ct)` → 继续后续 handler
+- Handler **不调用** `next` → 后续 handler 不再执行（inbound 与 outbound 均跳过）
+
+### 边界行为
+
+| 场景 | 行为 |
+|------|------|
+| 空管道 | `InvokeAsync` 正常完成，不抛异常 |
+| `Use(null)` | `ArgumentNullException` |
+
+## 与 Strategy / Factory 的边界
+
+| 模式 | 关注点 |
+|------|--------|
+| **Chain** | 请求在 **有序 pipeline** 中流动，可短路 |
+| **Strategy** | 按 key **选一个** 实现 |
+| **Factory** | 按 key **创建一个** 新实例 |
+
+## 示例
+
+见 [samples/Chain.Sample](../samples/Chain.Sample/)：日志 → 鉴权 → 资源 handler，演示授权与未授权两种路径。
+
+## 编译期：`[HandlerOrder]` 源生成器
+
+### 特性
+
+```csharp
+// 泛型（推荐，C# 11+ / net8.0）
+[HandlerOrder<RequestContext>(10)]
+public sealed class LoggingHandler : IHandler<RequestContext> { }
+
+// 非泛型（netstandard2.0）
+[HandlerOrder(10, typeof(RequestContext))]
+public sealed class LoggingHandler : IHandler<RequestContext> { }
+```
+
+数值越小越先执行（与手动 `Use` 注册顺序一致）。
+
+### 生成输出
+
+对每种 `TContext` 生成 `{Context}HandlerPipeline`：
+
+```csharp
+public static partial class RequestContextHandlerPipeline
+{
+    public static HandlerPipeline<RequestContext> Instance { get; }
+}
+```
+
+### 诊断
+
+| ID | 说明 |
+|----|------|
+| DP005 | 同一 context 下重复的 Order |
+| DP008 | 未实现 `IHandler<TContext>` |
+| DP009 | 缺少 public 无参构造 |
+
+## 后续
+
+- DI 扩展（Autofac → MSDI → DryIoc）
+
+## 参考
+
+- GoF: Chain of Responsibility (Behavioral)
+- [docs/DEVELOPMENT.md](DEVELOPMENT.md)
+- [AGENTS.md](../AGENTS.md)

@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP007,
+    Message: Type 'CustomPayment' must declare a public parameterless constructor to be used with generated static registration
+  }
+]

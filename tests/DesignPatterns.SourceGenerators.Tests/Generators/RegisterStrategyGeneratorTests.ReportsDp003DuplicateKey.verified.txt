@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP003,
+    Message: Strategy key 'alipay' is already registered for contract 'TestAssembly.IPaymentStrategy'
+  },
+  {
+    Id: DP003,
+    Message: Strategy key 'alipay' is already registered for contract 'TestAssembly.IPaymentStrategy'
+  }
+]

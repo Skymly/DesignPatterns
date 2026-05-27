@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP005,
+    Message: Handler order '10' is already used for context 'TestAssembly.RequestContext'
+  },
+  {
+    Id: DP005,
+    Message: Handler order '10' is already used for context 'TestAssembly.RequestContext'
+  }
+]

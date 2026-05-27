@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP002,
+    Message: GenerateSingleton cannot be applied to 'InvalidStatic'
+  }
+]

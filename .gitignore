@@ -57,3 +57,6 @@ _NCrunch_*
 .env
 .env.*
 !.env.example
+
+## Verify snapshot tests
+*.received.*

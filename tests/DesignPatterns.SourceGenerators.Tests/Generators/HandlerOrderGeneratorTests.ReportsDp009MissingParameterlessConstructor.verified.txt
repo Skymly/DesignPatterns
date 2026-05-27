@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP009,
+    Message: Type 'CustomHandler' must declare a public parameterless constructor to be used with generated handler pipelines
+  }
+]

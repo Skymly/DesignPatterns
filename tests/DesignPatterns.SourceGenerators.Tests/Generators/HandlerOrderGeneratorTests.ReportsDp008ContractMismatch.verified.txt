@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP008,
+    Message: Type 'BrokenHandler' does not implement IHandler<TestAssembly.RequestContext>
+  }
+]

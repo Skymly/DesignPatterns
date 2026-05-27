@@ -76,9 +76,9 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 ### 运行时（M1 建议）
 
-1. Chain of Responsibility — `IHandler<TContext>` + 管道
-2. Strategy — 命名注册与解析
-3. Factory Registry — 键到实现的映射
+1. [x] Chain of Responsibility — `IHandler<TContext>` + 管道（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
+2. [x] Strategy — 命名注册与解析（见 [Strategy.md](Strategy.md)）
+3. [x] Factory Registry — 键到实现的映射
 
 ### Roslyn（R1 建议）
 
@@ -89,7 +89,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 ### 后续
 
 - Decorator 链、Composite 遍历、轻量 EventAggregator
-- Handler `[Order]` 生成与 `DP005` 顺序冲突检测
+- Handler `[HandlerOrder]` 生成（已实现，见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
 - `StrategyKeys` 生成以减少字符串 Completion 维护成本
 
 ## 编码规范

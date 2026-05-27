@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP001,
+    Message: Class 'NotPartial' must be declared partial to receive generated singleton members
+  }
+]
