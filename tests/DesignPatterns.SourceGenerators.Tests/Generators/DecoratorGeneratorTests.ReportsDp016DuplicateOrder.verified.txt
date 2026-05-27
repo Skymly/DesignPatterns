@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP016,
+    Message: Decorator order '10' is already used for service contract 'TestAssembly.IPaymentService'
+  },
+  {
+    Id: DP016,
+    Message: Decorator order '10' is already used for service contract 'TestAssembly.IPaymentService'
+  }
+]

@@ -93,7 +93,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 ### 后续（M2）
 
 - [x] Composite — `ICompositeNode<T>` + 遍历 + `[CompositePart]`（见 [Composite.md](Composite.md)）
-- [ ] Decorator 链
+- [x] Decorator — 服务包装栈（见 [Decorator.md](Decorator.md)）
 - [ ] 轻量 EventAggregator
 
 ## 编码规范
@@ -114,7 +114,7 @@ dotnet test DesignPatterns.slnx
 | 层级 | 项目 | 覆盖 |
 |------|------|------|
 | 单元 | `tests/DesignPatterns.Tests` | 运行时 API、特性校验 |
-| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton） |
+| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton/Decorator） |
 | 快照 | `tests/DesignPatterns.SourceGenerators.Tests` | 生成源码与 DP 诊断（Verify） |
 | Analyzer | `tests/DesignPatterns.Analyzers.Tests` | DP006、CodeFix（Strategy/Handler/Composite） |
 
@@ -138,6 +138,7 @@ CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（
 - [AGENTS.md](../AGENTS.md) — AI 助手上下文
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — 贡献与测试流程
 - [ROADMAP.md](ROADMAP.md) — 功能 backlog
+- [Decorator.md](Decorator.md) — Decorator 模式设计与 API
 
 ## 待决事项（无发布计划时可延后）
 

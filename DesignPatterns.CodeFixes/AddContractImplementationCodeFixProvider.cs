@@ -23,7 +23,8 @@ public sealed class AddContractImplementationCodeFixProvider : CodeFixProvider
         ImmutableArray.Create(
             DiagnosticIds.RegisterStrategyContractMismatch,
             DiagnosticIds.HandlerOrderContractMismatch,
-            DiagnosticIds.CompositePartContractMismatch);
+            DiagnosticIds.CompositePartContractMismatch,
+            DiagnosticIds.DecoratorContractMismatch);
 
     /// <inheritdoc />
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;

@@ -16,4 +16,8 @@ DP012    | DesignPatterns.Generators | Error    | Composite parent-key cycle
 DP013    | DesignPatterns.Generators | Error    | Composite part does not implement contract
 DP014    | DesignPatterns.Generators | Error    | Composite part missing public parameterless constructor
 DP015    | DesignPatterns.Generators | Error    | Composite part missing ICompositeBuildable implementation
+DP016    | DesignPatterns.Generators | Error    | Duplicate decorator order for the same service contract
+DP017    | DesignPatterns.Generators | Error    | Decorator does not implement service contract
+DP018    | DesignPatterns.Generators | Error    | Decorator does not implement IDecorator for service contract
+DP019    | DesignPatterns.Generators | Error    | Decorator missing public parameterless constructor
 DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing RegisterStrategy attribute

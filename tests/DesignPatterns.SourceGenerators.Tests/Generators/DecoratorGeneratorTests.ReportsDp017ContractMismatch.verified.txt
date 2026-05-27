@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP017,
+    Message: Type 'BrokenDecorator' does not implement service contract 'TestAssembly.IPaymentService'
+  }
+]

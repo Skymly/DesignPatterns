@@ -23,7 +23,8 @@ public sealed class AddParameterlessConstructorCodeFixProvider : CodeFixProvider
         ImmutableArray.Create(
             DiagnosticIds.RegisterStrategyMissingParameterlessConstructor,
             DiagnosticIds.HandlerOrderMissingParameterlessConstructor,
-            DiagnosticIds.CompositePartMissingParameterlessConstructor);
+            DiagnosticIds.CompositePartMissingParameterlessConstructor,
+            DiagnosticIds.DecoratorMissingParameterlessConstructor);
 
     /// <inheritdoc />
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;

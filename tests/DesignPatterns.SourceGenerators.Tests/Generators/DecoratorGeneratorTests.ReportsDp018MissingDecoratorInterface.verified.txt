@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP018,
+    Message: Type 'BrokenDecorator' does not implement IDecorator<TestAssembly.IPaymentService>
+  }
+]

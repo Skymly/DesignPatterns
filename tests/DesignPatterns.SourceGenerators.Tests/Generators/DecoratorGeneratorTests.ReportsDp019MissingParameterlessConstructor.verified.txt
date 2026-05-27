@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP019,
+    Message: Type 'BrokenDecorator' must declare a public parameterless constructor to be used with generated decorator stacks
+  }
+]

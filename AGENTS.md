@@ -46,8 +46,9 @@ dotnet test DesignPatterns.slnx
 | Strategy | `[RegisterStrategy]` | `RegisterStrategyGenerator` |
 | Chain | `IHandler<T>`、`HandlerPipeline` | `HandlerOrderGenerator` |
 | Composite | `[CompositePart]` | `CompositePartGenerator` |
+| Decorator | `[Decorator]`、`DecoratorStackBuilder` | `DecoratorGenerator` |
 
-模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)。
+模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)。
 
 ## 编译期诊断 ID
 
@@ -58,6 +59,7 @@ dotnet test DesignPatterns.slnx
 | DP005、DP008–DP009 | HandlerOrder（生成器） |
 | DP006 | 未注册策略（Analyzer） |
 | DP010–DP015 | CompositePart（生成器） |
+| DP016–DP019 | Decorator（生成器） |
 
 常量定义：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
@@ -70,7 +72,8 @@ dotnet test DesignPatterns.slnx
 | R1 | `[RegisterStrategy]` + DP003/004/007 | 已完成 |
 | R1+ | Singleton、HandlerOrder 生成器 | 已完成 |
 | M2 | Composite | 已完成 |
-| M2 | Decorator、EventAggregator | 未开始 |
+| M2 | Decorator | 已完成 |
+| M2 | EventAggregator | 未开始 |
 | — | CodeFix + DP006 | 已完成 |
 | — | DI 扩展包 | 未开始（见 [docs/ROADMAP.md](docs/ROADMAP.md)） |
 

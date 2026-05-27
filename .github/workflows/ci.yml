@@ -34,3 +34,4 @@ jobs:
           dotnet build samples/Chain.Sample/Chain.Sample.csproj -c Release
           dotnet build samples/Composite.Sample/Composite.Sample.csproj -c Release
           dotnet build samples/Factory.Sample/Factory.Sample.csproj -c Release
+          dotnet build samples/Decorator.Sample/Decorator.Sample.csproj -c Release

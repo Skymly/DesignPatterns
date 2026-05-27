@@ -408,3 +408,64 @@ public sealed class CompositeCodeFixTests
         Assert.Contains("IMenuNode>", fixedSource, StringComparison.Ordinal);
     }
 }
+
+public sealed class DecoratorCodeFixTests
+{
+    [Fact]
+    public async Task FixesDp017ByAddingContractInterface()
+    {
+        const string source = """
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public class LoggingPaymentDecorator : IDecorator<IPaymentService>
+            {
+                public IPaymentService Decorate(IPaymentService inner) => inner;
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<DecoratorGenerator>(
+            source,
+            "DP017",
+            new AddContractImplementationCodeFixProvider());
+
+        Assert.Contains("IPaymentService", fixedSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task FixesDp019ByAddingParameterlessConstructor()
+    {
+        const string source = """
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public class LoggingPaymentDecorator : IPaymentService, IDecorator<IPaymentService>
+            {
+                public LoggingPaymentDecorator(string ignored) { }
+
+                public IPaymentService Decorate(IPaymentService inner) => inner;
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<DecoratorGenerator>(
+            source,
+            "DP019",
+            new AddParameterlessConstructorCodeFixProvider());
+
+        Assert.Contains("public LoggingPaymentDecorator()", fixedSource, StringComparison.Ordinal);
+    }
+}

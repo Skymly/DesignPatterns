@@ -17,6 +17,7 @@
 | Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder | `[RegisterStrategy]` → Keys + Registry |
 | Chain of Responsibility | `DesignPatterns.Behavioral` | `IHandler<T>` / `HandlerPipeline` | `[HandlerOrder]` → `{Context}HandlerPipeline` |
 | Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser` | `[CompositePart]` → Keys + Catalog + `BuildRoot()` |
+| Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder` | `[Decorator]` → `{Contract}DecoratorStack.Build` |
 
 安装 NuGet 包 **`DesignPatterns`**（元包）即可同时获得运行时库与源生成器。
 
@@ -38,7 +39,8 @@ DesignPatterns.slnx
 │   ├── Strategy.Sample/
 │   ├── Chain.Sample/
 │   ├── Composite.Sample/
-│   └── Factory.Sample/
+│   ├── Factory.Sample/
+│   └── Decorator.Sample/
 └── docs/                              # 设计与开发文档
 ```
 
@@ -51,6 +53,7 @@ DesignPatterns.slnx
 | [docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md) | 责任链模式设计与 API |
 | [docs/Composite.md](docs/Composite.md) | Composite 模式设计与 API |
 | [docs/FactoryRegistry.md](docs/FactoryRegistry.md) | Factory Registry 模式设计与 API |
+| [docs/Decorator.md](docs/Decorator.md) | Decorator 模式设计与 API |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 功能与技术 backlog |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献与测试说明 |
 | [AGENTS.md](AGENTS.md) | AI 编码助手项目上下文 |
@@ -72,4 +75,4 @@ dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o a
 
 ## 规划中的能力
 
-见 [docs/ROADMAP.md](docs/ROADMAP.md)（Decorator、EventAggregator、DI 扩展、`[RegisterFactory]` 等）。
+见 [docs/ROADMAP.md](docs/ROADMAP.md)（EventAggregator、DI 扩展、`[RegisterFactory]` 等）。

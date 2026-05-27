@@ -20,4 +20,8 @@ public static class DiagnosticIds
     public const string CompositePartContractMismatch = "DP013";
     public const string CompositePartMissingParameterlessConstructor = "DP014";
     public const string CompositePartMissingBuildable = "DP015";
+    public const string DecoratorDuplicateOrder = "DP016";
+    public const string DecoratorContractMismatch = "DP017";
+    public const string DecoratorMissingDecoratorInterface = "DP018";
+    public const string DecoratorMissingParameterlessConstructor = "DP019";
 }

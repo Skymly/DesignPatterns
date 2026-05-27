@@ -11,8 +11,11 @@
 | Strategy | `MyContractKeys`、`MyContractRegistry` |
 | Chain | `{Context}HandlerPipeline` |
 | Composite | `MyContractCompositeKeys`、`MyContractCompositeCatalog.BuildRoot()` |
+| Decorator（规划） | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
 
 Factory Registry v1 **无**生成器，仅手动 `FactoryRegistryBuilder`。
+
+Decorator 设计详见 [Decorator.md](Decorator.md)。
 
 ---
 
@@ -20,7 +23,6 @@ Factory Registry v1 **无**生成器，仅手动 `FactoryRegistryBuilder`。
 
 | 项 | 动机 | 依赖 | 预估 | 破坏性 |
 |----|------|------|------|--------|
-| Decorator | 组合型横切逻辑 | Chain 管道经验 | 中 | 新 API |
 | EventAggregator | 轻量 pub/sub | 无 | 中 | 新 API |
 
 ## P3 — 生态与对称
@@ -43,6 +45,7 @@ Factory Registry v1 **无**生成器，仅手动 `FactoryRegistryBuilder`。
 
 ## 已完成（工程化）
 
+- M2 Decorator：`IDecorator`、`DecoratorStackBuilder`、`[Decorator]` 生成器、DP016–019、Sample
 - P0–P2：Factory 文档/示例、集成测试、CI、Analyzers/CodeFix 拆分、`DesignPatterns.Diagnostics`
 - CodeFix：无参构造、接口实现、RegisterStrategy、ICompositeBuildable
 - DP006 未注册策略 Analyzer
