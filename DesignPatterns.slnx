@@ -1,8 +1,10 @@
 <Solution>
   <Project Path="DesignPatterns/DesignPatterns.csproj" />
+  <Project Path="DesignPatterns.Diagnostics/DesignPatterns.Diagnostics.csproj" />
   <Project Path="DesignPatterns.SourceGenerators/DesignPatterns.SourceGenerators.csproj" />
-  <Project Path="DesignPatterns.Package/DesignPatterns.Package.csproj" />
   <Project Path="DesignPatterns.Analyzers/DesignPatterns.Analyzers.csproj" />
+  <Project Path="DesignPatterns.CodeFixes/DesignPatterns.CodeFixes.csproj" />
+  <Project Path="DesignPatterns.Package/DesignPatterns.Package.csproj" />
   <Project Path="samples/GenerateSingleton.Sample/GenerateSingleton.Sample.csproj" />
   <Project Path="samples/Strategy.Sample/Strategy.Sample.csproj" />
   <Project Path="samples/Chain.Sample/Chain.Sample.csproj" />

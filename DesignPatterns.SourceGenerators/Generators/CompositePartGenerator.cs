@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using DesignPatterns.Diagnostics;
 using DesignPatterns.SourceGenerators.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,7 +24,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
     public const string CompositePartGenericMetadataName = "DesignPatterns.Structural.CompositePartAttribute`1";
 
     private static readonly DiagnosticDescriptor DuplicateKeyDescriptor = new(
-        id: "DP010",
+        id: DiagnosticIds.CompositePartDuplicateKey,
         title: "Duplicate composite key",
         messageFormat: "Composite key '{0}' is already registered for contract '{1}'",
         category: "DesignPatterns.Generators",
@@ -31,7 +32,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor UnknownParentKeyDescriptor = new(
-        id: "DP011",
+        id: DiagnosticIds.CompositePartUnknownParentKey,
         title: "Unknown composite parent key",
         messageFormat: "Composite parent key '{0}' was not found for contract '{1}'",
         category: "DesignPatterns.Generators",
@@ -39,7 +40,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor CycleDescriptor = new(
-        id: "DP012",
+        id: DiagnosticIds.CompositePartCycle,
         title: "Composite parent chain cycle",
         messageFormat: "Composite key '{0}' participates in a parent-key cycle for contract '{1}'",
         category: "DesignPatterns.Generators",
@@ -47,7 +48,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor ContractMismatchDescriptor = new(
-        id: "DP013",
+        id: DiagnosticIds.CompositePartContractMismatch,
         title: "Composite part does not implement contract",
         messageFormat: "Type '{0}' does not implement composite contract '{1}'",
         category: "DesignPatterns.Generators",
@@ -55,7 +56,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor = new(
-        id: "DP014",
+        id: DiagnosticIds.CompositePartMissingParameterlessConstructor,
         title: "Composite part requires a public parameterless constructor",
         messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated composite catalogs",
         category: "DesignPatterns.Generators",
@@ -63,7 +64,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor MissingBuildableDescriptor = new(
-        id: "DP015",
+        id: DiagnosticIds.CompositePartMissingBuildable,
         title: "Composite part must implement ICompositeBuildable",
         messageFormat: "Type '{0}' must implement ICompositeBuildable<{1}> to be used with generated composite catalogs",
         category: "DesignPatterns.Generators",

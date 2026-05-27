@@ -1,10 +1,11 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace DesignPatterns.Analyzers.CodeFixes;
+namespace DesignPatterns.CodeFixes;
 
 internal static class CodeFixHelpers
 {
@@ -13,8 +14,8 @@ internal static class CodeFixHelpers
         Diagnostic diagnostic,
         out ClassDeclarationSyntax? classDeclaration)
     {
-        classDeclaration = root.FindToken(diagnostic.Location.SourceSpan.Start)
-            .Parent?
+        var node = root.FindNode(diagnostic.Location.SourceSpan);
+        classDeclaration = node?
             .AncestorsAndSelf()
             .OfType<ClassDeclarationSyntax>()
             .FirstOrDefault();
@@ -25,7 +26,33 @@ internal static class CodeFixHelpers
     internal static bool TryGetContractTypeName(Diagnostic diagnostic, out string? contractTypeName)
     {
         contractTypeName = null;
-        var matches = Regex.Matches(diagnostic.GetMessage(), "'([^']+)'", RegexOptions.CultureInvariant);
+        var message = diagnostic.GetMessage();
+
+        if (diagnostic.Id == DiagnosticIds.HandlerOrderContractMismatch)
+        {
+            var handlerMatch = Regex.Match(message, @"IHandler<([^>]+)>", RegexOptions.CultureInvariant);
+            if (handlerMatch.Success)
+            {
+                contractTypeName = $"IHandler<{handlerMatch.Groups[1].Value}>";
+                return true;
+            }
+
+            return false;
+        }
+
+        if (diagnostic.Id == DiagnosticIds.CompositePartMissingBuildable)
+        {
+            var buildableMatch = Regex.Match(message, @"ICompositeBuildable<([^>]+)>", RegexOptions.CultureInvariant);
+            if (buildableMatch.Success)
+            {
+                contractTypeName = buildableMatch.Groups[1].Value;
+                return true;
+            }
+
+            return false;
+        }
+
+        var matches = Regex.Matches(message, "'([^']+)'", RegexOptions.CultureInvariant);
         if (matches.Count < 2)
         {
             return false;

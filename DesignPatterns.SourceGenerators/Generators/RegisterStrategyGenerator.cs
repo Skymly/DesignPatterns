@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using DesignPatterns.Diagnostics;
 using DesignPatterns.SourceGenerators.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,7 +24,7 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
     public const string RegisterStrategyGenericMetadataName = "DesignPatterns.Behavioral.RegisterStrategyAttribute`1";
 
     private static readonly DiagnosticDescriptor DuplicateKeyDescriptor = new(
-        id: "DP003",
+        id: DiagnosticIds.RegisterStrategyDuplicateKey,
         title: "Duplicate strategy key",
         messageFormat: "Strategy key '{0}' is already registered for contract '{1}'",
         category: "DesignPatterns.Generators",
@@ -31,7 +32,7 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor ContractMismatchDescriptor = new(
-        id: "DP004",
+        id: DiagnosticIds.RegisterStrategyContractMismatch,
         title: "Strategy does not implement contract",
         messageFormat: "Type '{0}' does not implement strategy contract '{1}'",
         category: "DesignPatterns.Generators",
@@ -39,7 +40,7 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor = new(
-        id: "DP007",
+        id: DiagnosticIds.RegisterStrategyMissingParameterlessConstructor,
         title: "Strategy implementation requires a public parameterless constructor",
         messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated static registration",
         category: "DesignPatterns.Generators",

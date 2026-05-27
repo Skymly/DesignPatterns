@@ -24,8 +24,17 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
     public IReadOnlyCollection<TKey> Keys => (IReadOnlyCollection<TKey>)_strategies.Keys;
 
     /// <inheritdoc />
-    public bool TryGet(TKey key, out TStrategy strategy) =>
-        _strategies.TryGetValue(key, out strategy);
+    public bool TryGet(TKey key, out TStrategy strategy)
+    {
+        if (_strategies.TryGetValue(key, out var value))
+        {
+            strategy = value;
+            return true;
+        }
+
+        strategy = default!;
+        return false;
+    }
 
     /// <inheritdoc />
     public TStrategy Get(TKey key)

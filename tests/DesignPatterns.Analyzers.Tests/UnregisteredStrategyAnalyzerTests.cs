@@ -1,10 +1,11 @@
 using System.Collections.Immutable;
 using DesignPatterns.Analyzers;
-using DesignPatterns.Analyzers.CodeFixes;
+using DesignPatterns.CodeFixes;
 using DesignPatterns.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Host.Mef;
@@ -28,10 +29,11 @@ internal static class AnalyzerTestContext
             .ConfigureAwait(false);
     }
 
-    internal static async Task<string> ApplyGeneratorCodeFixAsync(
+    internal static async Task<string> ApplyGeneratorCodeFixAsync<TGenerator>(
         string source,
         string diagnosticId,
         CodeFixProvider codeFixProvider)
+        where TGenerator : IIncrementalGenerator, new()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
         var tree = CSharpSyntaxTree.ParseText(source, parseOptions, path: "Test.cs");
@@ -41,7 +43,7 @@ internal static class AnalyzerTestContext
             References,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(new RegisterStrategyGenerator());
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator());
         driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var diagnostics);
 
         var diagnostic = diagnostics.First(d => d.Id == diagnosticId);
@@ -184,7 +186,7 @@ public sealed class AddParameterlessConstructorCodeFixTests
             }
             """;
 
-        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync(
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<RegisterStrategyGenerator>(
             source,
             "DP007",
             new AddParameterlessConstructorCodeFixProvider());
@@ -268,11 +270,141 @@ public sealed class AddContractImplementationCodeFixTests
             }
             """;
 
-        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync(
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<RegisterStrategyGenerator>(
             source,
             "DP004",
             new AddContractImplementationCodeFixProvider());
 
         Assert.Contains("IPaymentStrategy", fixedSource, StringComparison.Ordinal);
+    }
+}
+
+public sealed class HandlerCodeFixTests
+{
+    [Fact]
+    public async Task FixesDp009ByAddingParameterlessConstructor()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class RequestContext { }
+
+            [HandlerOrder<RequestContext>(1)]
+            public class AuthHandler : IHandler<RequestContext>
+            {
+                public AuthHandler(string ignored) { }
+
+                public ValueTask InvokeAsync(
+                    RequestContext context,
+                    HandlerDelegate<RequestContext> next,
+                    CancellationToken cancellationToken = default) => default;
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<HandlerOrderGenerator>(
+            source,
+            "DP009",
+            new AddParameterlessConstructorCodeFixProvider());
+
+        Assert.Contains("public AuthHandler()", fixedSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task FixesDp008ByAddingIHandlerImplementation()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class RequestContext { }
+
+            [HandlerOrder<RequestContext>(1)]
+            public class AuthHandler
+            {
+                public AuthHandler(string ignored) { }
+
+                public ValueTask InvokeAsync(
+                    RequestContext context,
+                    HandlerDelegate<RequestContext> next,
+                    CancellationToken cancellationToken = default) => default;
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<HandlerOrderGenerator>(
+            source,
+            "DP008",
+            new AddContractImplementationCodeFixProvider());
+
+        Assert.Contains("IHandler<", fixedSource, StringComparison.Ordinal);
+        Assert.Contains("RequestContext>", fixedSource, StringComparison.Ordinal);
+    }
+}
+
+public sealed class CompositeCodeFixTests
+{
+    [Fact]
+    public async Task FixesDp014ByAddingParameterlessConstructor()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IMenuNode : ICompositeNode<IMenuNode> { string Title { get; } }
+
+            [CompositePart<IMenuNode>("root")]
+            public class RootMenu : IMenuNode
+            {
+                public RootMenu(string ignored) { }
+
+                public string Title => "root";
+
+                public IReadOnlyList<IMenuNode> Children => System.Array.Empty<IMenuNode>();
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<CompositePartGenerator>(
+            source,
+            "DP014",
+            new AddParameterlessConstructorCodeFixProvider());
+
+        Assert.Contains("public RootMenu()", fixedSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task FixesDp015ByAddingCompositeBuildable()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IMenuNode : ICompositeNode<IMenuNode> { string Title { get; } }
+
+            [CompositePart<IMenuNode>("root")]
+            public class RootMenu : IMenuNode
+            {
+                public string Title => "root";
+
+                public IReadOnlyList<IMenuNode> Children => System.Array.Empty<IMenuNode>();
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<CompositePartGenerator>(
+            source,
+            "DP015",
+            new AddCompositeBuildableCodeFixProvider());
+
+        Assert.Contains("ICompositeBuildable<", fixedSource, StringComparison.Ordinal);
+        Assert.Contains("IMenuNode>", fixedSource, StringComparison.Ordinal);
     }
 }

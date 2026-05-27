@@ -43,7 +43,9 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 | 路径 | 职责 |
 |------|------|
-| `DesignPatterns.Analyzers/` | `IIncrementalGenerator`、`DiagnosticAnalyzer`、`CodeFixProvider`、`CompletionProvider` |
+| `DesignPatterns.Diagnostics/` | 诊断 ID 常量 |
+| `DesignPatterns.Analyzers/` | `DiagnosticAnalyzer`（DP006） |
+| `DesignPatterns.CodeFixes/` | `CodeFixProvider` |
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
 | `tests/DesignPatterns.Analyzers.Tests/` | Analyzer/CodeFix 测试（P2 起） |
@@ -107,7 +109,20 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 dotnet test DesignPatterns.slnx
 ```
 
-运行时测试：`tests/DesignPatterns.Tests`；生成器快照：`tests/DesignPatterns.SourceGenerators.Tests`（Verify）；Analyzer/CodeFix：`tests/DesignPatterns.Analyzers.Tests`。
+### 测试金字塔
+
+| 层级 | 项目 | 覆盖 |
+|------|------|------|
+| 单元 | `tests/DesignPatterns.Tests` | 运行时 API、特性校验 |
+| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton） |
+| 快照 | `tests/DesignPatterns.SourceGenerators.Tests` | 生成源码与 DP 诊断（Verify） |
+| Analyzer | `tests/DesignPatterns.Analyzers.Tests` | DP006、CodeFix（Strategy/Handler/Composite） |
+
+```bash
+dotnet test DesignPatterns.slnx
+```
+
+贡献流程见 [CONTRIBUTING.md](../CONTRIBUTING.md)。产品 backlog 见 [ROADMAP.md](ROADMAP.md)。
 
 ## 提交与分支
 
@@ -116,22 +131,16 @@ dotnet test DesignPatterns.slnx
 - 修复分支：`fix/<short-description>`
 - 提交信息：祈使句、英文或中文均可，需说明 **why**（例：`Add RegisterStrategy source generator for strategy registry`）
 
-尚未配置 CI 时，提交前请在本地执行 `dotnet build`（后续补充 `dotnet test`）。
-
-## 发布（规划）
-
-- 运行时：`DesignPatterns` NuGet 包
-- 编译期：`DesignPatterns.Analyzers` 或作为运行时包的 analyzer 依赖（待决）
-- 版本： [Semantic Versioning 2.0.0](https://semver.org/)
+CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test、samples 编译）。
 
 ## 相关文档
 
-- [AGENTS.md](../AGENTS.md) — AI 助手在本仓库中的职责、命令与禁忌
-- 对话中形成的架构备忘：模块化包、Roslyn 三件套协同流程（见 AGENTS.md 架构摘要）
+- [AGENTS.md](../AGENTS.md) — AI 助手上下文
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — 贡献与测试流程
+- [ROADMAP.md](ROADMAP.md) — 功能 backlog
 
-## 待决事项
+## 待决事项（无发布计划时可延后）
 
-- [ ] 开源许可证（MIT / Apache-2.0）
-- [ ] 分析器与主包是否同 NuGet 发布
-- [ ] 多目标框架：`netstandard2.0` + `net8.0`
-- [ ] CI（GitHub Actions）：build + test + 包验证
+- [ ] 开源许可证
+- [ ] 公开发布与 SemVer 流程
+- [ ] NuGet 元包 `net8.0` 运行时 TFM

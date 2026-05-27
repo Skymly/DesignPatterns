@@ -15,7 +15,7 @@
     <PackageTags>design-patterns;roslyn;source-generator</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage;_IncludeAnalyzersInPackage</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage;_IncludeAnalyzersInPackage;_IncludeCodeFixesInPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,6 +29,9 @@
                       ReferenceOutputAssembly="false"
                       PrivateAssets="all" />
     <ProjectReference Include="..\DesignPatterns.Analyzers\DesignPatterns.Analyzers.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <ProjectReference Include="..\DesignPatterns.CodeFixes\DesignPatterns.CodeFixes.csproj"
                       ReferenceOutputAssembly="false"
                       PrivateAssets="all" />
   </ItemGroup>
@@ -63,6 +66,17 @@
            Text="Analyzers assembly not found at '$(_AnalyzersDll)'. Build DesignPatterns.Analyzers first." />
     <ItemGroup>
       <TfmSpecificPackageFile Include="$(_AnalyzersDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_IncludeCodeFixesInPackage">
+    <PropertyGroup>
+      <_CodeFixesDll>$(MSBuildThisFileDirectory)..\DesignPatterns.CodeFixes\bin\$(Configuration)\netstandard2.0\DesignPatterns.CodeFixes.dll</_CodeFixesDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_CodeFixesDll)')"
+           Text="CodeFixes assembly not found at '$(_CodeFixesDll)'. Build DesignPatterns.CodeFixes first." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_CodeFixesDll)" PackagePath="analyzers/dotnet/cs" />
     </ItemGroup>
   </Target>
 

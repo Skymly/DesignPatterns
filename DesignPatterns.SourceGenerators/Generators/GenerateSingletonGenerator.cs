@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using DesignPatterns.Diagnostics;
 using DesignPatterns.SourceGenerators.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -19,7 +20,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
     public const string AttributeMetadataName = "DesignPatterns.Creational.GenerateSingletonAttribute";
 
     private static readonly DiagnosticDescriptor NotPartialDescriptor = new(
-        id: "DP001",
+        id: DiagnosticIds.GenerateSingletonNotPartial,
         title: "GenerateSingleton requires a partial class",
         messageFormat: "Class '{0}' must be declared partial to receive generated singleton members",
         category: "DesignPatterns.Generators",
@@ -27,7 +28,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor InvalidTargetDescriptor = new(
-        id: "DP002",
+        id: DiagnosticIds.GenerateSingletonInvalidTarget,
         title: "GenerateSingleton target is invalid",
         messageFormat: "GenerateSingleton cannot be applied to '{0}'",
         category: "DesignPatterns.Generators",

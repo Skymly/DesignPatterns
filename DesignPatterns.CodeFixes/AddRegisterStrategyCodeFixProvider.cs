@@ -3,14 +3,14 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DesignPatterns.SourceGenerators.Diagnostics;
+using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace DesignPatterns.Analyzers.CodeFixes;
+namespace DesignPatterns.CodeFixes;
 
 /// <summary>
 /// Adds <c>[RegisterStrategy]</c> to an unregistered strategy implementation.

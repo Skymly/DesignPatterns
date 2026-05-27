@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using DesignPatterns.SourceGenerators.Diagnostics;
+using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 

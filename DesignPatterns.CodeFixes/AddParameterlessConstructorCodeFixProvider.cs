@@ -3,14 +3,14 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DesignPatterns.SourceGenerators.Diagnostics;
+using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace DesignPatterns.Analyzers.CodeFixes;
+namespace DesignPatterns.CodeFixes;
 
 /// <summary>
 /// Adds a public parameterless constructor when required by generated registration.
@@ -38,14 +38,7 @@ public sealed class AddParameterlessConstructorCodeFixProvider : CodeFixProvider
         }
 
         var diagnostic = context.Diagnostics.First();
-        var diagnosticSpan = diagnostic.Location.SourceSpan;
-        var classDeclaration = root.FindToken(diagnosticSpan.Start)
-            .Parent?
-            .AncestorsAndSelf()
-            .OfType<ClassDeclarationSyntax>()
-            .FirstOrDefault();
-
-        if (classDeclaration is null)
+        if (!CodeFixHelpers.TryGetClassDeclaration(root, diagnostic, out var classDeclaration))
         {
             return;
         }
@@ -54,7 +47,7 @@ public sealed class AddParameterlessConstructorCodeFixProvider : CodeFixProvider
             CodeAction.Create(
                 title: "Add public parameterless constructor",
                 createChangedDocument: cancellationToken =>
-                    AddConstructorAsync(context.Document, classDeclaration, cancellationToken),
+                    AddConstructorAsync(context.Document, classDeclaration!, cancellationToken),
                 equivalenceKey: nameof(AddParameterlessConstructorCodeFixProvider)),
             diagnostic);
     }

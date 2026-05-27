@@ -1,6 +1,4 @@
-#pragma warning disable CS1591
-
-namespace DesignPatterns.SourceGenerators.Diagnostics;
+namespace DesignPatterns.Diagnostics;
 
 /// <summary>
 /// Central diagnostic identifier constants for DesignPatterns compile-time components.

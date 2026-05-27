@@ -12,9 +12,16 @@
     <ProjectReference Include="..\..\DesignPatterns\DesignPatterns.csproj" />
     <ProjectReference Include="..\..\DesignPatterns.Analyzers\DesignPatterns.Analyzers.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="true" />
+                      ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\DesignPatterns.CodeFixes\DesignPatterns.CodeFixes.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\DesignPatterns.SourceGenerators\DesignPatterns.SourceGenerators.csproj"
                       OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\DesignPatterns.CodeFixes\DesignPatterns.CodeFixes.csproj"
+                      ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\DesignPatterns.Analyzers\DesignPatterns.Analyzers.csproj"
                       ReferenceOutputAssembly="true" />
   </ItemGroup>
 

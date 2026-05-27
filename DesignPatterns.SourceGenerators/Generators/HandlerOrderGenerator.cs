@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using DesignPatterns.Diagnostics;
 using DesignPatterns.SourceGenerators.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,7 +24,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
     public const string HandlerOrderGenericMetadataName = "DesignPatterns.Behavioral.HandlerOrderAttribute`1";
 
     private static readonly DiagnosticDescriptor DuplicateOrderDescriptor = new(
-        id: "DP005",
+        id: DiagnosticIds.HandlerOrderDuplicateOrder,
         title: "Duplicate handler order",
         messageFormat: "Handler order '{0}' is already used for context '{1}'",
         category: "DesignPatterns.Generators",
@@ -31,7 +32,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor HandlerContractMismatchDescriptor = new(
-        id: "DP008",
+        id: DiagnosticIds.HandlerOrderContractMismatch,
         title: "Handler does not implement IHandler for context",
         messageFormat: "Type '{0}' does not implement IHandler<{1}>",
         category: "DesignPatterns.Generators",
@@ -39,7 +40,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         isEnabledByDefault: true);
 
     private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor = new(
-        id: "DP009",
+        id: DiagnosticIds.HandlerOrderMissingParameterlessConstructor,
         title: "Handler requires a public parameterless constructor",
         messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated handler pipelines",
         category: "DesignPatterns.Generators",

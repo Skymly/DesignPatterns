@@ -26,3 +26,11 @@ jobs:
 
       - name: Test
         run: dotnet test DesignPatterns.slnx --configuration Release --no-build --verbosity normal
+
+      - name: Build samples
+        run: |
+          dotnet build samples/GenerateSingleton.Sample/GenerateSingleton.Sample.csproj -c Release
+          dotnet build samples/Strategy.Sample/Strategy.Sample.csproj -c Release
+          dotnet build samples/Chain.Sample/Chain.Sample.csproj -c Release
+          dotnet build samples/Composite.Sample/Composite.Sample.csproj -c Release
+          dotnet build samples/Factory.Sample/Factory.Sample.csproj -c Release

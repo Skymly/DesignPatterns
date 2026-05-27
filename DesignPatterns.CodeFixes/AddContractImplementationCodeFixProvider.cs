@@ -3,24 +3,27 @@ using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DesignPatterns.SourceGenerators.Diagnostics;
+using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace DesignPatterns.Analyzers.CodeFixes;
+namespace DesignPatterns.CodeFixes;
 
 /// <summary>
-/// Adds <c>ICompositeBuildable&lt;TContract&gt;</c> to a composite part class.
+/// Adds a missing contract interface to the class declaration.
 /// </summary>
-[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AddCompositeBuildableCodeFixProvider)), Shared]
-public sealed class AddCompositeBuildableCodeFixProvider : CodeFixProvider
+[ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AddContractImplementationCodeFixProvider)), Shared]
+public sealed class AddContractImplementationCodeFixProvider : CodeFixProvider
 {
     /// <inheritdoc />
     public sealed override ImmutableArray<string> FixableDiagnosticIds { get; } =
-        ImmutableArray.Create(DiagnosticIds.CompositePartMissingBuildable);
+        ImmutableArray.Create(
+            DiagnosticIds.RegisterStrategyContractMismatch,
+            DiagnosticIds.HandlerOrderContractMismatch,
+            DiagnosticIds.CompositePartContractMismatch);
 
     /// <inheritdoc />
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
@@ -45,23 +48,22 @@ public sealed class AddCompositeBuildableCodeFixProvider : CodeFixProvider
             return;
         }
 
-        var buildableTypeName = $"ICompositeBuildable<{contractTypeName}>";
         context.RegisterCodeFix(
             CodeAction.Create(
-                title: $"Implement {buildableTypeName}",
+                title: $"Implement {contractTypeName}",
                 createChangedDocument: cancellationToken =>
-                    AddBuildableAsync(context.Document, classDeclaration!, buildableTypeName, cancellationToken),
-                equivalenceKey: nameof(AddCompositeBuildableCodeFixProvider)),
+                    AddInterfaceAsync(context.Document, classDeclaration!, contractTypeName!, cancellationToken),
+                equivalenceKey: nameof(AddContractImplementationCodeFixProvider)),
             diagnostic);
     }
 
-    private static async Task<Document> AddBuildableAsync(
+    private static async Task<Document> AddInterfaceAsync(
         Document document,
         ClassDeclarationSyntax classDeclaration,
-        string buildableTypeName,
+        string contractTypeName,
         CancellationToken cancellationToken)
     {
-        var interfaceType = SyntaxFactory.ParseTypeName(buildableTypeName);
+        var interfaceType = SyntaxFactory.ParseTypeName(contractTypeName);
         BaseListSyntax baseList;
 
         if (classDeclaration.BaseList is null)

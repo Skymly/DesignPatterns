@@ -42,6 +42,8 @@ public interface IAsyncStrategy<in TInput, TOutput>
 ```
 
 > **注意**：`[RegisterStrategy]` 不要求实现 `IStrategy<,>`。任何接口/基类均可作为策略契约。
+>
+> `IStrategy<,>` / `IAsyncStrategy<,>` 为**可选标记接口**，便于表达同步/异步算法形状；注册表与生成器不依赖它们。用法见 `tests/DesignPatterns.Tests/Behavioral/StrategyMarkerInterfaceTests.cs`。
 
 ### 注册表
 
