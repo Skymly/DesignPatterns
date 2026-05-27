@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP012,
+    Message: Composite key 'a' participates in a parent-key cycle for contract 'TestAssembly.IMenuNode'
+  },
+  {
+    Id: DP012,
+    Message: Composite key 'b' participates in a parent-key cycle for contract 'TestAssembly.IMenuNode'
+  }
+]

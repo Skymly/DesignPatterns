@@ -5,6 +5,7 @@
   <Project Path="samples/GenerateSingleton.Sample/GenerateSingleton.Sample.csproj" />
   <Project Path="samples/Strategy.Sample/Strategy.Sample.csproj" />
   <Project Path="samples/Chain.Sample/Chain.Sample.csproj" />
+  <Project Path="samples/Composite.Sample/Composite.Sample.csproj" />
   <Project Path="tests/DesignPatterns.Tests/DesignPatterns.Tests.csproj" />
   <Project Path="tests/DesignPatterns.SourceGenerators.Tests/DesignPatterns.SourceGenerators.Tests.csproj" />
 </Solution>

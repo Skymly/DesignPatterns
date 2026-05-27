@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP010,
+    Message: Composite key 'root' is already registered for contract 'TestAssembly.IMenuNode'
+  },
+  {
+    Id: DP010,
+    Message: Composite key 'root' is already registered for contract 'TestAssembly.IMenuNode'
+  }
+]

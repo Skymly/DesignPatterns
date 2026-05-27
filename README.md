@@ -16,6 +16,7 @@
 | Factory Registry | `DesignPatterns.Creational` | `IFactoryRegistry` / `FactoryRegistryBuilder` | — |
 | Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder | `[RegisterStrategy]` → Keys + Registry |
 | Chain of Responsibility | `DesignPatterns.Behavioral` | `IHandler<T>` / `HandlerPipeline` | `[HandlerOrder]` → `{Context}HandlerPipeline` |
+| Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser` | `[CompositePart]` → Keys + Catalog + `BuildRoot()` |
 
 安装 NuGet 包 **`DesignPatterns`**（元包）即可同时获得运行时库与源生成器。
 
@@ -30,7 +31,8 @@ DesignPatterns.slnx
 ├── samples/                           # 按模式划分的示例
 │   ├── GenerateSingleton.Sample/
 │   ├── Strategy.Sample/
-│   └── Chain.Sample/
+│   ├── Chain.Sample/
+│   └── Composite.Sample/
 └── docs/                              # 设计与开发文档
 ```
 
@@ -41,6 +43,7 @@ DesignPatterns.slnx
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | 环境、构建、测试、架构约定 |
 | [docs/Strategy.md](docs/Strategy.md) | Strategy 模式设计与 API |
 | [docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md) | 责任链模式设计与 API |
+| [docs/Composite.md](docs/Composite.md) | Composite 模式设计与 API |
 | [AGENTS.md](AGENTS.md) | AI 编码助手项目上下文 |
 
 ## 快速开始
@@ -61,8 +64,8 @@ dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o a
 ## 规划中的能力
 
 - DI 扩展包（Autofac → MSDI → DryIoc）
-- Decorator、Composite 等结构型模式
-- Roslyn 快照测试、CodeFix、Completion
+- Decorator、EventAggregator 等结构型/行为型模式
+- CodeFix、Completion
 - CI 与开源许可证
 
 ## 许可证

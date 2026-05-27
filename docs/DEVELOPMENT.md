@@ -86,11 +86,12 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 2. 诊断：未注册实现、重复 key
 3. CodeFix：一键添加注册特性
 
-### 后续
+### 后续（M2）
 
-- Decorator 链、Composite 遍历、轻量 EventAggregator
+- [x] Composite — `ICompositeNode<T>` + 遍历 + `[CompositePart]`（见 [Composite.md](Composite.md)）
+- [ ] Decorator 链
+- [ ] 轻量 EventAggregator
 - Handler `[HandlerOrder]` 生成（已实现，见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
-- `StrategyKeys` 生成以减少字符串 Completion 维护成本
 
 ## 编码规范
 
@@ -101,18 +102,11 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 ## 测试
 
-规划中的测试命令：
-
 ```bash
 dotnet test DesignPatterns.slnx
 ```
 
-Roslyn 测试建议使用：
-
-- `Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing`
-- `Microsoft.CodeAnalysis.CSharp.Analyzer.Testing`
-
-对生成源码与诊断消息做**快照回归**，避免生成器静默变更。
+运行时测试：`tests/DesignPatterns.Tests`；生成器快照：`tests/DesignPatterns.SourceGenerators.Tests`（Verify）。
 
 ## 提交与分支
 

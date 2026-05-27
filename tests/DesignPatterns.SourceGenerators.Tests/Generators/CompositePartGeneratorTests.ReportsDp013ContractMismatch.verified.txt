@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP013,
+    Message: Type 'BrokenMenu' does not implement composite contract 'TestAssembly.IMenuNode'
+  },
+  {
+    Id: DP015,
+    Message: Type 'BrokenMenu' must implement ICompositeBuildable<TestAssembly.IMenuNode> to be used with generated composite catalogs
+  }
+]
