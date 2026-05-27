@@ -224,6 +224,32 @@ public sealed class CompositeTraverserTests
         Assert.Same(child, built.Children[0]);
     }
 
+    [Fact]
+    public void IsLeaf_ReturnsTrueWhenNoChildren()
+    {
+        ITestNode node = new TestNode("leaf");
+
+        Assert.True(node.IsLeaf());
+    }
+
+    [Fact]
+    public void IsLeaf_ReturnsFalseWhenHasChildren()
+    {
+        var node = new TestNode("parent");
+        node.SetChildren(new[] { new TestNode("child") });
+
+        Assert.False(((ITestNode)node).IsLeaf());
+    }
+
+    [Fact]
+    public void Assemble_EmptyCatalog_ThrowsCompositeAssemblyException()
+    {
+        var exception = Assert.Throws<CompositeAssemblyException>(
+            () => CompositeCatalogAssembler.Assemble(Array.Empty<CompositeCatalogEntry<ITestNode>>()));
+
+        Assert.Contains("empty", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static ITestNode BuildSampleTree()
     {
         var root = new TestNode("root");

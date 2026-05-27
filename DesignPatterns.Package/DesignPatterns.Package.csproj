@@ -15,7 +15,7 @@
     <PackageTags>design-patterns;roslyn;source-generator</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage;_IncludeAnalyzersInPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,6 +26,9 @@
     <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" PrivateAssets="all" />
     <!-- Build the generator project, but pack its DLL explicitly (avoid running generators on this project) -->
     <ProjectReference Include="..\DesignPatterns.SourceGenerators\DesignPatterns.SourceGenerators.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <ProjectReference Include="..\DesignPatterns.Analyzers\DesignPatterns.Analyzers.csproj"
                       ReferenceOutputAssembly="false"
                       PrivateAssets="all" />
   </ItemGroup>
@@ -49,6 +52,17 @@
            Text="Source generator assembly not found at '$(_SourceGeneratorDll)'. Build DesignPatterns.SourceGenerators first." />
     <ItemGroup>
       <TfmSpecificPackageFile Include="$(_SourceGeneratorDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_IncludeAnalyzersInPackage">
+    <PropertyGroup>
+      <_AnalyzersDll>$(MSBuildThisFileDirectory)..\DesignPatterns.Analyzers\bin\$(Configuration)\netstandard2.0\DesignPatterns.Analyzers.dll</_AnalyzersDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_AnalyzersDll)')"
+           Text="Analyzers assembly not found at '$(_AnalyzersDll)'. Build DesignPatterns.Analyzers first." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_AnalyzersDll)" PackagePath="analyzers/dotnet/cs" />
     </ItemGroup>
   </Target>
 

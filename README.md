@@ -26,13 +26,17 @@
 DesignPatterns.slnx
 ├── DesignPatterns/                    # 运行时核心（netstandard2.0 + net8.0）
 ├── DesignPatterns.SourceGenerators/   # 增量源生成器与编译期诊断
+├── DesignPatterns.Analyzers/          # DP006 Analyzer + CodeFix
 ├── DesignPatterns.Package/            # NuGet 元包（PackageId=DesignPatterns）
 ├── tests/DesignPatterns.Tests/        # 运行时单元测试（xUnit）
+├── tests/DesignPatterns.SourceGenerators.Tests/  # 生成器 Verify 快照
+├── tests/DesignPatterns.Analyzers.Tests/         # Analyzer/CodeFix 测试
 ├── samples/                           # 按模式划分的示例
 │   ├── GenerateSingleton.Sample/
 │   ├── Strategy.Sample/
 │   ├── Chain.Sample/
-│   └── Composite.Sample/
+│   ├── Composite.Sample/
+│   └── Factory.Sample/
 └── docs/                              # 设计与开发文档
 ```
 
@@ -44,6 +48,7 @@ DesignPatterns.slnx
 | [docs/Strategy.md](docs/Strategy.md) | Strategy 模式设计与 API |
 | [docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md) | 责任链模式设计与 API |
 | [docs/Composite.md](docs/Composite.md) | Composite 模式设计与 API |
+| [docs/FactoryRegistry.md](docs/FactoryRegistry.md) | Factory Registry 模式设计与 API |
 | [AGENTS.md](AGENTS.md) | AI 编码助手项目上下文 |
 
 ## 快速开始
@@ -65,8 +70,8 @@ dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o a
 
 - DI 扩展包（Autofac → MSDI → DryIoc）
 - Decorator、EventAggregator 等结构型/行为型模式
-- CodeFix、Completion
-- CI 与开源许可证
+- Completion
+- 开源许可证
 
 ## 许可证
 

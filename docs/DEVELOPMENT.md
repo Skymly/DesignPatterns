@@ -45,7 +45,8 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 |------|------|
 | `DesignPatterns.Analyzers/` | `IIncrementalGenerator`、`DiagnosticAnalyzer`、`CodeFixProvider`、`CompletionProvider` |
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
-| `tests/DesignPatterns.Analyzers.Tests/` | 生成器/分析器快照与诊断测试 |
+| `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
+| `tests/DesignPatterns.Analyzers.Tests/` | Analyzer/CodeFix 测试（P2 起） |
 | `samples/` | 每个模式一个最小可运行示例，兼作文档 |
 
 命名空间根：`DesignPatterns`（运行时）、`DesignPatterns.Analyzers`（编译期）。
@@ -64,7 +65,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 1. 使用 **`IIncrementalGenerator`**，通过 `ForAttributeWithMetadataName` 绑定特性。
 2. 分析器程序集：`IsRoslynComponent`、`EnforceExtendedAnalyzerRules`、`IncludeBuildOutput=false`。
 3. **生成胶水代码**：注册表、排序管道、`StrategyKeys` 常量；不生成完整业务状态机。
-4. 诊断 ID 统一前缀 **`DP`**（如 `DP002`：实现策略但未注册）。
+4. 诊断 ID 统一前缀 **`DP`**（如 `DP002`：`GenerateSingleton` 无效目标；`DP006`：策略实现未注册）。
 5. IDE 体验优先级：**生成强类型常量 > CodeFix > Snippet > 自定义 Completion**。
 
 ### 与生态边界
@@ -78,20 +79,20 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 1. [x] Chain of Responsibility — `IHandler<TContext>` + 管道（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
 2. [x] Strategy — 命名注册与解析（见 [Strategy.md](Strategy.md)）
-3. [x] Factory Registry — 键到实现的映射
+3. [x] Factory Registry — 键到实现的映射（见 [FactoryRegistry.md](FactoryRegistry.md)）
 
 ### Roslyn（R1 建议）
 
-1. `[RegisterStrategy]` + 增量生成注册表
-2. 诊断：未注册实现、重复 key
-3. CodeFix：一键添加注册特性
+1. [x] `[RegisterStrategy]` + 增量生成注册表
+2. [x] 诊断：重复 key、接口不匹配、缺无参构造（DP003/004/007）
+3. [x] `[HandlerOrder]` 生成（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
+4. [x] CodeFix + DP006 未注册策略 Analyzer（`DesignPatterns.Analyzers`）
 
 ### 后续（M2）
 
 - [x] Composite — `ICompositeNode<T>` + 遍历 + `[CompositePart]`（见 [Composite.md](Composite.md)）
 - [ ] Decorator 链
 - [ ] 轻量 EventAggregator
-- Handler `[HandlerOrder]` 生成（已实现，见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
 
 ## 编码规范
 
@@ -106,7 +107,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 dotnet test DesignPatterns.slnx
 ```
 
-运行时测试：`tests/DesignPatterns.Tests`；生成器快照：`tests/DesignPatterns.SourceGenerators.Tests`（Verify）。
+运行时测试：`tests/DesignPatterns.Tests`；生成器快照：`tests/DesignPatterns.SourceGenerators.Tests`（Verify）；Analyzer/CodeFix：`tests/DesignPatterns.Analyzers.Tests`。
 
 ## 提交与分支
 

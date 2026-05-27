@@ -16,3 +16,4 @@ DP012    | DesignPatterns.Generators | Error    | Composite parent-key cycle
 DP013    | DesignPatterns.Generators | Error    | Composite part does not implement contract
 DP014    | DesignPatterns.Generators | Error    | Composite part missing public parameterless constructor
 DP015    | DesignPatterns.Generators | Error    | Composite part missing ICompositeBuildable implementation
+DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing RegisterStrategy attribute

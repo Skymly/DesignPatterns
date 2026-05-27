@@ -60,7 +60,7 @@ public interface IStrategyRegistry<TKey, out TStrategy>
 }
 ```
 
-提供不可变实现 `StrategyRegistry<TKey, TStrategy>`，内部 `ImmutableDictionary` 或 `FrozenDictionary`（net8.0）。
+提供不可变实现 `StrategyRegistry<TKey, TStrategy>`，内部使用 `IReadOnlyDictionary` 包装 `Dictionary`（`FrozenDictionary` 优化留 P3）。
 
 ### Builder（手动注册，无生成器时）
 
@@ -173,34 +173,18 @@ public static partial class PaymentStrategyRegistry
 }
 ```
 
-#### 3. DI 扩展方法（可选生成）
-
-```csharp
-// PaymentStrategyServiceCollectionExtensions.g.cs
-public static class PaymentStrategyServiceCollectionExtensions
-{
-    public static IServiceCollection AddPaymentStrategies(this IServiceCollection services)
-    {
-        services.AddSingleton<AlipayPayment>();
-        services.AddSingleton<WechatPayment>();
-        services.AddSingleton<IStrategyRegistry<string, IPaymentStrategy>>(sp => ...);
-        return services;
-    }
-}
-```
-
-DI 扩展的生成需要检测项目是否引用了对应 DI 包，或通过 MSBuild 属性开关控制。
-
 ---
 
 ## 诊断规则
 
-| ID | 严重性 | 触发条件 | 说明 |
-|----|--------|----------|------|
-| DP003 | Error | 同一 `TContract` 下 key 重复 | 编译期检测冲突 |
-| DP004 | Error | 标记的类未实现指定的 `TContract` | 接口不匹配 |
-| DP005 | Warning | `[RegisterStrategy]` 用在非 class 上 | 无效目标 |
-| DP006 | Info | 实现了某策略接口但未注册 | 建议添加特性 |
+| ID | 严重性 | 来源 | 触发条件 | 说明 |
+|----|--------|------|----------|------|
+| DP003 | Error | 源生成器 | 同一 `TContract` 下 key 重复 | 编译期检测冲突 |
+| DP004 | Error | 源生成器 | 标记的类未实现指定的 `TContract` | 接口不匹配 |
+| DP006 | Info | Analyzer | 实现了某策略契约但未加 `[RegisterStrategy]` | 建议添加特性 |
+| DP007 | Error | 源生成器 | 标记的类缺少 public 无参构造 | 无法 `new()` 实例化 |
+
+> **注意**：DP005 属于 Handler（`[HandlerOrder]` 重复 Order），不属于 Strategy。
 
 ---
 
@@ -244,15 +228,14 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 
 ## 与 Factory Registry 的关系
 
-Strategy Registry 和 Factory Registry 共享底层：
-
 | | Strategy Registry | Factory Registry |
 |---|---|---|
-| 注册内容 | key → 实例/委托 | key → `Func<T>` |
-| 生命周期 | 通常 Singleton | 每次 Create 新实例 |
-| 共享基础 | `IRegistry<TKey, TValue>` | 同左 |
+| 注册内容 | key → 实例（或 build 时 invoke 一次的 factory） | key → `Func<TProduct>` |
+| 生命周期 | 通常 Singleton（生成器用 `new()` 静态单例） | 每次 `Create` 调用 factory |
+| 编译期 | `[RegisterStrategy]` 生成 Keys + Registry | 无生成器（v1 手动 Builder） |
+| 共享抽象 | `IReadOnlyRegistry<TKey, TValue>` **尚未实现**（P3 可选） |
 
-实现时可抽取 `IReadOnlyRegistry<TKey, TValue>` 作为共享接口，Strategy 和 Factory 分别包装。
+详见 [FactoryRegistry.md](FactoryRegistry.md)。
 
 ---
 
@@ -263,9 +246,17 @@ Strategy Registry 和 Factory Registry 共享底层：
 | 1 | `IStrategyRegistry<TKey, TStrategy>` + `StrategyRegistry` + Builder | M1 |
 | 2 | `RegisterStrategyAttribute` / `RegisterStrategyAttribute<T>` 定义 | M1 |
 | 3 | `RegisterStrategyGenerator`：扫描特性 → 生成 Keys + 注册表 | R1 |
-| 4 | 诊断 DP003/DP004/DP005/DP006 | R1 |
+| 4 | 诊断 DP003/DP004/DP007（生成器）+ DP006（Analyzer） | R1 |
 | 5 | 示例项目 `samples/Strategy.Sample/` | R1 |
-| 6 | DI 扩展包（Autofac → MSDI → DryIoc） | M2 |
+| 6 | DI 扩展包（Autofac → MSDI → DryIoc） | P3（规划中） |
+
+---
+
+## 规划中的能力（P3）
+
+- DI 扩展方法生成（`AddPaymentStrategies` 等），需独立扩展包或 MSBuild 开关
+- `StrategyRegistry` net8.0 路径使用 `FrozenDictionary`
+- 与 Factory Registry 共享 `IReadOnlyRegistry<TKey, TValue>` 抽象
 
 ---
 
