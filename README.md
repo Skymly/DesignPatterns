@@ -13,11 +13,14 @@
 | 模式 | 命名空间 | 运行时 | 源生成器 |
 |------|----------|--------|----------|
 | Singleton | `DesignPatterns.Creational` | `[GenerateSingleton]` | `Lazy<T>` + `Instance` |
-| Factory Registry | `DesignPatterns.Creational` | `IFactoryRegistry` / `FactoryRegistryBuilder` | — |
+| Factory Registry | `DesignPatterns.Creational` | `IFactoryRegistry` / `FactoryRegistryBuilder` | `[RegisterFactory]` → Keys + Registry |
 | Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder | `[RegisterStrategy]` → Keys + Registry |
 | Chain of Responsibility | `DesignPatterns.Behavioral` | `IHandler<T>` / `HandlerPipeline` | `[HandlerOrder]` → `{Context}HandlerPipeline` |
 | Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser` | `[CompositePart]` → Keys + Catalog + `BuildRoot()` |
 | Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder` | `[Decorator]` → `{Contract}DecoratorStack.Build` |
+| Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | — |
+
+另可选 **`DesignPatterns.Extensions.DependencyInjection`**（`AddStrategyRegistry`、`AddFactoryRegistry`、`AddHandlerPipeline`、`AddEventAggregator`）。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
 
 安装 NuGet 包 **`DesignPatterns`**（元包）即可同时获得运行时库与源生成器。
 
@@ -28,7 +31,7 @@ DesignPatterns.slnx
 ├── DesignPatterns/                    # 运行时核心（netstandard2.0 + net8.0）
 ├── DesignPatterns.Diagnostics/        # DP### 诊断 ID 常量
 ├── DesignPatterns.SourceGenerators/   # 增量源生成器
-├── DesignPatterns.Analyzers/          # DP006 Analyzer
+├── DesignPatterns.Analyzers/          # DP006、DP023 Analyzer
 ├── DesignPatterns.CodeFixes/          # CodeFix
 ├── DesignPatterns.Package/            # NuGet 元包（PackageId=DesignPatterns）
 ├── tests/DesignPatterns.Tests/        # 运行时单元测试（xUnit）
@@ -54,6 +57,7 @@ DesignPatterns.slnx
 | [docs/Composite.md](docs/Composite.md) | Composite 模式设计与 API |
 | [docs/FactoryRegistry.md](docs/FactoryRegistry.md) | Factory Registry 模式设计与 API |
 | [docs/Decorator.md](docs/Decorator.md) | Decorator 模式设计与 API |
+| [docs/EventAggregator.md](docs/EventAggregator.md) | Event Aggregator 模式设计与 API |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 功能与技术 backlog |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献与测试说明 |
 | [AGENTS.md](AGENTS.md) | AI 编码助手项目上下文 |
@@ -75,4 +79,4 @@ dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o a
 
 ## 规划中的能力
 
-见 [docs/ROADMAP.md](docs/ROADMAP.md)（EventAggregator、DI 扩展、`[RegisterFactory]` 等）。
+见 [docs/ROADMAP.md](docs/ROADMAP.md)（可选增强项与 CompletionProvider 等）。

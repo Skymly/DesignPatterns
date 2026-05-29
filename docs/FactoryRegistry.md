@@ -2,7 +2,11 @@
 
 ## 概述
 
-Factory Registry 按 key 解析**工厂委托**，每次 `Create` 调用 factory 得到新产品实例。本库 v1 提供运行时 API 与手动 `FactoryRegistryBuilder`；**无源生成器、无编译期诊断**（与 Strategy 的 `[RegisterStrategy]` 生成器对称能力留 P3）。
+Factory Registry 按 key 解析**工厂实现**，每次 `Create` 调用对应 factory 委托得到新产品实例。本库提供：
+
+- **运行时**：`IFactoryRegistry`、`FactoryRegistryBuilder` 手动注册
+- **编译期**：`[RegisterFactory]` / `[RegisterFactory<TContract>]` 源生成器 → 强类型 Keys + 静态 Registry
+- **Analyzer**：DP023 提示未标记的工厂实现（与 Strategy DP006 对称）
 
 ## 设计目标
 
@@ -21,7 +25,9 @@ Factory Registry 按 key 解析**工厂委托**，每次 `Create` 调用 factory
 | `FactoryRegistryBuilder<TKey, TProduct>` | 手动注册 `Func<TProduct>` 或 `Func<TKey, TProduct>` |
 | `FactoryNotFoundException` | key 未注册时抛出 |
 
-### 基本用法
+> `IFactoryRegistry` **不**继承 `IReadOnlyRegistry<TKey, TValue>`；该共享抽象仅由 `IStrategyRegistry` 使用。
+
+### 手动 Builder（无生成器时）
 
 ```csharp
 using DesignPatterns.Creational;
@@ -43,11 +49,67 @@ if (!registry.TryCreate("unknown", out _))
 }
 ```
 
-### Builder 语义
-
 - `Register(key, Func<TProduct>)`：每次 `Create(key)` 调用该 factory
-- `Register(key, Func<TKey, TProduct>)`：factory 接收 key（内部包装为无参 factory）
-- 重复 key 在 `Register` 时抛 `ArgumentException`（**运行时**检测，非编译期）
+- `Register(key, Func<TKey, TProduct>)`：factory 接收 key
+- 重复 key 在 `Register` 时抛 `ArgumentException`（**运行时**检测）
+
+---
+
+## 编译期：`[RegisterFactory]` 源生成器
+
+### 特性
+
+```csharp
+// 泛型 Attribute（C# 11+ / net7+ 消费者）
+[RegisterFactory<IProductFactory>("standard")]
+public class StandardFactory : IProductFactory { ... }
+
+// 非泛型（netstandard2.0）
+[RegisterFactory("standard", typeof(IProductFactory))]
+public class StandardFactory : IProductFactory { ... }
+```
+
+工厂契约一般为 **接口**（或基类）；实现类需 **public 无参构造**，以便生成器注册 `() => new Implementation()`。
+
+### 生成器输出
+
+对每个契约 `TContract`（命名规则与 Strategy 相同：去掉前缀 `I` 等）：
+
+#### 1. 强类型 Key 常量
+
+```csharp
+// ProductFactoryKeys.g.cs
+public static partial class ProductFactoryKeys
+{
+    public const string Standard = "standard";
+    public const string Premium = "premium";
+}
+```
+
+#### 2. 静态注册表
+
+```csharp
+// ProductFactoryRegistry.g.cs
+public static partial class ProductFactoryRegistry
+{
+    public static IFactoryRegistry<string, IProductFactory> Create() { ... }
+}
+```
+
+`Create()` 返回的注册表在每次 `Create(key)` 时 **新建** 产品实例（与 Strategy 注册表返回单例实例不同）。
+
+---
+
+## 诊断规则
+
+| ID | 严重性 | 来源 | 触发条件 |
+|----|--------|------|----------|
+| DP020 | Error | 源生成器 | 同一 `TContract` 下 key 重复 |
+| DP021 | Error | 源生成器 | 标记的类未实现指定的 `TContract` |
+| DP022 | Error | 源生成器 | 标记的类缺少 public 无参构造 |
+| DP023 | Info | Analyzer | 实现了某工厂契约但未加 `[RegisterFactory]` |
+
+CodeFix：DP023 可一键添加 `[RegisterFactory("suggested-key", typeof(TContract))]`（与 DP006 对称）。
 
 ---
 
@@ -55,29 +117,32 @@ if (!registry.TryCreate("unknown", out _))
 
 | | Strategy Registry | Factory Registry |
 |---|---|---|
-| 注册内容 | key → **实例**（或 build 时 invoke 一次的 factory） | key → **`Func<TProduct>`** |
-| `Get` / `Create` | 返回已注册实例 | **每次**调用 factory |
-| 典型生命周期 | Singleton | Transient / 按需新建 |
-| 编译期 | `[RegisterStrategy]` → Keys + 静态 Registry | 无（v1 手动 Builder） |
+| 注册内容 | key → **实例** | key → **每次 Create 新建** |
+| 编译期 | `[RegisterStrategy]` | `[RegisterFactory]` |
+| 共享抽象 | `IStrategyRegistry` → `IReadOnlyRegistry` | 无 |
 | 未找到 | `StrategyNotFoundException` | `FactoryNotFoundException` |
+| 未注册实现 | DP006 (Info) | DP023 (Info) |
 
-生成器产出的 Strategy 注册表在静态初始化时对每个实现执行 `new Implementation()`，得到**单例实例**；Factory 则保持「每次 Create 新建」语义。
-
-共享抽象 `IReadOnlyRegistry<TKey, TValue>` **尚未实现**（P3 可选）。
+详见 [Strategy.md](Strategy.md)。
 
 ---
 
-## v1 设计边界
+## DI 集成
 
-- **无** `[RegisterFactory]` 源生成器（P3 可选：Keys + 静态 `Func` 表）
-- **无** DP 诊断（重复 key、契约不匹配等仅在 Builder 运行时抛出）
-- **无** DI 扩展包（P3：从 `IServiceProvider` 解析 `Create`）
+`DesignPatterns.Extensions.DependencyInjection`：
+
+```csharp
+services.AddFactoryRegistry<string, IProduct>(builder => { ... });
+```
+
+用于手动配置的 `FactoryRegistryBuilder`；生成器产出的静态 `Create()` 仍可在无 DI 场景直接使用。
 
 ---
 
 ## 示例
 
-见 [`samples/Factory.Sample/`](../samples/Factory.Sample/)。
+- 手动 Builder：[`samples/Factory.Sample/`](../samples/Factory.Sample/)
+- 生成器 + 集成测试：`tests/DesignPatterns.Tests/Integration/FactoryRegistryIntegrationTests.cs`
 
 ---
 

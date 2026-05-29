@@ -24,3 +24,4 @@ DP020    | DesignPatterns.Generators | Error    | Duplicate factory key for the 
 DP021    | DesignPatterns.Generators | Error    | Factory implementation does not implement contract
 DP022    | DesignPatterns.Generators | Error    | Factory implementation missing public parameterless constructor
 DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing RegisterStrategy attribute
+DP023    | DesignPatterns.Analyzers | Info     | Factory implementation missing RegisterFactory attribute

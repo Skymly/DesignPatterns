@@ -44,7 +44,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 | 路径 | 职责 |
 |------|------|
 | `DesignPatterns.Diagnostics/` | 诊断 ID 常量 |
-| `DesignPatterns.Analyzers/` | `DiagnosticAnalyzer`（DP006） |
+| `DesignPatterns.Analyzers/` | `DiagnosticAnalyzer`（DP006、DP023） |
 | `DesignPatterns.CodeFixes/` | `CodeFixProvider` |
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
@@ -99,7 +99,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 ### 生态（P3）
 
 - [x] `[RegisterFactory]` — Factory 编译期 key/重复检测（DP020–022）
-- [x] `IReadOnlyRegistry<TKey,TValue>` — Strategy/Factory 共享抽象
+- [x] `IReadOnlyRegistry<TKey,TValue>` — 仅 `IStrategyRegistry` 继承
 - [x] `FrozenDictionary` — net8.0 `StrategyRegistry` 查找优化
 - [x] DI 扩展包 — `DesignPatterns.Extensions.DependencyInjection`
 
@@ -121,9 +121,9 @@ dotnet test DesignPatterns.slnx
 | 层级 | 项目 | 覆盖 |
 |------|------|------|
 | 单元 | `tests/DesignPatterns.Tests` | 运行时 API、特性校验 |
-| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton/Decorator/Factory） |
+| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton/Decorator/Factory/EventAggregator 单元测试在 Behavioral） |
 | 快照 | `tests/DesignPatterns.SourceGenerators.Tests` | 生成源码与 DP 诊断（Verify） |
-| Analyzer | `tests/DesignPatterns.Analyzers.Tests` | DP006、CodeFix（Strategy/Handler/Composite） |
+| Analyzer | `tests/DesignPatterns.Analyzers.Tests` | DP006、DP023、CodeFix（Strategy/Factory/Handler/Composite） |
 | DI 扩展 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests` | DI 注册与解析 |
 
 ```bash
@@ -147,6 +147,7 @@ CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — 贡献与测试流程
 - [ROADMAP.md](ROADMAP.md) — 功能 backlog
 - [Decorator.md](Decorator.md) — Decorator 模式设计与 API
+- [EventAggregator.md](EventAggregator.md) — Event Aggregator 模式设计与 API
 
 ## 待决事项（无发布计划时可延后）
 

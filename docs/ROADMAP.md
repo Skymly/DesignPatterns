@@ -18,21 +18,6 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 
 ---
 
-## M2 — 模式能力
-
-| 项 | 动机 | 依赖 | 预估 | 破坏性 |
-|----|------|------|------|--------|
-| EventAggregator | 轻量 pub/sub | 无 | 中 | 新 API |
-
-## P3 — 生态与对称
-
-| 项 | 动机 | 依赖 | 预估 | 破坏性 |
-|----|------|------|------|--------|
-| DI 扩展包 | 容器管理生命周期，替代静态 `new()` | 独立包项目 | 大 | 新包 |
-| `[RegisterFactory]` | Factory 编译期 key/重复检测 | `DiagnosticIds` 稳定 | 中 | 新诊断 |
-| `FrozenDictionary` | net8.0 `StrategyRegistry` 查找优化 | 多目标测试 | 小 | 无 |
-| `IReadOnlyRegistry<TKey,TValue>` | Strategy/Factory 共享抽象 | API 评审 | 中 | 可能 |
-
 ## 已有模式增强（可选）
 
 | 项 | 说明 |
@@ -44,15 +29,15 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 
 ## 已完成（工程化）
 
-- M2 EventAggregator：`IEventAggregator`、`IEventHandler<T>`、`EventAggregator` 实现、10 个单元测试、Sample
-- P3 RegisterFactory：`[RegisterFactory]` 属性 + `RegisterFactoryGenerator`、DP020–022、集成测试、Sample
-- P3 IReadOnlyRegistry：`IReadOnlyRegistry<TKey,TValue>` 共享抽象，`IStrategyRegistry`/`IFactoryRegistry` 均继承
+- M2 EventAggregator：`IEventAggregator`、`IEventHandler<T>`、`EventAggregator` 实现、单元测试、Sample
+- P3 RegisterFactory：`[RegisterFactory]` 属性 + `RegisterFactoryGenerator`、DP020–022、集成测试
+- P3 IReadOnlyRegistry：`IReadOnlyRegistry<TKey,TValue>`；**仅** `IStrategyRegistry` 继承（`IFactoryRegistry` 不继承）
 - P3 FrozenDictionary：`StrategyRegistry` 在 net8.0 使用 `FrozenDictionary` 优化查找
-- P3 DI 扩展包：`DesignPatterns.Extensions.DependencyInjection`、4 个扩展方法、22 个测试
+- P3 DI 扩展包：`DesignPatterns.Extensions.DependencyInjection`、`AddEventAggregator` 等
 - M2 Decorator：`IDecorator`、`DecoratorStackBuilder`、`[Decorator]` 生成器、DP016–019、Sample
 - P0–P2：Factory 文档/示例、集成测试、CI、Analyzers/CodeFix 拆分、`DesignPatterns.Diagnostics`
-- CodeFix：无参构造、接口实现、RegisterStrategy、ICompositeBuildable
-- DP006 未注册策略 Analyzer
+- CodeFix：无参构造、接口实现、RegisterStrategy、RegisterFactory、ICompositeBuildable
+- DP006 未注册策略 Analyzer；DP023 未注册工厂 Analyzer
 
 ## 明确不做
 

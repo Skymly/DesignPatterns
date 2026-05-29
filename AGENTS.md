@@ -16,9 +16,9 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                    # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/        # DiagnosticIds 常量（DP001–DP022）
+├── DesignPatterns.Diagnostics/        # DiagnosticIds 常量（DP001–DP023）
 ├── DesignPatterns.SourceGenerators/   # 增量源生成器
-├── DesignPatterns.Analyzers/          # DP006 Analyzer
+├── DesignPatterns.Analyzers/          # DP006、DP023 Analyzer
 ├── DesignPatterns.CodeFixes/          # CodeFixProvider（Workspaces）
 ├── DesignPatterns.Extensions.DependencyInjection/ # DI 扩展包
 ├── DesignPatterns.Package/            # NuGet 元包（本地 pack，无发布计划）
@@ -50,7 +50,7 @@ dotnet test DesignPatterns.slnx
 | Decorator | `[Decorator]`、`DecoratorStackBuilder` | `DecoratorGenerator` |
 | EventAggregator | `IEventAggregator`、`IEventHandler<T>` | 无 |
 
-模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)。
+模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)。
 
 ## 编译期诊断 ID
 
@@ -60,6 +60,7 @@ dotnet test DesignPatterns.slnx
 | DP003–DP004、DP007 | RegisterStrategy（生成器） |
 | DP005、DP008–DP009 | HandlerOrder（生成器） |
 | DP006 | 未注册策略（Analyzer） |
+| DP023 | 未注册工厂（Analyzer） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -80,7 +81,7 @@ dotnet test DesignPatterns.slnx
 | P3 | `[RegisterFactory]` + DP020–022 | 已完成 |
 | P3 | IReadOnlyRegistry + FrozenDictionary | 已完成 |
 | P3 | DI 扩展包 | 已完成 |
-| — | CodeFix + DP006 | 已完成 |
+| — | CodeFix + DP006/DP023 | 已完成 |
 
 ## 测试要求
 

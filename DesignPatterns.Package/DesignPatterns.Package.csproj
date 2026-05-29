@@ -3,7 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
 
-    <!-- Meta-package: bundles runtime library + source generator into a single NuGet id -->
+    <!-- Meta-package: bundles runtime library + source generator + analyzers/code fixes.
+         Optional DI extensions live in DesignPatterns.Extensions.DependencyInjection (separate package, same solution). -->
     <AssemblyName>DesignPatterns.Package</AssemblyName>
     <IsPackable>true</IsPackable>
     <IncludeBuildOutput>false</IncludeBuildOutput>
