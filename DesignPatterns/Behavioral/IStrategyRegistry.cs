@@ -1,5 +1,3 @@
-using DesignPatterns.Creational;
-
 namespace DesignPatterns.Behavioral;
 
 /// <summary>

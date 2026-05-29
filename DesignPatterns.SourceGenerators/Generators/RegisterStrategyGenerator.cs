@@ -62,19 +62,18 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(
             nonGeneric.Collect().Combine(generic.Collect()),
-            static (spc, source) => Execute(spc, source.Left, source.Right));
+            static (spc, source) => Execute(spc,
+                source.Left.SelectMany(static list => list).ToImmutableArray(),
+                source.Right.SelectMany(static list => list).ToImmutableArray()));
     }
 
-    private static StrategyRegistration? Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
+    private static List<StrategyRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
     {
+        var result = new List<StrategyRegistration>();
+
         if (context.TargetSymbol is not INamedTypeSymbol implementation)
         {
-            return null;
-        }
-
-        if (context.Attributes.IsDefaultOrEmpty)
-        {
-            return null;
+            return result;
         }
 
         foreach (var attribute in context.Attributes)
@@ -107,21 +106,19 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
             }
 
             var location = context.TargetNode.GetLocation();
-            return new StrategyRegistration(key!, contract, implementation, location);
+            result.Add(new StrategyRegistration(key!, contract, implementation, location));
         }
 
-        return null;
+        return result;
     }
 
     private static void Execute(
         SourceProductionContext context,
-        ImmutableArray<StrategyRegistration?> nonGeneric,
-        ImmutableArray<StrategyRegistration?> generic)
+        ImmutableArray<StrategyRegistration> nonGeneric,
+        ImmutableArray<StrategyRegistration> generic)
     {
         var registrations = nonGeneric
             .Concat(generic)
-            .Where(static r => r is not null)
-            .Cast<StrategyRegistration>()
             .ToList();
 
         if (registrations.Count == 0)

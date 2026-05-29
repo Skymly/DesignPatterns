@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DesignPatterns.Creational;
 
@@ -22,10 +23,7 @@ public sealed class FactoryRegistry<TKey, TProduct> : IFactoryRegistry<TKey, TPr
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<TKey> Keys => (IReadOnlyCollection<TKey>)_factories.Keys;
-
-    /// <inheritdoc />
-    public bool TryGet(TKey key, out TProduct value) => TryCreate(key, out value);
+    public IReadOnlyCollection<TKey> Keys => _factories.Keys.ToArray();
 
     /// <inheritdoc />
     public bool TryCreate(TKey key, out TProduct product)

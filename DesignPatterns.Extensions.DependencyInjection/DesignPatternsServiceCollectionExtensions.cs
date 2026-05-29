@@ -90,6 +90,10 @@ public static class DesignPatternsServiceCollectionExtensions
     /// <summary>
     /// Registers a <see cref="HandlerPipeline{TContext}"/> built by the provided configuration delegate.
     /// </summary>
+    /// <remarks>
+    /// Registers the concrete <see cref="HandlerPipeline{TContext}"/> type
+    /// since no <c>IHandlerPipeline</c> abstraction exists.
+    /// </remarks>
     /// <typeparam name="TContext">The context type flowing through the pipeline.</typeparam>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">A delegate to configure the <see cref="HandlerPipelineBuilder{TContext}"/>.</param>

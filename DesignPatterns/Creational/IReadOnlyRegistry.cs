@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DesignPatterns.Creational;
+namespace DesignPatterns;
 
 /// <summary>
 /// Shared read-only abstraction for keyed registries.

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 #if NET8_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
+using System.Linq;
 
 namespace DesignPatterns.Behavioral;
 
@@ -33,7 +34,7 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<TKey> Keys => (IReadOnlyCollection<TKey>)_strategies.Keys;
+    public IReadOnlyCollection<TKey> Keys => _strategies.Keys.ToArray();
 
     /// <inheritdoc />
     public bool TryGet(TKey key, out TStrategy strategy)

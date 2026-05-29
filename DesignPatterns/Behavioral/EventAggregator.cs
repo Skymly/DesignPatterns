@@ -59,6 +59,8 @@ public sealed class EventAggregator : IEventAggregator
     /// <inheritdoc />
     public ValueTask PublishAsync<TEvent>(TEvent evt, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         List<object> snapshot;
 
         lock (_lock)
