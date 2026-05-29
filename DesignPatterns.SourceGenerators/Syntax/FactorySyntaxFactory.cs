@@ -1,0 +1,208 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace DesignPatterns.SourceGenerators.Syntax;
+
+internal static class FactorySyntaxFactory
+{
+    public static CompilationUnitSyntax CreateKeysCompilationUnit(
+        string? namespaceName,
+        string keysClassName,
+        IReadOnlyList<(string ConstantName, string KeyValue)> keys)
+    {
+        var members = keys.Select(k =>
+            SyntaxFactory.FieldDeclaration(
+                    SyntaxFactory.VariableDeclaration(
+                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
+                        .AddVariables(
+                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
+                                .WithInitializer(
+                                    SyntaxFactory.EqualsValueClause(
+                                        SyntaxFactory.LiteralExpression(
+                                            SyntaxKind.StringLiteralExpression,
+                                            SyntaxFactory.Literal(k.KeyValue))))))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.ConstKeyword))));
+
+        var keysClass = SyntaxFactory.ClassDeclaration(keysClassName)
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .AddMembers(members.ToArray());
+
+        return WrapInCompilationUnit(namespaceName, keysClass);
+    }
+
+    public static CompilationUnitSyntax CreateRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        IReadOnlyList<(string Key, string ImplementationTypeName)> entries)
+    {
+        // Build: new FactoryRegistryBuilder<string, TContract>()
+        var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("FactoryRegistryBuilder"))
+            .WithTypeArgumentList(
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                        new TypeSyntax[]
+                        {
+                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                            SyntaxFactory.ParseTypeName(contractTypeName),
+                        })));
+
+        // Build chained .Register("key", () => new Impl()) calls
+        ExpressionSyntax builderExpression = SyntaxFactory.ObjectCreationExpression(builderType)
+            .WithArgumentList(SyntaxFactory.ArgumentList());
+
+        foreach (var entry in entries)
+        {
+            // () => new global::Impl()
+            var lambdaBody = SyntaxFactory.ObjectCreationExpression(
+                    SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
+                .WithArgumentList(SyntaxFactory.ArgumentList());
+
+            var lambda = SyntaxFactory.ParenthesizedLambdaExpression()
+                .WithParameterList(SyntaxFactory.ParameterList())
+                .WithExpressionBody(lambdaBody);
+
+            builderExpression = SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    builderExpression,
+                    SyntaxFactory.IdentifierName("Register")),
+                SyntaxFactory.ArgumentList(
+                    SyntaxFactory.SeparatedList<ArgumentSyntax>(
+                        new ArgumentSyntax[]
+                        {
+                            SyntaxFactory.Argument(
+                                SyntaxFactory.LiteralExpression(
+                                    SyntaxKind.StringLiteralExpression,
+                                    SyntaxFactory.Literal(entry.Key))),
+                            SyntaxFactory.Argument(lambda),
+                        })));
+        }
+
+        // .Build()
+        var buildCall = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                builderExpression,
+                SyntaxFactory.IdentifierName("Build")));
+
+        // Return type: IFactoryRegistry<string, TContract>
+        var returnType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("IFactoryRegistry"))
+            .WithTypeArgumentList(
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                        new TypeSyntax[]
+                        {
+                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                            SyntaxFactory.ParseTypeName(contractTypeName),
+                        })));
+
+        var createMethod = SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+
+        var registryClass = SyntaxFactory.ClassDeclaration(registryClassName)
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .AddMembers(createMethod);
+
+        return WrapInCompilationUnit(
+            namespaceName,
+            registryClass,
+            "System",
+            "DesignPatterns.Creational");
+    }
+
+    public static string GetKeysClassName(INamedTypeSymbol contract) =>
+        GetBaseName(contract) + "Keys";
+
+    public static string GetRegistryClassName(INamedTypeSymbol contract) =>
+        GetBaseName(contract) + "Registry";
+
+    public static string ToConstantName(string key)
+    {
+        var parts = key.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            return "Key";
+        }
+
+        return string.Concat(parts.Select(ToPascalCaseSegment));
+    }
+
+    private static string GetBaseName(INamedTypeSymbol contract)
+    {
+        var name = contract.Name;
+        if (name.StartsWith("I", StringComparison.Ordinal) && name.Length > 1 && char.IsUpper(name[1]))
+        {
+            name = name.Substring(1);
+        }
+
+        return name;
+    }
+
+    private static string ToPascalCaseSegment(string segment)
+    {
+        if (string.IsNullOrEmpty(segment))
+        {
+            return string.Empty;
+        }
+
+        if (segment.Length == 1)
+        {
+            return segment.ToUpperInvariant();
+        }
+
+        return char.ToUpperInvariant(segment[0]) + segment.Substring(1);
+    }
+
+    private static CompilationUnitSyntax WrapInCompilationUnit(
+        string? namespaceName,
+        TypeDeclarationSyntax typeDeclaration,
+        params string[] additionalUsings)
+    {
+        var compilationUnit = SyntaxFactory.CompilationUnit()
+            .WithLeadingTrivia(CreateAutoGeneratedHeader())
+            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")));
+
+        foreach (var additionalUsing in additionalUsings)
+        {
+            compilationUnit = compilationUnit.AddUsings(
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(additionalUsing)));
+        }
+
+        MemberDeclarationSyntax member = typeDeclaration;
+        if (!string.IsNullOrEmpty(namespaceName))
+        {
+            member = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(namespaceName!))
+                .AddMembers(typeDeclaration);
+        }
+
+        return compilationUnit.AddMembers(member).NormalizeWhitespace();
+    }
+
+    private static SyntaxTriviaList CreateAutoGeneratedHeader() =>
+        SyntaxFactory.TriviaList(
+            SyntaxFactory.Comment("// <auto-generated />"),
+            SyntaxFactory.EndOfLine("\n"),
+            SyntaxFactory.Comment("// Generated by DesignPatterns.SourceGenerators.RegisterFactoryGenerator"),
+            SyntaxFactory.EndOfLine("\n"));
+}

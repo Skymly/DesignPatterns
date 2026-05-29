@@ -11,9 +11,8 @@
 | Strategy | `MyContractKeys`、`MyContractRegistry` |
 | Chain | `{Context}HandlerPipeline` |
 | Composite | `MyContractCompositeKeys`、`MyContractCompositeCatalog.BuildRoot()` |
-| Decorator（规划） | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
-
-Factory Registry v1 **无**生成器，仅手动 `FactoryRegistryBuilder`。
+| Decorator | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
+| Factory | `{Contract}Keys`、`{Contract}Registry` |
 
 Decorator 设计详见 [Decorator.md](Decorator.md)。
 
@@ -45,6 +44,11 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 
 ## 已完成（工程化）
 
+- M2 EventAggregator：`IEventAggregator`、`IEventHandler<T>`、`EventAggregator` 实现、10 个单元测试、Sample
+- P3 RegisterFactory：`[RegisterFactory]` 属性 + `RegisterFactoryGenerator`、DP020–022、集成测试、Sample
+- P3 IReadOnlyRegistry：`IReadOnlyRegistry<TKey,TValue>` 共享抽象，`IStrategyRegistry`/`IFactoryRegistry` 均继承
+- P3 FrozenDictionary：`StrategyRegistry` 在 net8.0 使用 `FrozenDictionary` 优化查找
+- P3 DI 扩展包：`DesignPatterns.Extensions.DependencyInjection`、4 个扩展方法、22 个测试
 - M2 Decorator：`IDecorator`、`DecoratorStackBuilder`、`[Decorator]` 生成器、DP016–019、Sample
 - P0–P2：Factory 文档/示例、集成测试、CI、Analyzers/CodeFix 拆分、`DesignPatterns.Diagnostics`
 - CodeFix：无参构造、接口实现、RegisterStrategy、ICompositeBuildable

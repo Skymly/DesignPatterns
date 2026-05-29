@@ -16,12 +16,13 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                    # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/        # DiagnosticIds 常量（DP001–DP015）
+├── DesignPatterns.Diagnostics/        # DiagnosticIds 常量（DP001–DP022）
 ├── DesignPatterns.SourceGenerators/   # 增量源生成器
 ├── DesignPatterns.Analyzers/          # DP006 Analyzer
 ├── DesignPatterns.CodeFixes/          # CodeFixProvider（Workspaces）
+├── DesignPatterns.Extensions.DependencyInjection/ # DI 扩展包
 ├── DesignPatterns.Package/            # NuGet 元包（本地 pack，无发布计划）
-├── tests/                             # Tests / SourceGenerators.Tests / Analyzers.Tests
+├── tests/                             # Tests / SourceGenerators.Tests / Analyzers.Tests / DI.Tests
 ├── samples/                           # 各模式示例
 ├── docs/                              # DEVELOPMENT、ROADMAP、模式文档
 └── AGENTS.md
@@ -42,11 +43,12 @@ dotnet test DesignPatterns.slnx
 | 模式 | 特性 / API | 生成器 |
 |------|------------|--------|
 | Singleton | `[GenerateSingleton]` | `GenerateSingletonGenerator` |
-| Factory Registry | `IFactoryRegistry`、`FactoryRegistryBuilder` | 无 |
+| Factory Registry | `IFactoryRegistry`、`FactoryRegistryBuilder`、`[RegisterFactory]` | `RegisterFactoryGenerator` |
 | Strategy | `[RegisterStrategy]` | `RegisterStrategyGenerator` |
 | Chain | `IHandler<T>`、`HandlerPipeline` | `HandlerOrderGenerator` |
 | Composite | `[CompositePart]` | `CompositePartGenerator` |
 | Decorator | `[Decorator]`、`DecoratorStackBuilder` | `DecoratorGenerator` |
+| EventAggregator | `IEventAggregator`、`IEventHandler<T>` | 无 |
 
 模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)。
 
@@ -60,6 +62,7 @@ dotnet test DesignPatterns.slnx
 | DP006 | 未注册策略（Analyzer） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
+| DP020–DP022 | RegisterFactory（生成器） |
 
 常量定义：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
@@ -73,9 +76,11 @@ dotnet test DesignPatterns.slnx
 | R1+ | Singleton、HandlerOrder 生成器 | 已完成 |
 | M2 | Composite | 已完成 |
 | M2 | Decorator | 已完成 |
-| M2 | EventAggregator | 未开始 |
+| M2 | EventAggregator | 已完成 |
+| P3 | `[RegisterFactory]` + DP020–022 | 已完成 |
+| P3 | IReadOnlyRegistry + FrozenDictionary | 已完成 |
+| P3 | DI 扩展包 | 已完成 |
 | — | CodeFix + DP006 | 已完成 |
-| — | DI 扩展包 | 未开始（见 [docs/ROADMAP.md](docs/ROADMAP.md)） |
 
 ## 测试要求
 
@@ -84,6 +89,7 @@ dotnet test DesignPatterns.slnx
 | 单元 / 集成 | `tests/DesignPatterns.Tests` |
 | 生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests` |
 | Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` |
+| DI 扩展 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests` |
 
 提交前：`dotnet build DesignPatterns.slnx` 与 `dotnet test DesignPatterns.slnx`。
 

@@ -24,4 +24,7 @@ public static class DiagnosticIds
     public const string DecoratorContractMismatch = "DP017";
     public const string DecoratorMissingDecoratorInterface = "DP018";
     public const string DecoratorMissingParameterlessConstructor = "DP019";
+    public const string RegisterFactoryDuplicateKey = "DP020";
+    public const string RegisterFactoryContractMismatch = "DP021";
+    public const string RegisterFactoryMissingParameterlessConstructor = "DP022";
 }

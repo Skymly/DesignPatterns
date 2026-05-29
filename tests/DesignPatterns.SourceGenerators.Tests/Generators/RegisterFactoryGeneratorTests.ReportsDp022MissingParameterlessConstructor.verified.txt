@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP022,
+    Message: Type 'CustomFactory' must declare a public parameterless constructor to be used with generated static registration
+  }
+]

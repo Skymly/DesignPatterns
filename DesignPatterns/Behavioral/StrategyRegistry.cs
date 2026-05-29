@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
+#if NET8_0_OR_GREATER
+using System.Collections.Frozen;
+#endif
+
 namespace DesignPatterns.Behavioral;
 
 /// <summary>
 /// Immutable <see cref="IStrategyRegistry{TKey,TStrategy}"/> backed by a read-only dictionary.
+/// On net8.0+ the dictionary is frozen for faster lookups.
 /// </summary>
 /// <typeparam name="TKey">Key type.</typeparam>
 /// <typeparam name="TStrategy">Strategy implementation type.</typeparam>
@@ -17,7 +22,14 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
     /// </summary>
     public StrategyRegistry(IReadOnlyDictionary<TKey, TStrategy> strategies)
     {
-        _strategies = strategies ?? throw new ArgumentNullException(nameof(strategies));
+        var dict = strategies ?? throw new ArgumentNullException(nameof(strategies));
+#if NET8_0_OR_GREATER
+        _strategies = dict is FrozenDictionary<TKey, TStrategy> frozen
+            ? frozen
+            : dict.ToFrozenDictionary();
+#else
+        _strategies = dict;
+#endif
     }
 
     /// <inheritdoc />

@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP020,
+    Message: Factory key 'standard' is already registered for contract 'TestAssembly.IProductFactory'
+  },
+  {
+    Id: DP020,
+    Message: Factory key 'standard' is already registered for contract 'TestAssembly.IProductFactory'
+  }
+]

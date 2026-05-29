@@ -20,4 +20,7 @@ DP016    | DesignPatterns.Generators | Error    | Duplicate decorator order for 
 DP017    | DesignPatterns.Generators | Error    | Decorator does not implement service contract
 DP018    | DesignPatterns.Generators | Error    | Decorator does not implement IDecorator for service contract
 DP019    | DesignPatterns.Generators | Error    | Decorator missing public parameterless constructor
+DP020    | DesignPatterns.Generators | Error    | Duplicate factory key for the same contract
+DP021    | DesignPatterns.Generators | Error    | Factory implementation does not implement contract
+DP022    | DesignPatterns.Generators | Error    | Factory implementation missing public parameterless constructor
 DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing RegisterStrategy attribute

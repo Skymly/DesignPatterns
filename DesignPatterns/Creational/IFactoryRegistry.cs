@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace DesignPatterns.Creational;
 
 /// <summary>
@@ -8,14 +6,9 @@ namespace DesignPatterns.Creational;
 /// </summary>
 /// <typeparam name="TKey">Key type.</typeparam>
 /// <typeparam name="TProduct">Product type created by factories.</typeparam>
-public interface IFactoryRegistry<TKey, TProduct>
+public interface IFactoryRegistry<TKey, TProduct> : IReadOnlyRegistry<TKey, TProduct>
     where TKey : notnull
 {
-    /// <summary>
-    /// Gets all registered keys.
-    /// </summary>
-    IReadOnlyCollection<TKey> Keys { get; }
-
     /// <summary>
     /// Tries to create a product for the given key.
     /// </summary>

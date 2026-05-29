@@ -2,8 +2,15 @@
   <Project Path="DesignPatterns/DesignPatterns.csproj" />
   <Project Path="DesignPatterns.Diagnostics/DesignPatterns.Diagnostics.csproj" />
   <Project Path="DesignPatterns.SourceGenerators/DesignPatterns.SourceGenerators.csproj" />
+  <Folder Name="/samples/">
+    <Project Path="samples/EventAggregator.Sample/EventAggregator.Sample.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DesignPatterns.Extensions.DependencyInjection.Tests/DesignPatterns.Extensions.DependencyInjection.Tests.csproj" />
+  </Folder>
   <Project Path="DesignPatterns.Analyzers/DesignPatterns.Analyzers.csproj" />
   <Project Path="DesignPatterns.CodeFixes/DesignPatterns.CodeFixes.csproj" />
+  <Project Path="DesignPatterns.Extensions.DependencyInjection/DesignPatterns.Extensions.DependencyInjection.csproj" />
   <Project Path="DesignPatterns.Package/DesignPatterns.Package.csproj" />
   <Project Path="samples/GenerateSingleton.Sample/GenerateSingleton.Sample.csproj" />
   <Project Path="samples/Strategy.Sample/Strategy.Sample.csproj" />
@@ -11,6 +18,7 @@
   <Project Path="samples/Composite.Sample/Composite.Sample.csproj" />
   <Project Path="samples/Factory.Sample/Factory.Sample.csproj" />
   <Project Path="samples/Decorator.Sample/Decorator.Sample.csproj" />
+  <Project Path="samples/RegisterFactory.Sample/RegisterFactory.Sample.csproj" />
   <Project Path="tests/DesignPatterns.Tests/DesignPatterns.Tests.csproj" />
   <Project Path="tests/DesignPatterns.Analyzers.Tests/DesignPatterns.Analyzers.Tests.csproj" />
   <Project Path="tests/DesignPatterns.SourceGenerators.Tests/DesignPatterns.SourceGenerators.Tests.csproj" />

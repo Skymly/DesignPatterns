@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP021,
+    Message: Type 'BrokenFactory' does not implement factory contract 'TestAssembly.IProductFactory'
+  }
+]

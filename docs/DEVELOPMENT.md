@@ -58,7 +58,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 ### 运行时库
 
 1. **Primitives，非框架**：暴露接口、管道、注册表；不替用户做领域建模。
-2. **零/极少依赖**：Core 不引用 `Microsoft.Extensions.DependencyInjection`；DI 扩展放在独立包（规划中）。
+2. **零/极少依赖**：Core 不引用 `Microsoft.Extensions.DependencyInjection`；DI 扩展在 `DesignPatterns.Extensions.DependencyInjection`。
 3. **异步一等**：管道与处理器默认支持 `CancellationToken` 与 `ValueTask`。
 4. **显式失败**：优先 `TryResolve`、明确异常信息，避免静默 `null`。
 
@@ -94,7 +94,14 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 - [x] Composite — `ICompositeNode<T>` + 遍历 + `[CompositePart]`（见 [Composite.md](Composite.md)）
 - [x] Decorator — 服务包装栈（见 [Decorator.md](Decorator.md)）
-- [ ] 轻量 EventAggregator
+- [x] EventAggregator — 轻量 pub/sub（`IEventAggregator`、`IEventHandler<T>`）
+
+### 生态（P3）
+
+- [x] `[RegisterFactory]` — Factory 编译期 key/重复检测（DP020–022）
+- [x] `IReadOnlyRegistry<TKey,TValue>` — Strategy/Factory 共享抽象
+- [x] `FrozenDictionary` — net8.0 `StrategyRegistry` 查找优化
+- [x] DI 扩展包 — `DesignPatterns.Extensions.DependencyInjection`
 
 ## 编码规范
 
@@ -114,9 +121,10 @@ dotnet test DesignPatterns.slnx
 | 层级 | 项目 | 覆盖 |
 |------|------|------|
 | 单元 | `tests/DesignPatterns.Tests` | 运行时 API、特性校验 |
-| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton/Decorator） |
+| 集成 | `tests/DesignPatterns.Tests/Integration/` | 生成器产出 → 运行时（Chain/Strategy/Composite/Singleton/Decorator/Factory） |
 | 快照 | `tests/DesignPatterns.SourceGenerators.Tests` | 生成源码与 DP 诊断（Verify） |
 | Analyzer | `tests/DesignPatterns.Analyzers.Tests` | DP006、CodeFix（Strategy/Handler/Composite） |
+| DI 扩展 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests` | DI 注册与解析 |
 
 ```bash
 dotnet test DesignPatterns.slnx
