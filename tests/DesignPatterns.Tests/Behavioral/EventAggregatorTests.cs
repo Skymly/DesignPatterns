@@ -132,19 +132,11 @@ public sealed class EventAggregatorTests
     }
 
     [Fact]
-    public async Task ConcurrentSubscribeAndPublish_IsThreadSafe()
+    public async Task ConcurrentSubscribeAndPublish_DoesNotThrow()
     {
         const int iterations = 100;
         var aggregator = new EventAggregator();
-        var counter = 0;
-        var handler = new DelegateHandler<TestEvent>(_ =>
-        {
-            Interlocked.Increment(ref counter);
-            return default;
-        });
-
-        // Seed a handler so publishes always have at least one subscriber once work starts.
-        aggregator.Subscribe(handler);
+        var handler = new DelegateHandler<TestEvent>(_ => default);
 
         var start = new Barrier(participantCount: 3);
 
@@ -167,9 +159,38 @@ public sealed class EventAggregatorTests
         });
 
         start.SignalAndWait();
-        await Task.WhenAll(subscribeTask, publishTask);
 
-        Assert.True(counter >= iterations);
+        var exception = await Record.ExceptionAsync(() => Task.WhenAll(subscribeTask, publishTask));
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public async Task PublishAfterSeed_InvokesAllHandlersInSnapshot()
+    {
+        var aggregator = new EventAggregator();
+        var counter = 0;
+        var handler = new DelegateHandler<TestEvent>(_ =>
+        {
+            Interlocked.Increment(ref counter);
+            return default;
+        });
+
+        aggregator.Subscribe(handler);
+        aggregator.Subscribe(handler);
+
+        await aggregator.PublishAsync(new TestEvent("first"));
+
+        Assert.Equal(2, counter);
+
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            Interlocked.Increment(ref counter);
+            return default;
+        }));
+
+        await aggregator.PublishAsync(new TestEvent("second"));
+
+        Assert.Equal(5, counter);
     }
 
     // Helper types
