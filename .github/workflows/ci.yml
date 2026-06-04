@@ -36,23 +36,16 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore
-        run: dotnet restore DesignPatterns.slnx
+      - name: Run CI via Nuke
+        run: dotnet run --project build/_build.csproj -- --root . --target Ci --configuration Release
 
-      - name: Build
-        run: dotnet build DesignPatterns.slnx --configuration Release --no-restore
-
-      - name: Test
-        run: dotnet test DesignPatterns.slnx --configuration Release --no-build --verbosity normal
-
-      - name: Build samples
-        shell: bash
-        run: |
-          set -euo pipefail
-          for proj in samples/*/*.csproj; do
-            echo "Building $proj"
-            dotnet build "$proj" -c Release
-          done
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          if-no-files-found: warn
 
   pack:
     runs-on: ubuntu-latest
@@ -73,14 +66,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Pack meta-package
-        run: |
-          dotnet restore DesignPatterns.slnx
-          dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o artifacts/packages
+      - name: Pack and verify via Nuke
+        run: dotnet run --project build/_build.csproj -- --root . --target CiPack --configuration Release
 
       - name: Upload packages
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages
-          path: artifacts/packages/*.nupkg
+          path: artifacts/package/*.nupkg
           if-no-files-found: error

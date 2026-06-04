@@ -67,16 +67,28 @@ DesignPatterns.slnx
 
 ## 常用命令
 
+与 CI 一致（Nuke）：
+
 ```powershell
-dotnet restore DesignPatterns.slnx
-dotnet build DesignPatterns.slnx -c Release
-dotnet test DesignPatterns.slnx -c Release
+# 编译 + 测试 + 示例（默认本地 Debug；CI 用 Release）
+./build.ps1 --target Ci --configuration Release
+
+# 打包 + 校验 nupkg → artifacts/package/
+./build.ps1 --target CiPack --configuration Release
 ```
 
-本地打包：
+等价：
 
 ```powershell
-dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o artifacts/packages
+dotnet run --project build/_build.csproj -- --target Ci --configuration Release
+dotnet run --project build/_build.csproj -- --target CiPack --configuration Release
+```
+
+传统 dotnet（仍可用，非 CI 权威路径）：
+
+```powershell
+dotnet build DesignPatterns.slnx -c Release
+dotnet test DesignPatterns.slnx -c Release
 ```
 
 启用生成器 DI 路径：引用 `DesignPatterns.Extensions.DependencyInjection`（自动 Import `build/DesignPatterns.Extensions.DependencyInjection.targets`）。
@@ -118,11 +130,16 @@ dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o a
 
 ## 构建与 CI
 
+| Nuke 目标 | 说明 |
+|-----------|------|
+| **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` → `BuildSamples` |
+| **CiPack** | `Ci` 链 + `Pack` + `PackVerify` → `artifacts/package/*.nupkg` |
+
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | Restore → Build → Test → 全部 `samples/` → **Pack** 元包 artifact（**不** 发布 NuGet） |
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | **Ci** + **CiPack**（**不** 发布 NuGet） |
 
-与 CI 一致：提交前本地执行 `dotnet build` + `dotnet test`（Release 配置）。
+提交前：本地 `./build.ps1 --target Ci --configuration Release`（或 `CiPack` 若改打包）。
 
 ---
 

@@ -18,10 +18,27 @@
 ## 克隆与构建
 
 ```bash
-git clone <your-remote-url> DesignPatterns
+git clone https://github.com/Skymly/DesignPatterns.git
 cd DesignPatterns
+```
+
+**推荐（与 CI 一致，Nuke）：**
+
+```powershell
+# Windows
+./build.ps1 --target Ci --configuration Release
+./build.ps1 --target CiPack --configuration Release
+
+# Linux / macOS
+./build.sh --target Ci --configuration Release
+```
+
+**传统 dotnet：**
+
+```bash
 dotnet restore DesignPatterns.slnx
 dotnet build DesignPatterns.slnx --configuration Release
+dotnet test DesignPatterns.slnx --configuration Release --no-build
 ```
 
 仅构建核心库：
@@ -112,9 +129,17 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 ## 测试
 
-```bash
-dotnet test DesignPatterns.slnx
+```powershell
+./build.ps1 --target Ci --configuration Release
 ```
+
+或：
+
+```bash
+dotnet test DesignPatterns.slnx -c Release
+```
+
+Nuke `UnitTest` 会依次运行 `tests/` 下四个测试项目，并将 TRX 写入 `TestResults/`。
 
 ### 测试金字塔
 
