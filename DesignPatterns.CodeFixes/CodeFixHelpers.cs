@@ -40,6 +40,18 @@ internal static class CodeFixHelpers
             return false;
         }
 
+        if (diagnostic.Id == DiagnosticIds.HandlerOrderUnregisteredImplementation)
+        {
+            var handlerMatch = Regex.Match(message, @"IHandler<([^>]+)>", RegexOptions.CultureInvariant);
+            if (handlerMatch.Success)
+            {
+                contractTypeName = handlerMatch.Groups[1].Value;
+                return true;
+            }
+
+            return false;
+        }
+
         if (diagnostic.Id == DiagnosticIds.CompositePartMissingBuildable)
         {
             var buildableMatch = Regex.Match(message, @"ICompositeBuildable<([^>]+)>", RegexOptions.CultureInvariant);
