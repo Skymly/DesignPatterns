@@ -80,6 +80,82 @@ public sealed class HandlerOrderGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesPipelinesWhenSingleClassHasMultipleContexts()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class RequestContext
+            {
+            }
+
+            public sealed class AuditContext
+            {
+            }
+
+            [HandlerOrder<RequestContext>(10)]
+            [HandlerOrder<AuditContext>(10)]
+            public sealed class SharedLoggingHandler :
+                IHandler<RequestContext>,
+                IHandler<AuditContext>
+            {
+                public ValueTask InvokeAsync(
+                    RequestContext context,
+                    HandlerDelegate<RequestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(context, cancellationToken);
+
+                public ValueTask InvokeAsync(
+                    AuditContext context,
+                    HandlerDelegate<AuditContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(context, cancellationToken);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp005DuplicateOrderOnSameClass()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class RequestContext
+            {
+            }
+
+            [HandlerOrder<RequestContext>(10)]
+            [HandlerOrder<RequestContext>(10)]
+            public sealed class DuplicateOrderHandler : IHandler<RequestContext>
+            {
+                public ValueTask InvokeAsync(
+                    RequestContext context,
+                    HandlerDelegate<RequestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp005DuplicateOrder()
     {
         const string source = """

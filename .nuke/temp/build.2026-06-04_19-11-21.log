@@ -1,0 +1,186 @@
+V |                      | ArgumentsFromParametersFile.OnBuildCreated (150)
+V |                      | HandleReSharperSurrogateArguments.OnBuildCreated (150)
+V |                      | InjectParameterValues.OnBuildCreated (100)
+V |                      | HandleShellCompletion.OnBuildCreated (75)
+V |                      | GenerateBuildServerConfigurations.OnBuildCreated (50)
+V |                      | InvokeBuildServerConfigurationGeneration.OnBuildCreated (45)
+V |                      | UpdateNotification.OnBuildCreated (10)
+V |                      | UnsetVisualStudioEnvironmentVariables.OnBuildCreated (0)
+V |                      | HandleVisualStudioDebugging.OnBuildCreated (0)
+V |                      | EventInvoker.OnBuildCreated (-3.4028235E+38)
+V |                      | HandlePlanRequests.OnBuildInitialized (10)
+V |                      | HandleHelpRequests.OnBuildInitialized (5)
+V |                      | Telemetry.OnBuildInitialized (0)
+V |                      | InjectNonParameterValues.OnBuildInitialized (-100)
+V |                      | EventInvoker.OnBuildInitialized (-3.4028235E+38)
+V | Clean                | EventInvoker.OnTargetRunning (-3.4028235E+38)
+V | Clean                | Telemetry.OnTargetSucceeded (0)
+V | Clean                | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+V | Restore              | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | Restore              | > "C:\Program Files\dotnet\dotnet.exe" restore C:\Code\Skymly\DesignPatterns\DesignPatterns.slnx
+V | Restore              | @ C:\Code\Skymly\DesignPatterns
+D | Restore              |   正在确定要还原的项目…
+D | Restore              |   所有项目均是最新的，无法还原。
+V | Restore              | Telemetry.OnTargetSucceeded (0)
+V | Restore              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+V | Compile              | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | Compile              | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\DesignPatterns.slnx --configuration Release --no-restore
+V | Compile              | @ C:\Code\Skymly\DesignPatterns
+D | Compile              |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | Compile              |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\netstandard2.0\DesignPatterns.dll
+D | Compile              |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | Compile              |   DesignPatterns.CodeFixes -> C:\Code\Skymly\DesignPatterns\DesignPatterns.CodeFixes\bin\Release\netstandard2.0\DesignPatterns.CodeFixes.dll
+D | Compile              |   DesignPatterns.Analyzers -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Analyzers\bin\Release\netstandard2.0\DesignPatterns.Analyzers.dll
+D | Compile              |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | Compile              |   DesignPatterns.Package -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Package\bin\Release\netstandard2.0\DesignPatterns.Package.dll
+D | Compile              |   Factory.Sample -> C:\Code\Skymly\DesignPatterns\samples\Factory.Sample\bin\Release\net8.0\Factory.Sample.dll
+D | Compile              |   DesignPatterns.Extensions.DependencyInjection -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Extensions.DependencyInjection\bin\Release\netstandard2.0\DesignPatterns.Extensions.DependencyInjection.dll
+D | Compile              |   EventAggregator.Sample -> C:\Code\Skymly\DesignPatterns\samples\EventAggregator.Sample\bin\Release\net8.0\EventAggregator.Sample.dll
+W | Compile              | C:\Code\Skymly\DesignPatterns\DesignPatterns.Extensions.DependencyInjection\ServiceProviderStrategyRegistry.cs(55,17): warning CS8767: “bool ServiceProviderStrategyRegistry<TKey, TStrategy>.TryGet(TKey key, out TStrategy strategy)”的参数“strategy”类型中引用类型的为 Null 性与隐式实现的成员“bool IReadOnlyRegistry<TKey, TStrategy>.TryGet(TKey key, out TStrategy value)”不匹配(可能是由于为 Null 性特性)。 [C:\Code\Skymly\DesignPatterns\DesignPatterns.Extensions.DependencyInjection\DesignPatterns.Extensions.DependencyInjection.csproj::TargetFramework=net8.0]
+D | Compile              |   DesignPatterns.Extensions.DependencyInjection -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Extensions.DependencyInjection\bin\Release\net8.0\DesignPatterns.Extensions.DependencyInjection.dll
+D | Compile              |   Strategy.Sample -> C:\Code\Skymly\DesignPatterns\samples\Strategy.Sample\bin\Release\net8.0\Strategy.Sample.dll
+D | Compile              |   Chain.Sample -> C:\Code\Skymly\DesignPatterns\samples\Chain.Sample\bin\Release\net8.0\Chain.Sample.dll
+D | Compile              |   Composite.Sample -> C:\Code\Skymly\DesignPatterns\samples\Composite.Sample\bin\Release\net8.0\Composite.Sample.dll
+D | Compile              |   RegisterFactory.Sample -> C:\Code\Skymly\DesignPatterns\samples\RegisterFactory.Sample\bin\Release\net8.0\RegisterFactory.Sample.dll
+D | Compile              |   Decorator.Sample -> C:\Code\Skymly\DesignPatterns\samples\Decorator.Sample\bin\Release\net8.0\Decorator.Sample.dll
+D | Compile              |   GenerateSingleton.Sample -> C:\Code\Skymly\DesignPatterns\samples\GenerateSingleton.Sample\bin\Release\net8.0\GenerateSingleton.Sample.dll
+D | Compile              |   DesignPatterns.Tests -> C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Tests\bin\Release\net8.0\DesignPatterns.Tests.dll
+D | Compile              |   DesignPatterns.Extensions.DependencyInjection.Tests -> C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Extensions.DependencyInjection.Tests\bin\Release\net8.0\DesignPatterns.Extensions.DependencyInjection.Tests.dll
+D | Compile              |   DesignPatterns.Analyzers.Tests -> C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Analyzers.Tests\bin\Release\net8.0\DesignPatterns.Analyzers.Tests.dll
+D | Compile              |   DesignPatterns.SourceGenerators.Tests -> C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.SourceGenerators.Tests\bin\Release\net8.0\DesignPatterns.SourceGenerators.Tests.dll
+D | Compile              | 
+D | Compile              | 已成功生成。
+D | Compile              | 
+W | Compile              | C:\Code\Skymly\DesignPatterns\DesignPatterns.Extensions.DependencyInjection\ServiceProviderStrategyRegistry.cs(55,17): warning CS8767: “bool ServiceProviderStrategyRegistry<TKey, TStrategy>.TryGet(TKey key, out TStrategy strategy)”的参数“strategy”类型中引用类型的为 Null 性与隐式实现的成员“bool IReadOnlyRegistry<TKey, TStrategy>.TryGet(TKey key, out TStrategy value)”不匹配(可能是由于为 Null 性特性)。 [C:\Code\Skymly\DesignPatterns\DesignPatterns.Extensions.DependencyInjection\DesignPatterns.Extensions.DependencyInjection.csproj::TargetFramework=net8.0]
+D | Compile              |     1 个警告
+D | Compile              |     0 个错误
+D | Compile              | 
+D | Compile              | 已用时间 00:00:06.56
+V | Compile              | Telemetry.OnTargetSucceeded (0)
+V | Compile              | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+V | UnitTest             | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | UnitTest             | > "C:\Program Files\dotnet\dotnet.exe" test C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Tests\DesignPatterns.Tests.csproj --configuration Release --no-build --results-directory C:\Code\Skymly\DesignPatterns\TestResults --logger trx;LogFileName=DesignPatterns.Tests.trx
+V | UnitTest             | @ C:\Code\Skymly\DesignPatterns
+D | UnitTest             | C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Tests\bin\Release\net8.0\DesignPatterns.Tests.dll (.NETCoreApp,Version=v8.0)的测试运行
+D | UnitTest             | 总共 1 个测试文件与指定模式相匹配。
+D | UnitTest             | 结果文件: C:\Code\Skymly\DesignPatterns\TestResults\DesignPatterns.Tests.trx
+D | UnitTest             | 
+D | UnitTest             | 已通过! - 失败:     0，通过:    98，已跳过:     0，总计:    98，持续时间: 196 ms - DesignPatterns.Tests.dll (net8.0)
+I | UnitTest             | > "C:\Program Files\dotnet\dotnet.exe" test C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.SourceGenerators.Tests\DesignPatterns.SourceGenerators.Tests.csproj --configuration Release --no-build --results-directory C:\Code\Skymly\DesignPatterns\TestResults --logger trx;LogFileName=DesignPatterns.SourceGenerators.Tests.trx
+V | UnitTest             | @ C:\Code\Skymly\DesignPatterns
+D | UnitTest             | C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.SourceGenerators.Tests\bin\Release\net8.0\DesignPatterns.SourceGenerators.Tests.dll (.NETCoreApp,Version=v8.0)的测试运行
+D | UnitTest             | 总共 1 个测试文件与指定模式相匹配。
+D | UnitTest             | 结果文件: C:\Code\Skymly\DesignPatterns\TestResults\DesignPatterns.SourceGenerators.Tests.trx
+D | UnitTest             | 
+D | UnitTest             | 已通过! - 失败:     0，通过:    33，已跳过:     0，总计:    33，持续时间: 2 s - DesignPatterns.SourceGenerators.Tests.dll (net8.0)
+I | UnitTest             | > "C:\Program Files\dotnet\dotnet.exe" test C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Analyzers.Tests\DesignPatterns.Analyzers.Tests.csproj --configuration Release --no-build --results-directory C:\Code\Skymly\DesignPatterns\TestResults --logger trx;LogFileName=DesignPatterns.Analyzers.Tests.trx
+V | UnitTest             | @ C:\Code\Skymly\DesignPatterns
+D | UnitTest             | C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Analyzers.Tests\bin\Release\net8.0\DesignPatterns.Analyzers.Tests.dll (.NETCoreApp,Version=v8.0)的测试运行
+D | UnitTest             | 总共 1 个测试文件与指定模式相匹配。
+D | UnitTest             | 结果文件: C:\Code\Skymly\DesignPatterns\TestResults\DesignPatterns.Analyzers.Tests.trx
+D | UnitTest             | 
+D | UnitTest             | 已通过! - 失败:     0，通过:    12，已跳过:     0，总计:    12，持续时间: 1 s - DesignPatterns.Analyzers.Tests.dll (net8.0)
+I | UnitTest             | > "C:\Program Files\dotnet\dotnet.exe" test C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Extensions.DependencyInjection.Tests\DesignPatterns.Extensions.DependencyInjection.Tests.csproj --configuration Release --no-build --results-directory C:\Code\Skymly\DesignPatterns\TestResults --logger trx;LogFileName=DesignPatterns.Extensions.DependencyInjection.Tests.trx
+V | UnitTest             | @ C:\Code\Skymly\DesignPatterns
+D | UnitTest             | C:\Code\Skymly\DesignPatterns\tests\DesignPatterns.Extensions.DependencyInjection.Tests\bin\Release\net8.0\DesignPatterns.Extensions.DependencyInjection.Tests.dll (.NETCoreApp,Version=v8.0)的测试运行
+D | UnitTest             | 总共 1 个测试文件与指定模式相匹配。
+D | UnitTest             | 结果文件: C:\Code\Skymly\DesignPatterns\TestResults\DesignPatterns.Extensions.DependencyInjection.Tests.trx
+D | UnitTest             | 
+D | UnitTest             | 已通过! - 失败:     0，通过:    27，已跳过:     0，总计:    27，持续时间: 247 ms - DesignPatterns.Extensions.DependencyInjection.Tests.dll (net8.0)
+V | UnitTest             | Telemetry.OnTargetSucceeded (0)
+V | UnitTest             | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
+V | BuildSamples         | EventInvoker.OnTargetRunning (-3.4028235E+38)
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\Chain.Sample\Chain.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | BuildSamples         |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | BuildSamples         |   Chain.Sample -> C:\Code\Skymly\DesignPatterns\samples\Chain.Sample\bin\Release\net8.0\Chain.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:03.62
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\Composite.Sample\Composite.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | BuildSamples         |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | BuildSamples         |   Composite.Sample -> C:\Code\Skymly\DesignPatterns\samples\Composite.Sample\bin\Release\net8.0\Composite.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:03.64
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\Decorator.Sample\Decorator.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | BuildSamples         |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | BuildSamples         |   Decorator.Sample -> C:\Code\Skymly\DesignPatterns\samples\Decorator.Sample\bin\Release\net8.0\Decorator.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:03.37
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\EventAggregator.Sample\EventAggregator.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   EventAggregator.Sample -> C:\Code\Skymly\DesignPatterns\samples\EventAggregator.Sample\bin\Release\net8.0\EventAggregator.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:01.85
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\Factory.Sample\Factory.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   Factory.Sample -> C:\Code\Skymly\DesignPatterns\samples\Factory.Sample\bin\Release\net8.0\Factory.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:02.00
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\GenerateSingleton.Sample\GenerateSingleton.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | BuildSamples         |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | BuildSamples         |   GenerateSingleton.Sample -> C:\Code\Skymly\DesignPatterns\samples\GenerateSingleton.Sample\bin\Release\net8.0\GenerateSingleton.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:03.40
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\RegisterFactory.Sample\RegisterFactory.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | BuildSamples         |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | BuildSamples         |   RegisterFactory.Sample -> C:\Code\Skymly\DesignPatterns\samples\RegisterFactory.Sample\bin\Release\net8.0\RegisterFactory.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:03.71
+I | BuildSamples         | > "C:\Program Files\dotnet\dotnet.exe" build C:\Code\Skymly\DesignPatterns\samples\Strategy.Sample\Strategy.Sample.csproj --configuration Release --no-restore
+V | BuildSamples         | @ C:\Code\Skymly\DesignPatterns
+D | BuildSamples         |   DesignPatterns -> C:\Code\Skymly\DesignPatterns\DesignPatterns\bin\Release\net8.0\DesignPatterns.dll
+D | BuildSamples         |   DesignPatterns.Diagnostics -> C:\Code\Skymly\DesignPatterns\DesignPatterns.Diagnostics\bin\Release\netstandard2.0\DesignPatterns.Diagnostics.dll
+D | BuildSamples         |   DesignPatterns.SourceGenerators -> C:\Code\Skymly\DesignPatterns\DesignPatterns.SourceGenerators\bin\Release\netstandard2.0\DesignPatterns.SourceGenerators.dll
+D | BuildSamples         |   Strategy.Sample -> C:\Code\Skymly\DesignPatterns\samples\Strategy.Sample\bin\Release\net8.0\Strategy.Sample.dll
+D | BuildSamples         | 
+D | BuildSamples         | 已成功生成。
+D | BuildSamples         |     0 个警告
+D | BuildSamples         |     0 个错误
+D | BuildSamples         | 
+D | BuildSamples         | 已用时间 00:00:03.52
+V | BuildSamples         | Telemetry.OnTargetSucceeded (0)
+V | BuildSamples         | EventInvoker.OnTargetSucceeded (-3.4028235E+38)
