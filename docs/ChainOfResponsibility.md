@@ -93,6 +93,7 @@ public static partial class RequestContextHandlerPipeline
 | DP008 | 未实现 `IHandler<TContext>` |
 | DP009 | 缺少 public 无参构造 |
 | DP024 | Info | Analyzer | 实现了 `IHandler<TContext>` 但未加 `[HandlerOrder]`（该 context 已有其它 handler 注册） |
+| DP024 | Info | CodeFix | 一键添加 `[HandlerOrder(order, typeof(TContext))]` |
 
 ## DI 集成
 
