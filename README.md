@@ -45,8 +45,8 @@ DesignPatterns.slnx
 ├── DesignPatterns/                    # 运行时核心（netstandard2.0 + net8.0）
 ├── DesignPatterns.Diagnostics/        # DP### 诊断 ID 常量
 ├── DesignPatterns.SourceGenerators/   # 增量源生成器
-├── DesignPatterns.Analyzers/          # DP006、DP023 Analyzer
-├── DesignPatterns.CodeFixes/          # CodeFix
+├── DesignPatterns.Analyzers/          # DP006、DP023、DP024 Analyzer
+├── DesignPatterns.CodeFixes/          # CodeFix（含 DP024 HandlerOrder）
 ├── DesignPatterns.Package/            # NuGet 元包（PackageId=DesignPatterns）
 ├── tests/DesignPatterns.Tests/        # 运行时单元测试（xUnit）
 ├── tests/DesignPatterns.SourceGenerators.Tests/  # 生成器 Verify 快照
@@ -93,6 +93,19 @@ cd DesignPatterns
 
 ```powershell
 ./build.ps1 --target CiPack --configuration Release
+```
+
+### 示例程序
+
+| 示例 | 说明 |
+|------|------|
+| [DependencyInjection.Sample](samples/DependencyInjection.Sample/) | `RegisterDi`：Strategy / Factory / Handler |
+| [Composite.Sample](samples/Composite.Sample/) | Catalog `BuildRoot()` + 手动 `CompositeTreeBuilder` |
+| [Strategy.Sample](samples/Strategy.Sample/) | 静态 `Instance` 策略注册表 |
+
+```powershell
+dotnet run --project samples/DependencyInjection.Sample/DependencyInjection.Sample.csproj -c Release
+dotnet run --project samples/Composite.Sample/Composite.Sample.csproj -c Release
 ```
 
 ## 规划中的能力
