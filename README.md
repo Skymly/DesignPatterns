@@ -57,7 +57,8 @@ DesignPatterns.slnx
 │   ├── Chain.Sample/
 │   ├── Composite.Sample/
 │   ├── Factory.Sample/
-│   └── Decorator.Sample/
+│   ├── Decorator.Sample/
+│   └── DependencyInjection.Sample/   # RegisterDi (Strategy / Factory / Handler)
 └── docs/                              # 设计与开发文档
 ```
 

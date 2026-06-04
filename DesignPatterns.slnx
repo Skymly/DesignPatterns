@@ -3,6 +3,7 @@
   <Project Path="DesignPatterns.Diagnostics/DesignPatterns.Diagnostics.csproj" />
   <Project Path="DesignPatterns.SourceGenerators/DesignPatterns.SourceGenerators.csproj" />
   <Folder Name="/samples/">
+    <Project Path="samples/DependencyInjection.Sample/DependencyInjection.Sample.csproj" />
     <Project Path="samples/EventAggregator.Sample/EventAggregator.Sample.csproj" />
   </Folder>
   <Folder Name="/tests/">

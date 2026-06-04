@@ -66,7 +66,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
 | `tests/DesignPatterns.Analyzers.Tests/` | Analyzer/CodeFix 测试（P2 起） |
-| `samples/` | 每个模式一个最小可运行示例，兼作文档 |
+| `samples/` | 每个模式一个最小可运行示例；`DependencyInjection.Sample` 演示 `RegisterDi` |
 
 命名空间根：`DesignPatterns`（运行时）、`DesignPatterns.Analyzers`（编译期）。
 
