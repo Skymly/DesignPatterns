@@ -120,7 +120,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP005、DP008–DP009 | HandlerOrder（生成器） |
 | DP006 | 未注册策略（Analyzer） |
 | DP023 | 未注册工厂（Analyzer） |
-| DP024 | 未注册 Handler（Analyzer） |
+| DP024 | 未注册 Handler（Analyzer + CodeFix） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -169,7 +169,11 @@ dotnet test DesignPatterns.slnx -c Release
 | M2 | Composite / Decorator / EventAggregator | 已完成 |
 | P3 | `[RegisterFactory]`、IReadOnlyRegistry、FrozenDictionary、DI 扩展包 | 已完成 |
 | P3 | DI 与生成器打通（`RegisterDi` / `Create(IServiceProvider)`） | 已完成 |
-| — | CodeFix + DP006/DP023 | 已完成 |
+| — | Nuke `Ci` / `CiPack`、GitHub Actions | 已完成 |
+| — | Handler `AllowMultiple` | 已完成 |
+| — | `DependencyInjection.Sample`（`RegisterDi`） | 已完成 |
+| — | DP024 未注册 Handler Analyzer | 已完成 |
+| — | CodeFix + DP006/DP023/DP024 | 已完成 |
 
 功能 backlog：[docs/ROADMAP.md](docs/ROADMAP.md)。
 

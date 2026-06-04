@@ -28,7 +28,7 @@
 |------|------|----------|
 | 运行时单元 / 集成 | `tests/DesignPatterns.Tests` | 修改 Core API 或生成器消费路径 |
 | 源生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests` | 修改生成代码；运行测试后接受 Verify 快照变更 |
-| Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` | 修改 DP006 或 CodeFix 行为 |
+| Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` | 修改 DP006 / DP023 / DP024 或 CodeFix 行为 |
 
 ### 生成器快照
 
