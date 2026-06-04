@@ -9,7 +9,7 @@ namespace DesignPatterns.Behavioral;
 /// Lower values run first.
 /// </summary>
 /// <typeparam name="TContext">The context type flowing through the pipeline.</typeparam>
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
 public sealed class HandlerOrderAttribute<TContext> : Attribute
 {
     /// <summary>

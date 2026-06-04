@@ -72,6 +72,8 @@ public sealed class LoggingHandler : IHandler<RequestContext> { }
 
 数值越小越先执行（与手动 `Use` 注册顺序一致）。
 
+同一 handler 类可标注多个 `[HandlerOrder<...>]`（`AllowMultiple = true`），分别加入不同 `TContext` 的生成管道，例如共享日志 handler 同时实现 `IHandler<RequestContext>` 与 `IHandler<AuditContext>`。同一 context 下重复的 Order 仍报 **DP005**。
+
 ### 生成输出
 
 对每种 `TContext` 生成 `{Context}HandlerPipeline`：

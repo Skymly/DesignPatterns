@@ -22,13 +22,14 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 
 | 项 | 说明 |
 |----|------|
-| Handler `AllowMultiple` | 单类多 `TContext` |
+| ~~Handler `AllowMultiple`~~ | 单类多 `TContext`（已完成） |
 | Composite 多根/森林 | v2 设计 |
 | Composite 手动 `CompositeTreeBuilder` | Sample 分支演示 |
 | CompletionProvider | IDE 补全，维护成本高 |
 
 ## 已完成（工程化）
 
+- Handler `AllowMultiple`：单类多个 `[HandlerOrder]` / `[HandlerOrder<TContext>]`；生成器按特性实例注册；集成测试
 - DI 与生成器打通：`DesignPatterns_EnableDiIntegration` targets；Strategy / Factory / Handler 生成 `RegisterDi` + `Create(IServiceProvider)`；`ServiceProviderStrategyRegistry`；集成测试
 - M2 EventAggregator：`IEventAggregator`、`IEventHandler<T>`、`EventAggregator` 实现、单元测试、Sample
 - P3 RegisterFactory：`[RegisterFactory]` 属性 + `RegisterFactoryGenerator`、DP020–022、集成测试

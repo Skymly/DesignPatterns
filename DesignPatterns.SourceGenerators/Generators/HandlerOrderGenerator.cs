@@ -64,20 +64,27 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(
             nonGeneric.Collect().Combine(generic.Collect()).Combine(diEnabled),
-            static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
+            static (spc, source) => Execute(spc,
+                source.Left.Left.SelectMany(static list => list).ToImmutableArray(),
+                source.Left.Right.SelectMany(static list => list).ToImmutableArray(),
+                source.Right));
     }
 
-    private static HandlerRegistration? Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
+    private static List<HandlerRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
     {
+        var result = new List<HandlerRegistration>();
+
         if (context.TargetSymbol is not INamedTypeSymbol handlerType)
         {
-            return null;
+            return result;
         }
 
         if (context.Attributes.IsDefaultOrEmpty)
         {
-            return null;
+            return result;
         }
+
+        var location = context.TargetNode.GetLocation();
 
         foreach (var attribute in context.Attributes)
         {
@@ -109,26 +116,24 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 continue;
             }
 
-            return new HandlerRegistration(
+            result.Add(new HandlerRegistration(
                 order,
                 contextType,
                 handlerType,
-                context.TargetNode.GetLocation());
+                location));
         }
 
-        return null;
+        return result;
     }
 
     private static void Execute(
         SourceProductionContext context,
-        ImmutableArray<HandlerRegistration?> nonGeneric,
-        ImmutableArray<HandlerRegistration?> generic,
+        ImmutableArray<HandlerRegistration> nonGeneric,
+        ImmutableArray<HandlerRegistration> generic,
         bool enableDiIntegration)
     {
         var registrations = nonGeneric
             .Concat(generic)
-            .Where(static r => r is not null)
-            .Cast<HandlerRegistration>()
             .ToList();
 
         if (registrations.Count == 0)

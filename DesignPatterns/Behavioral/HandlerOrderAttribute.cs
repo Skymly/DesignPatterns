@@ -6,7 +6,7 @@ namespace DesignPatterns.Behavioral;
 /// Specifies the execution order of a handler within a generated pipeline for the given context type.
 /// Lower values run first. Use the generic attribute when the target framework supports generic attributes (C# 11+).
 /// </summary>
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
 public sealed class HandlerOrderAttribute : Attribute
 {
     /// <summary>
