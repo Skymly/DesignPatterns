@@ -32,6 +32,8 @@ bld/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+TestResults/
+.nuke/temp/
 
 ## Test / coverage
 [Tt]est[Rr]esult*/

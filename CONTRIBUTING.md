@@ -10,11 +10,11 @@
 - [.NET SDK](https://dotnet.microsoft.com/download) 8.0+（见仓库根目录 [`global.json`](global.json)）
 - 克隆后执行：
 
-```bash
-dotnet restore DesignPatterns.slnx
-dotnet build DesignPatterns.slnx -c Release
-dotnet test DesignPatterns.slnx -c Release
+```powershell
+./build.ps1 --target Ci --configuration Release
 ```
+
+（与 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 相同；打包校验用 `--target CiPack`。）
 
 ## 分支与提交
 

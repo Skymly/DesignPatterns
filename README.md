@@ -81,14 +81,17 @@ DesignPatterns.slnx
 ```bash
 git clone https://github.com/Skymly/DesignPatterns.git
 cd DesignPatterns
-dotnet build DesignPatterns.slnx
-dotnet test DesignPatterns.slnx
 ```
 
-打包 NuGet（本地）：
+```powershell
+# 与 CI 相同（Nuke）
+./build.ps1 --target Ci --configuration Release
+```
 
-```bash
-dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o artifacts/packages
+打包并校验 NuGet 元包（输出到 `artifacts/package/`）：
+
+```powershell
+./build.ps1 --target CiPack --configuration Release
 ```
 
 ## 规划中的能力
