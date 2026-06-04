@@ -143,13 +143,21 @@ public sealed class UnregisteredHandlerAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var metadataName = attributeClass.MetadataName;
-        if (metadataName == "HandlerOrderAttribute")
+        return GetFullMetadataName(attributeClass) == HandlerAnalysisConstants.HandlerOrderMetadataName ||
+               GetFullMetadataName(attributeClass.OriginalDefinition) == HandlerAnalysisConstants.HandlerOrderGenericMetadataName;
+    }
+
+    private static string GetFullMetadataName(INamedTypeSymbol typeSymbol)
+    {
+        var metadataName = typeSymbol.MetadataName;
+        for (var containingType = typeSymbol.ContainingType; containingType is not null; containingType = containingType.ContainingType)
         {
-            return true;
+            metadataName = containingType.MetadataName + "+" + metadataName;
         }
 
-        return attributeClass.OriginalDefinition.MetadataName == "HandlerOrderAttribute`1";
+        return typeSymbol.ContainingNamespace.IsGlobalNamespace
+            ? metadataName
+            : typeSymbol.ContainingNamespace.ToDisplayString() + "." + metadataName;
     }
 
     private static INamedTypeSymbol? TryGetContextFromAttribute(AttributeData attribute)
