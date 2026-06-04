@@ -25,3 +25,4 @@ DP021    | DesignPatterns.Generators | Error    | Factory implementation does no
 DP022    | DesignPatterns.Generators | Error    | Factory implementation missing public parameterless constructor
 DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing RegisterStrategy attribute
 DP023    | DesignPatterns.Analyzers | Info     | Factory implementation missing RegisterFactory attribute
+DP024    | DesignPatterns.Analyzers | Info     | Handler implementation missing HandlerOrder attribute

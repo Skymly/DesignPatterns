@@ -39,7 +39,7 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 - M2 Decorator：`IDecorator`、`DecoratorStackBuilder`、`[Decorator]` 生成器、DP016–019、Sample
 - P0–P2：Factory 文档/示例、集成测试、CI、Analyzers/CodeFix 拆分、`DesignPatterns.Diagnostics`
 - CodeFix：无参构造、接口实现、RegisterStrategy、RegisterFactory、ICompositeBuildable
-- DP006 未注册策略 Analyzer；DP023 未注册工厂 Analyzer
+- DP006 未注册策略 Analyzer；DP023 未注册工厂 Analyzer；DP024 未注册 Handler Analyzer
 
 ## 明确不做
 

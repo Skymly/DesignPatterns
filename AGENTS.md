@@ -28,9 +28,9 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                              # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP023）
+├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP024）
 ├── DesignPatterns.SourceGenerators/             # 增量源生成器
-├── DesignPatterns.Analyzers/                    # DP006、DP023 Analyzer
+├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
 ├── DesignPatterns.Extensions.DependencyInjection/  # MSDI 扩展 + DI 生成器 targets
 ├── DesignPatterns.Package/                      # NuGet 元包（PackageId=DesignPatterns）
@@ -120,6 +120,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP005、DP008–DP009 | HandlerOrder（生成器） |
 | DP006 | 未注册策略（Analyzer） |
 | DP023 | 未注册工厂（Analyzer） |
+| DP024 | 未注册 Handler（Analyzer） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |

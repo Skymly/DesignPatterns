@@ -28,4 +28,5 @@ public static class DiagnosticIds
     public const string RegisterFactoryContractMismatch = "DP021";
     public const string RegisterFactoryMissingParameterlessConstructor = "DP022";
     public const string RegisterFactoryUnregisteredImplementation = "DP023";
+    public const string HandlerOrderUnregisteredImplementation = "DP024";
 }
