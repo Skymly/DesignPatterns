@@ -132,7 +132,40 @@ public sealed class EventAggregatorTests
     }
 
     [Fact]
-    public async Task ConcurrentSubscribeAndPublish_IsThreadSafe()
+    public async Task ConcurrentSubscribeAndPublish_DoesNotThrow()
+    {
+        const int iterations = 100;
+        var aggregator = new EventAggregator();
+        var handler = new DelegateHandler<TestEvent>(_ => default);
+
+        var start = new Barrier(participantCount: 3);
+
+        var subscribeTask = Task.Run(() =>
+        {
+            start.SignalAndWait();
+            for (var i = 0; i < iterations; i++)
+            {
+                aggregator.Subscribe(handler);
+            }
+        });
+
+        var publishTask = Task.Run(async () =>
+        {
+            start.SignalAndWait();
+            for (var i = 0; i < iterations; i++)
+            {
+                await aggregator.PublishAsync(new TestEvent("x"));
+            }
+        });
+
+        start.SignalAndWait();
+
+        var exception = await Record.ExceptionAsync(() => Task.WhenAll(subscribeTask, publishTask));
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public async Task PublishAfterSeed_InvokesAllHandlersInSnapshot()
     {
         var aggregator = new EventAggregator();
         var counter = 0;
@@ -142,25 +175,22 @@ public sealed class EventAggregatorTests
             return default;
         });
 
-        var subscribeTask = Task.Run(() =>
+        aggregator.Subscribe(handler);
+        aggregator.Subscribe(handler);
+
+        await aggregator.PublishAsync(new TestEvent("first"));
+
+        Assert.Equal(2, counter);
+
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
         {
-            for (var i = 0; i < 100; i++)
-            {
-                aggregator.Subscribe(handler);
-            }
-        });
+            Interlocked.Increment(ref counter);
+            return default;
+        }));
 
-        var publishTask = Task.Run(async () =>
-        {
-            for (var i = 0; i < 100; i++)
-            {
-                await aggregator.PublishAsync(new TestEvent("x"));
-            }
-        });
+        await aggregator.PublishAsync(new TestEvent("second"));
 
-        await Task.WhenAll(subscribeTask, publishTask);
-
-        Assert.True(counter > 0);
+        Assert.Equal(5, counter);
     }
 
     // Helper types
