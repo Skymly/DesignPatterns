@@ -1,19 +1,27 @@
 using Composite.Sample;
 using DesignPatterns.Structural;
 
-var root = MenuNodeCompositeCatalog.BuildRoot();
+Console.WriteLine("=== Catalog: MenuNodeCompositeCatalog.BuildRoot() ===");
+var catalogRoot = MenuNodeCompositeCatalog.BuildRoot();
 
-Console.WriteLine("=== Menu tree (depth-first) ===");
 CompositeTraverser.Traverse(
-    root,
+    catalogRoot,
     (node, depth, _) => Console.WriteLine($"{new string(' ', depth * 2)}{node.Title}"));
 
 Console.WriteLine();
-Console.WriteLine("=== Leaf items only ===");
-CompositeTraverser.Traverse(
-    root,
-    (node, depth, _) => Console.WriteLine($"{new string(' ', depth * 2)}{node.Title}"),
-    new CompositeTraversalOptions<IMenuNode> { VisitLeavesOnly = true });
+Console.WriteLine($"Root key constant: {MenuNodeCompositeKeys.Root}");
 
 Console.WriteLine();
-Console.WriteLine($"Root key constant: {MenuNodeCompositeKeys.Root}");
+Console.WriteLine("=== Manual: CompositeTreeBuilder<IMenuNode>() ===");
+var manualRoot = new ManualMenuBranch("Home (manual)");
+var manualTree = new CompositeTreeBuilder<IMenuNode>()
+    .Branch(manualRoot, branch => branch
+        .Leaf(new ManualMenuLeaf("Profile"))
+        .Branch(new ManualMenuBranch("Settings"), settings => settings
+            .Leaf(new ManualMenuLeaf("Account"))
+            .Leaf(new ManualMenuLeaf("Privacy"))))
+    .Build();
+
+CompositeTraverser.Traverse(
+    manualTree,
+    (node, depth, _) => Console.WriteLine($"{new string(' ', depth * 2)}{node.Title}"));

@@ -24,7 +24,7 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 |----|------|
 | ~~Handler `AllowMultiple`~~ | 单类多 `TContext`（已完成） |
 | Composite 多根/森林 | v2 设计 |
-| Composite 手动 `CompositeTreeBuilder` | Sample 分支演示 |
+| ~~Composite 手动 `CompositeTreeBuilder`~~ | Sample 分支演示（已完成） |
 | CompletionProvider | IDE 补全，维护成本高 |
 
 ## 已完成（工程化）
@@ -40,6 +40,7 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 - P0–P2：Factory 文档/示例、集成测试、CI、Analyzers/CodeFix 拆分、`DesignPatterns.Diagnostics`
 - CodeFix：无参构造、接口实现、RegisterStrategy、RegisterFactory、ICompositeBuildable
 - DP006 未注册策略 Analyzer；DP023 未注册工厂 Analyzer；DP024 未注册 Handler Analyzer
+- `Composite.Sample` 手动 `CompositeTreeBuilder` 演示
 
 ## 明确不做
 
