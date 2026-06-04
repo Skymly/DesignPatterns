@@ -149,8 +149,8 @@ CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（
 - [Decorator.md](Decorator.md) — Decorator 模式设计与 API
 - [EventAggregator.md](EventAggregator.md) — Event Aggregator 模式设计与 API
 
-## 待决事项（无发布计划时可延后）
+## 待决事项
 
-- [ ] 开源许可证
-- [ ] 公开发布与 SemVer 流程
+- [x] 开源许可证（[MIT](../LICENSE)）
+- [ ] 公开发布与 SemVer 流程（API 稳定前 README 标明早期阶段）
 - [ ] NuGet 元包 `net8.0` 运行时 TFM

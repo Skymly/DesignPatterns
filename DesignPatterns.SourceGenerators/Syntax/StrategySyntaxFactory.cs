@@ -45,7 +45,8 @@ internal static class StrategySyntaxFactory
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries)
+        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        bool enableDiIntegration = false)
     {
         var dictionaryType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Dictionary"))
             .WithTypeArgumentList(
@@ -136,20 +137,44 @@ internal static class StrategySyntaxFactory
                         SyntaxFactory.SingletonList<StatementSyntax>(
                             SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("_instance"))))));
 
+        var members = new List<MemberDeclarationSyntax> { registryField, instanceProperty };
+
+        if (enableDiIntegration)
+        {
+            members.Add(DiIntegrationSyntaxHelper.CreateDiEntriesField(entries));
+            members.Add(DiIntegrationSyntaxHelper.CreateStrategyCreateFromServiceProviderMethod(contractTypeName));
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                CreateStrategyRegistryInterfaceType(contractTypeName)));
+        }
+
         var registryClass = SyntaxFactory.ClassDeclaration(registryClassName)
             .WithModifiers(
                 SyntaxFactory.TokenList(
                     SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                     SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(registryField, instanceProperty);
+            .AddMembers(members.ToArray());
 
-        return WrapInCompilationUnit(
-            namespaceName,
-            registryClass,
-            "System.Collections.Generic",
-            "DesignPatterns.Behavioral");
+        var additionalUsings = new List<string> { "System.Collections.Generic", "DesignPatterns.Behavioral" };
+        if (enableDiIntegration)
+        {
+            additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        return WrapInCompilationUnit(namespaceName, registryClass, additionalUsings.ToArray());
     }
+
+    private static GenericNameSyntax CreateStrategyRegistryInterfaceType(string contractTypeName) =>
+        SyntaxFactory.GenericName(SyntaxFactory.Identifier("IStrategyRegistry"))
+            .WithTypeArgumentList(
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                        new TypeSyntax[]
+                        {
+                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                            SyntaxFactory.ParseTypeName(contractTypeName),
+                        })));
 
     public static string GetKeysClassName(INamedTypeSymbol contract) =>
         GetBaseName(contract) + "Keys";

@@ -9,9 +9,14 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <Import Project="..\..\DesignPatterns.Extensions.DependencyInjection\build\DesignPatterns.Extensions.DependencyInjection.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\..\DesignPatterns\DesignPatterns.csproj" />
     <ProjectReference Include="..\..\DesignPatterns.Extensions.DependencyInjection\DesignPatterns.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\DesignPatterns.SourceGenerators\DesignPatterns.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,10 @@
 # 贡献指南
 
+本仓库处于**早期阶段**，公共 API 与生成器产出可能在没有 major 版本策略的情况下变更。贡献前请阅读根目录 [README.md](README.md) 中的「项目状态」说明。
+
+- **Issue**：使用 [GitHub Issue 表单](https://github.com/Skymly/DesignPatterns/issues/new/choose)（英语）；范围限定单一模块，见 [AGENTS.md](AGENTS.md)。
+- **Pull Request**：填写 [PR 模板](.github/pull_request_template.md)；一个 PR 只改一个模块。
+
 ## 环境
 
 - [.NET SDK](https://dotnet.microsoft.com/download) 8.0+（见仓库根目录 [`global.json`](global.json)）

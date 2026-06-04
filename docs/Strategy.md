@@ -175,6 +175,42 @@ public static partial class PaymentStrategyRegistry
 }
 ```
 
+#### 3. DI 集成（引用 `DesignPatterns.Extensions.DependencyInjection` 时）
+
+引用扩展包会自动 Import `build/DesignPatterns.Extensions.DependencyInjection.targets`，设置 `DesignPatterns_EnableDiIntegration=true`，生成器额外输出：
+
+```csharp
+public static partial class PaymentStrategyRegistry
+{
+    // Instance 仍保留（new() 静态实例，无 DI 生命周期）
+
+    public static IStrategyRegistry<string, IPaymentStrategy> Create(IServiceProvider serviceProvider) =>
+        new ServiceProviderStrategyRegistry<string, IPaymentStrategy>(serviceProvider, _diEntries);
+
+    public static IServiceCollection RegisterDi(
+        IServiceCollection services,
+        ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+        ServiceLifetime registryLifetime = ServiceLifetime.Singleton);
+}
+```
+
+推荐用法：
+
+```csharp
+var services = new ServiceCollection();
+PaymentStrategyRegistry.RegisterDi(services);
+var registry = services.BuildServiceProvider()
+    .GetRequiredService<IStrategyRegistry<string, IPaymentStrategy>>();
+```
+
+| 生命周期组合 | 行为 |
+|--------------|------|
+| Singleton 实现 + Singleton 注册表 | 默认；`TryGet` 每次解析同一实现实例 |
+| Transient 实现 + Singleton 注册表 | `TryGet` 每次从容器取新实例（推荐需要可变策略时） |
+| Transient 注册表 | 每次解析注册表时重建 `Create(sp)` |
+
+手动 Builder 仍可用：`services.AddStrategyRegistry<string, IPaymentStrategy>(...)`（见扩展包），与生成器互不冲突。
+
 ---
 
 ## 诊断规则
@@ -212,19 +248,13 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 
 ---
 
-## 与 DI 容器的集成优先级
+## 与 DI 容器集成
 
-按 `AGENTS.md` 约定，DI 扩展包按以下顺序支持：
+**当前已实现**：`DesignPatterns.Extensions.DependencyInjection`（MSDI）+ 生成器 `RegisterDi` / `Create(IServiceProvider)`（Strategy / Factory / Handler）。
 
-1. **Autofac** — `DesignPatterns.Autofac`
-2. **MSDI** — `DesignPatterns.Extensions.DependencyInjection`
-3. **DryIoc** — `DesignPatterns.DryIoc`
-
-各扩展包提供：
-
-- `builder.RegisterStrategies()` / `services.AddStrategies()` 等一行注册
-- 生命周期由 DI 控制（Transient/Scoped/Singleton），注册表只负责 key→type 映射
-- 不在 Core 中引入 DI 依赖
+- 生命周期由 DI 控制；注册表通过 `ServiceProviderStrategyRegistry` 在 `TryGet` 时解析实现类型。
+- Core 不引用 DI；启用 DI 生成路径需引用扩展包（targets 打开 `DesignPatterns_EnableDiIntegration`）。
+- **后续可选**：Autofac / DryIoc 独立扩展包（与 MSDI 对称的 `RegisterDi` 包装）。
 
 ---
 
@@ -234,8 +264,9 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 |---|---|---|
 | 注册内容 | key → 实例（或 build 时 invoke 一次的 factory） | key → `Func<TProduct>` |
 | 生命周期 | 通常 Singleton（生成器用 `new()` 静态单例） | 每次 `Create` 调用 factory |
-| 编译期 | `[RegisterStrategy]` 生成 Keys + Registry | 无生成器（v1 手动 Builder） |
-| 共享抽象 | `IReadOnlyRegistry<TKey, TValue>` **尚未实现**（P3 可选） |
+| 编译期 | `[RegisterStrategy]` 生成 Keys + Registry | `[RegisterFactory]` 生成 Keys + `Create()` |
+| 共享抽象 | `IStrategyRegistry` 继承 `IReadOnlyRegistry` | Factory 不继承 |
+| DI | `PaymentStrategyRegistry.RegisterDi(services)` | `ProductFactoryRegistry.RegisterDi(services)` |
 
 详见 [FactoryRegistry.md](FactoryRegistry.md)。
 
@@ -250,15 +281,14 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 | 3 | `RegisterStrategyGenerator`：扫描特性 → 生成 Keys + 注册表 | R1 |
 | 4 | 诊断 DP003/DP004/DP007（生成器）+ DP006（Analyzer） | R1 |
 | 5 | 示例项目 `samples/Strategy.Sample/` | R1 |
-| 6 | DI 扩展包（Autofac → MSDI → DryIoc） | P3（规划中） |
+| 6 | DI 扩展包 + 生成器 `RegisterDi` | 已完成（MSDI） |
 
 ---
 
-## 规划中的能力（P3）
+## 规划中的能力
 
-- DI 扩展方法生成（`AddPaymentStrategies` 等），需独立扩展包或 MSBuild 开关
-- `StrategyRegistry` net8.0 路径使用 `FrozenDictionary`
-- 与 Factory Registry 共享 `IReadOnlyRegistry<TKey, TValue>` 抽象
+- Autofac / DryIoc 扩展包
+- IDE CompletionProvider（维护成本高）
 
 ---
 

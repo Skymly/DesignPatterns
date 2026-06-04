@@ -29,6 +29,7 @@ Decorator 设计详见 [Decorator.md](Decorator.md)。
 
 ## 已完成（工程化）
 
+- DI 与生成器打通：`DesignPatterns_EnableDiIntegration` targets；Strategy / Factory / Handler 生成 `RegisterDi` + `Create(IServiceProvider)`；`ServiceProviderStrategyRegistry`；集成测试
 - M2 EventAggregator：`IEventAggregator`、`IEventHandler<T>`、`EventAggregator` 实现、单元测试、Sample
 - P3 RegisterFactory：`[RegisterFactory]` 属性 + `RegisterFactoryGenerator`、DP020–022、集成测试
 - P3 IReadOnlyRegistry：`IReadOnlyRegistry<TKey,TValue>`；**仅** `IStrategyRegistry` 继承（`IFactoryRegistry` 不继承）

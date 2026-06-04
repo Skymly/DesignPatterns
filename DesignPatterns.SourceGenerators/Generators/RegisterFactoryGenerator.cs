@@ -60,11 +60,14 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
             static (node, _) => node is ClassDeclarationSyntax,
             static (ctx, _) => Transform(ctx, isGenericAttribute: true));
 
+        var diEnabled = GeneratorConfigHelper.CreateDiIntegrationEnabledProvider(context);
+
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()),
+            nonGeneric.Collect().Combine(generic.Collect()).Combine(diEnabled),
             static (spc, source) => Execute(spc,
-                source.Left.SelectMany(static list => list).ToImmutableArray(),
-                source.Right.SelectMany(static list => list).ToImmutableArray()));
+                source.Left.Left.SelectMany(static list => list).ToImmutableArray(),
+                source.Left.Right.SelectMany(static list => list).ToImmutableArray(),
+                source.Right));
     }
 
     private static List<FactoryRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
@@ -115,7 +118,8 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
     private static void Execute(
         SourceProductionContext context,
         ImmutableArray<FactoryRegistration> nonGeneric,
-        ImmutableArray<FactoryRegistration> generic)
+        ImmutableArray<FactoryRegistration> generic,
+        bool enableDiIntegration)
     {
         var registrations = nonGeneric
             .Concat(generic)
@@ -152,7 +156,7 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitGeneratedSources(context, contract, valid);
+            EmitGeneratedSources(context, contract, valid, enableDiIntegration);
         }
     }
 
@@ -198,7 +202,8 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
     private static void EmitGeneratedSources(
         SourceProductionContext context,
         INamedTypeSymbol contract,
-        List<FactoryRegistration> registrations)
+        List<FactoryRegistration> registrations,
+        bool enableDiIntegration)
     {
         var namespaceName = contract.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -230,7 +235,8 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
             namespaceName,
             registryClassName,
             contractTypeName,
-            registryEntries);
+            registryEntries,
+            enableDiIntegration);
 
         var hintPrefix = contract.Name;
         context.AddSource(

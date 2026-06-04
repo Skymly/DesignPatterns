@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributor guide (AGENTS.md)
+    url: https://github.com/Skymly/DesignPatterns/blob/main/AGENTS.md
+    about: Module boundaries, diagnostics, and Git workflow for this repository

@@ -45,76 +45,33 @@ internal static class FactorySyntaxFactory
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries)
+        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        bool enableDiIntegration = false)
     {
-        // Build: new FactoryRegistryBuilder<string, TContract>()
-        var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("FactoryRegistryBuilder"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SeparatedList<TypeSyntax>(
-                        new TypeSyntax[]
-                        {
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                            SyntaxFactory.ParseTypeName(contractTypeName),
-                        })));
+        var returnType = CreateFactoryRegistryInterfaceType(contractTypeName);
+        var buildCall = DiIntegrationSyntaxHelper.CreateFactoryRegistryBuilderExpression(
+            contractTypeName,
+            entries,
+            useServiceProvider: false);
 
-        // Build chained .Register("key", () => new Impl()) calls
-        ExpressionSyntax builderExpression = SyntaxFactory.ObjectCreationExpression(builderType)
-            .WithArgumentList(SyntaxFactory.ArgumentList());
-
-        foreach (var entry in entries)
+        var members = new List<MemberDeclarationSyntax>
         {
-            // () => new global::Impl()
-            var lambdaBody = SyntaxFactory.ObjectCreationExpression(
-                    SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
-                .WithArgumentList(SyntaxFactory.ArgumentList());
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+        };
 
-            var lambda = SyntaxFactory.ParenthesizedLambdaExpression()
-                .WithParameterList(SyntaxFactory.ParameterList())
-                .WithExpressionBody(lambdaBody);
-
-            builderExpression = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    builderExpression,
-                    SyntaxFactory.IdentifierName("Register")),
-                SyntaxFactory.ArgumentList(
-                    SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                        new ArgumentSyntax[]
-                        {
-                            SyntaxFactory.Argument(
-                                SyntaxFactory.LiteralExpression(
-                                    SyntaxKind.StringLiteralExpression,
-                                    SyntaxFactory.Literal(entry.Key))),
-                            SyntaxFactory.Argument(lambda),
-                        })));
+        if (enableDiIntegration)
+        {
+            members.Add(DiIntegrationSyntaxHelper.CreateFactoryCreateFromServiceProviderMethod(contractTypeName, entries));
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                returnType));
         }
-
-        // .Build()
-        var buildCall = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                builderExpression,
-                SyntaxFactory.IdentifierName("Build")));
-
-        // Return type: IFactoryRegistry<string, TContract>
-        var returnType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("IFactoryRegistry"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SeparatedList<TypeSyntax>(
-                        new TypeSyntax[]
-                        {
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                            SyntaxFactory.ParseTypeName(contractTypeName),
-                        })));
-
-        var createMethod = SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
-            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
 
         var registryClass = SyntaxFactory.ClassDeclaration(registryClassName)
             .WithModifiers(
@@ -122,14 +79,27 @@ internal static class FactorySyntaxFactory
                     SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                     SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(createMethod);
+            .AddMembers(members.ToArray());
 
-        return WrapInCompilationUnit(
-            namespaceName,
-            registryClass,
-            "System",
-            "DesignPatterns.Creational");
+        var additionalUsings = new List<string> { "System", "DesignPatterns.Creational" };
+        if (enableDiIntegration)
+        {
+            additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        return WrapInCompilationUnit(namespaceName, registryClass, additionalUsings.ToArray());
     }
+
+    private static GenericNameSyntax CreateFactoryRegistryInterfaceType(string contractTypeName) =>
+        SyntaxFactory.GenericName(SyntaxFactory.Identifier("IFactoryRegistry"))
+            .WithTypeArgumentList(
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                        new TypeSyntax[]
+                        {
+                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                            SyntaxFactory.ParseTypeName(contractTypeName),
+                        })));
 
     public static string GetKeysClassName(INamedTypeSymbol contract) =>
         GetBaseName(contract) + "Keys";

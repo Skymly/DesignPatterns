@@ -1,5 +1,11 @@
 using Chain.Sample;
 
+// With DesignPatterns.Extensions.DependencyInjection + targets:
+//   var services = new ServiceCollection();
+//   RequestContextHandlerPipeline.RegisterDi(services);
+//   var pipeline = services.BuildServiceProvider()
+//       .GetRequiredService<HandlerPipeline<RequestContext>>();
+
 var pipeline = RequestContextHandlerPipeline.Instance;
 
 Console.WriteLine("=== Authenticated request ===");

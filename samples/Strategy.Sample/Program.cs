@@ -1,5 +1,12 @@
 using Strategy.Sample;
 
+// Without DI package: use generated static Instance (eager new()).
+// With DesignPatterns.Extensions.DependencyInjection + targets:
+//   var services = new ServiceCollection();
+//   PaymentStrategyRegistry.RegisterDi(services);
+//   var registry = services.BuildServiceProvider()
+//       .GetRequiredService<IStrategyRegistry<string, IPaymentStrategy>>();
+
 var registry = PaymentStrategyRegistry.Instance;
 
 var alipay = registry.Get(PaymentStrategyKeys.Alipay);

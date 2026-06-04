@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <DesignPatterns_EnableDiIntegration>true</DesignPatterns_EnableDiIntegration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="DesignPatterns_EnableDiIntegration" />
+  </ItemGroup>
+</Project>

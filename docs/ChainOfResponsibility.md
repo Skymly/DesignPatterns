@@ -91,9 +91,22 @@ public static partial class RequestContextHandlerPipeline
 | DP008 | 未实现 `IHandler<TContext>` |
 | DP009 | 缺少 public 无参构造 |
 
+## DI 集成
+
+引用 `DesignPatterns.Extensions.DependencyInjection` 后，`{Context}HandlerPipeline` 生成：
+
+```csharp
+RequestContextHandlerPipeline.RegisterDi(services);
+var pipeline = provider.GetRequiredService<HandlerPipeline<RequestContext>>();
+```
+
+`Create(IServiceProvider sp)` 按 `[HandlerOrder]` 顺序 `GetRequiredService` 各 handler。Singleton 管道在首次构建时固定 handler 实例；需要每次解析新管道时使用 `registryLifetime: ServiceLifetime.Transient`。
+
+手动注册：`services.AddHandlerPipeline<TContext>(builder => ...)`（扩展包）。
+
 ## 后续
 
-- DI 扩展（Autofac → MSDI → DryIoc）
+- Autofac / DryIoc 扩展（可选）
 
 ## 参考
 

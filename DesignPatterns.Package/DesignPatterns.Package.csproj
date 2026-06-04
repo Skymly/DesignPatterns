@@ -12,14 +12,18 @@
 
     <PackageId>DesignPatterns</PackageId>
     <Title>DesignPatterns</Title>
-    <Description>Design patterns toolkit for .NET with compile-time source generators.</Description>
+    <Description>Design patterns toolkit for .NET with compile-time source generators. Early preview — APIs not stable.</Description>
     <PackageTags>design-patterns;roslyn;source-generator</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Skymly/DesignPatterns</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Skymly/DesignPatterns.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage;_IncludeAnalyzersInPackage;_IncludeCodeFixesInPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 

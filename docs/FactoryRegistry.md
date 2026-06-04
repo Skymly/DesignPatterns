@@ -129,13 +129,21 @@ CodeFix：DP023 可一键添加 `[RegisterFactory("suggested-key", typeof(TContr
 
 ## DI 集成
 
-`DesignPatterns.Extensions.DependencyInjection`：
+引用 `DesignPatterns.Extensions.DependencyInjection` 后，生成器为 `{Contract}FactoryRegistry` 增加：
 
 ```csharp
-services.AddFactoryRegistry<string, IProduct>(builder => { ... });
+ProductFactoryRegistry.RegisterDi(services); // TryAdd 各实现 + IFactoryRegistry<,>
+// 或
+services.AddFactoryRegistry<string, IProduct>(builder => { ... }); // 手动 Builder
 ```
 
-用于手动配置的 `FactoryRegistryBuilder`；生成器产出的静态 `Create()` 仍可在无 DI 场景直接使用。
+`Create(IServiceProvider sp)` 使用 `() => sp.GetRequiredService<TImpl>()` 注册工厂委托；**每次** `registry.Create(key)` 调用委托。实现类型为 Singleton 时，多次 `Create` 返回同一实例；需要新产品实例时对实现使用 `ServiceLifetime.Transient`：
+
+```csharp
+ProductFactoryRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+```
+
+无 DI 包时仍可使用静态 `Create()`（`new Impl()`）。
 
 ---
 

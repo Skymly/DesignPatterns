@@ -1,0 +1,73 @@
+name: Source Generator / Diagnostic Change
+description: Changes to Roslyn generators, analyzers, code fixes, or DP diagnostic IDs
+title: "[Generator]: "
+labels:
+  - generator
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use **English**. Generator and analyzer changes belong in `DesignPatterns.SourceGenerators`, `DesignPatterns.Analyzers`, or `DesignPatterns.CodeFixes`. Do not mix **Runtime** with **SourceGenerators** in one Issue unless explicitly scoped as a coordinated change with separate PRs.
+
+  - type: dropdown
+    id: module
+    attributes:
+      label: Module
+      options:
+        - SourceGenerators
+        - Analyzers
+        - Diagnostics
+        - DependencyInjection
+        - Runtime
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pattern
+    attributes:
+      label: Design pattern (if applicable)
+      options:
+        - Singleton
+        - Factory Registry
+        - Strategy
+        - Chain of Responsibility
+        - Composite
+        - Decorator
+        - Event Aggregator
+        - Cross-cutting / infrastructure
+        - N/A
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary of change
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic IDs affected
+      description: e.g. DP003, DP006, DP020–DP023, or new IDs
+      placeholder: DP### — description
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: breaking
+    attributes:
+      label: Impact
+      options:
+        - label: This is a breaking change to generated code or public analyzer behavior
+        - label: Verify snapshot tests will need updating
+        - label: README, AGENTS.md, or docs/ should be updated
+        - label: DI integration (`RegisterDi`) output may change
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true

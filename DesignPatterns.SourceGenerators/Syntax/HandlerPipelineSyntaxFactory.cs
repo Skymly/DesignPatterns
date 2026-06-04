@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -16,38 +15,13 @@ internal static class HandlerPipelineSyntaxFactory
         string? namespaceName,
         string pipelineClassName,
         string contextTypeName,
-        IReadOnlyList<string> handlerTypeNames)
+        IReadOnlyList<string> handlerTypeNames,
+        bool enableDiIntegration = false)
     {
-        var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipelineBuilder"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
-                        SyntaxFactory.ParseTypeName(contextTypeName))));
-
-        ExpressionSyntax builderExpression = SyntaxFactory.ObjectCreationExpression(builderType)
-            .WithArgumentList(SyntaxFactory.ArgumentList());
-
-        foreach (var handlerTypeName in handlerTypeNames)
-        {
-            builderExpression = SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        builderExpression,
-                        SyntaxFactory.IdentifierName("Use")))
-                .WithArgumentList(
-                    SyntaxFactory.ArgumentList(
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.Argument(
-                                SyntaxFactory.ObjectCreationExpression(
-                                        SyntaxFactory.ParseTypeName(handlerTypeName))
-                                    .WithArgumentList(SyntaxFactory.ArgumentList())))));
-        }
-
-        var buildInvocation = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                builderExpression,
-                SyntaxFactory.IdentifierName("Build")));
+        var buildInvocation = DiIntegrationSyntaxHelper.CreateHandlerPipelineBuilderExpression(
+            contextTypeName,
+            handlerTypeNames,
+            useServiceProvider: false);
 
         var instanceField = SyntaxFactory.FieldDeclaration(
                 SyntaxFactory.VariableDeclaration(
@@ -84,15 +58,35 @@ internal static class HandlerPipelineSyntaxFactory
                         SyntaxFactory.SingletonList<StatementSyntax>(
                             SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("_instance"))))));
 
+        var members = new List<MemberDeclarationSyntax> { instanceField, instanceProperty };
+
+        if (enableDiIntegration)
+        {
+            members.Add(DiIntegrationSyntaxHelper.CreateHandlerCreateFromServiceProviderMethod(contextTypeName, handlerTypeNames));
+            var pipelineType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
+                .WithTypeArgumentList(
+                    SyntaxFactory.TypeArgumentList(
+                        SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                            SyntaxFactory.ParseTypeName(contextTypeName))));
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(handlerTypeNames, pipelineType));
+        }
+
         var pipelineClass = SyntaxFactory.ClassDeclaration(pipelineClassName)
             .WithModifiers(
                 SyntaxFactory.TokenList(
                     SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                     SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(instanceField, instanceProperty);
+            .AddMembers(members.ToArray());
 
-        return WrapInCompilationUnit(namespaceName, pipelineClass, "DesignPatterns.Behavioral");
+        var additionalUsings = new List<string> { "DesignPatterns.Behavioral" };
+        if (enableDiIntegration)
+        {
+            additionalUsings.Insert(0, "System");
+            additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        return WrapInCompilationUnit(namespaceName, pipelineClass, additionalUsings.ToArray());
     }
 
     private static CompilationUnitSyntax WrapInCompilationUnit(

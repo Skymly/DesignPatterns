@@ -1,6 +1,20 @@
 # DesignPatterns
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 面向 .NET 的**设计模式工具库**：提供可组合的运行时 primitives，并通过 Roslyn 源生成器在编译期减少样板代码、发现误用。
+
+## 项目状态（早期阶段）
+
+> **本仓库已开源（[MIT](LICENSE)），但处于早期开发阶段。**
+>
+> - **公共 API 尚未稳定**：类型、特性、源生成器产出、诊断 ID（`DP###`）及命名规则可能在任意版本变更，**不保证**语义化版本下的向后兼容。
+> - **NuGet 发布**：当前以源码与本地 `dotnet pack` 为主；[nuget.org](https://www.nuget.org) 上可能尚无正式包，或版本与 `main` 不同步——以仓库 [Releases](https://github.com/Skymly/DesignPatterns/releases) 与文档为准。
+> - **生产环境**：建议仅在可接受 API 变动的实验、内部工具或学习场景使用；在 API 稳定前请固定 commit 或 fork，并关注 [ROADMAP](docs/ROADMAP.md) 与 breaking changes。
+
+**English:** This project is open source under the MIT license and in an **early preview**. Public APIs, generated code shapes, and diagnostics are **not stable** yet. Do not assume SemVer compatibility until a stability announcement.
+
+反馈与贡献见 [CONTRIBUTING.md](CONTRIBUTING.md)（Issue / PR 建议使用英语，见仓库协作约定）。
 
 ## 目标
 
@@ -20,9 +34,9 @@
 | Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder` | `[Decorator]` → `{Contract}DecoratorStack.Build` |
 | Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | — |
 
-另可选 **`DesignPatterns.Extensions.DependencyInjection`**（`AddStrategyRegistry`、`AddFactoryRegistry`、`AddHandlerPipeline`、`AddEventAggregator`）。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
+另可选 **`DesignPatterns.Extensions.DependencyInjection`**：手动 `AddStrategyRegistry` / `AddFactoryRegistry` / `AddHandlerPipeline`，以及引用该包时由源生成器输出的 **`{Contract}Registry.RegisterDi(services)`**（Strategy / Factory / Handler 从容器解析，见 [docs/Strategy.md](docs/Strategy.md)）。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
 
-安装 NuGet 包 **`DesignPatterns`**（元包）即可同时获得运行时库与源生成器。
+本地或 CI 打包后，元包 **`DesignPatterns`** 可同时引用运行时库与源生成器（见下方「快速开始」）。正式发布到 NuGet 前请以 README 中的项目状态为准。
 
 ## 仓库结构
 

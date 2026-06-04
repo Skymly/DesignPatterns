@@ -3,7 +3,7 @@ using RegisterFactory.Sample;
 
 // The source generator creates:
 // - ProductFactoryKeys (constants for each registered key)
-// - ProductFactoryRegistry (a static Create() method that builds the registry)
+// - ProductFactoryRegistry (static Create() and, with DI package, RegisterDi + Create(IServiceProvider))
 
 var registry = ProductFactoryRegistry.Create();
 

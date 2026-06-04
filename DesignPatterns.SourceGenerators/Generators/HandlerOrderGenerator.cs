@@ -60,9 +60,11 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             static (node, _) => node is ClassDeclarationSyntax,
             static (ctx, _) => Transform(ctx, isGenericAttribute: true));
 
+        var diEnabled = GeneratorConfigHelper.CreateDiIntegrationEnabledProvider(context);
+
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()),
-            static (spc, source) => Execute(spc, source.Left, source.Right));
+            nonGeneric.Collect().Combine(generic.Collect()).Combine(diEnabled),
+            static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 
     private static HandlerRegistration? Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
@@ -120,7 +122,8 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
     private static void Execute(
         SourceProductionContext context,
         ImmutableArray<HandlerRegistration?> nonGeneric,
-        ImmutableArray<HandlerRegistration?> generic)
+        ImmutableArray<HandlerRegistration?> generic,
+        bool enableDiIntegration)
     {
         var registrations = nonGeneric
             .Concat(generic)
@@ -157,7 +160,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitPipeline(context, contextType, valid);
+            EmitPipeline(context, contextType, valid, enableDiIntegration);
         }
     }
 
@@ -201,7 +204,8 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
     private static void EmitPipeline(
         SourceProductionContext context,
         INamedTypeSymbol contextType,
-        List<HandlerRegistration> handlers)
+        List<HandlerRegistration> handlers,
+        bool enableDiIntegration)
     {
         var namespaceName = contextType.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -217,7 +221,8 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             namespaceName,
             pipelineClassName,
             contextTypeName,
-            handlerTypeNames);
+            handlerTypeNames,
+            enableDiIntegration);
 
         context.AddSource(
             $"{contextType.Name}.{pipelineClassName}.g.cs",

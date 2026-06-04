@@ -1,22 +1,40 @@
 name: CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-test:
+  build-test:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore
         run: dotnet restore DesignPatterns.slnx
@@ -28,10 +46,41 @@ jobs:
         run: dotnet test DesignPatterns.slnx --configuration Release --no-build --verbosity normal
 
       - name: Build samples
+        shell: bash
         run: |
-          dotnet build samples/GenerateSingleton.Sample/GenerateSingleton.Sample.csproj -c Release
-          dotnet build samples/Strategy.Sample/Strategy.Sample.csproj -c Release
-          dotnet build samples/Chain.Sample/Chain.Sample.csproj -c Release
-          dotnet build samples/Composite.Sample/Composite.Sample.csproj -c Release
-          dotnet build samples/Factory.Sample/Factory.Sample.csproj -c Release
-          dotnet build samples/Decorator.Sample/Decorator.Sample.csproj -c Release
+          set -euo pipefail
+          for proj in samples/*/*.csproj; do
+            echo "Building $proj"
+            dotnet build "$proj" -c Release
+          done
+
+  pack:
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Pack meta-package
+        run: |
+          dotnet restore DesignPatterns.slnx
+          dotnet pack DesignPatterns.Package/DesignPatterns.Package.csproj -c Release -o artifacts/packages
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
