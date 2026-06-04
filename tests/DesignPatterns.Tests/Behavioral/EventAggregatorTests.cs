@@ -134,6 +134,7 @@ public sealed class EventAggregatorTests
     [Fact]
     public async Task ConcurrentSubscribeAndPublish_IsThreadSafe()
     {
+        const int iterations = 100;
         var aggregator = new EventAggregator();
         var counter = 0;
         var handler = new DelegateHandler<TestEvent>(_ =>
@@ -142,9 +143,15 @@ public sealed class EventAggregatorTests
             return default;
         });
 
+        // Seed a handler so publishes always have at least one subscriber once work starts.
+        aggregator.Subscribe(handler);
+
+        var start = new Barrier(participantCount: 3);
+
         var subscribeTask = Task.Run(() =>
         {
-            for (var i = 0; i < 100; i++)
+            start.SignalAndWait();
+            for (var i = 0; i < iterations; i++)
             {
                 aggregator.Subscribe(handler);
             }
@@ -152,15 +159,17 @@ public sealed class EventAggregatorTests
 
         var publishTask = Task.Run(async () =>
         {
-            for (var i = 0; i < 100; i++)
+            start.SignalAndWait();
+            for (var i = 0; i < iterations; i++)
             {
                 await aggregator.PublishAsync(new TestEvent("x"));
             }
         });
 
+        start.SignalAndWait();
         await Task.WhenAll(subscribeTask, publishTask);
 
-        Assert.True(counter > 0);
+        Assert.True(counter >= iterations);
     }
 
     // Helper types
