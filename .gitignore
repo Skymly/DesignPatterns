@@ -60,3 +60,5 @@ _NCrunch_*
 
 ## Verify snapshot tests
 *.received.*
+
+.nuke/temp/
