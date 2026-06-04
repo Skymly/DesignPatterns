@@ -92,6 +92,7 @@ public static partial class RequestContextHandlerPipeline
 | DP005 | 同一 context 下重复的 Order |
 | DP008 | 未实现 `IHandler<TContext>` |
 | DP009 | 缺少 public 无参构造 |
+| DP024 | Info | Analyzer | 实现了 `IHandler<TContext>` 但未加 `[HandlerOrder]`（该 context 已有其它 handler 注册） |
 
 ## DI 集成
 
