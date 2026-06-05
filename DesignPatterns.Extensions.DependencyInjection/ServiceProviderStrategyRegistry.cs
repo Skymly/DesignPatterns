@@ -2,9 +2,6 @@ using System;
 using System.Collections.Generic;
 using DesignPatterns.Behavioral;
 using Microsoft.Extensions.DependencyInjection;
-#if NET8_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
 
 namespace DesignPatterns.Extensions.DependencyInjection;
 
@@ -52,11 +49,7 @@ public sealed class ServiceProviderStrategyRegistry<TKey, TStrategy> : IStrategy
     }
 
     /// <inheritdoc />
-    public bool TryGet(TKey key,
-#if NET8_0_OR_GREATER
-        [MaybeNullWhen(false)]
-#endif
-        out TStrategy strategy)
+    public bool TryGet(TKey key, out TStrategy strategy)
     {
         if (!_typeByKey.TryGetValue(key, out var implementationType))
         {
