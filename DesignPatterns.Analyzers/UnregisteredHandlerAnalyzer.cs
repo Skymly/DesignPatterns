@@ -171,28 +171,6 @@ public sealed class UnregisteredHandlerAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static IEnumerable<INamedTypeSymbol> GetAllTypes(INamespaceSymbol namespaceSymbol)
-    {
-        foreach (var member in namespaceSymbol.GetMembers())
-        {
-            switch (member)
-            {
-                case INamespaceSymbol nestedNamespace:
-                    foreach (var nested in GetAllTypes(nestedNamespace))
-                    {
-                        yield return nested;
-                    }
-
-                    break;
-                case INamedTypeSymbol typeSymbol:
-                    yield return typeSymbol;
-                    foreach (var nestedType in typeSymbol.GetTypeMembers())
-                    {
-                        yield return nestedType;
-                    }
-
-                    break;
-            }
-        }
-    }
+    private static IEnumerable<INamedTypeSymbol> GetAllTypes(INamespaceSymbol namespaceSymbol) =>
+        AnalyzerSymbolHelper.GetAllTypes(namespaceSymbol);
 }
