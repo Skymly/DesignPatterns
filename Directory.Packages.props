@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.3.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="Nuke.Common" Version="9.0.4" />
+    <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
+    <PackageVersion Include="Verify.Xunit" Version="28.3.2" />
+    <PackageVersion Include="xunit" Version="2.9.2" Condition="'$(MSBuildProjectName)' == 'DesignPatterns.SourceGenerators.Tests'" />
+    <PackageVersion Include="xunit" Version="2.5.3" Condition="'$(MSBuildProjectName)' != 'DesignPatterns.SourceGenerators.Tests'" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" Condition="'$(MSBuildProjectName)' == 'DesignPatterns.SourceGenerators.Tests'" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.3" Condition="'$(MSBuildProjectName)' != 'DesignPatterns.SourceGenerators.Tests'" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+  </ItemGroup>
+</Project>
