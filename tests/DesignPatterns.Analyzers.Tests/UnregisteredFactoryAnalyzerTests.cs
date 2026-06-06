@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using DesignPatterns.Analyzers;
 using DesignPatterns.CodeFixes;
+using DesignPatterns.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -98,5 +99,66 @@ public sealed class AddRegisterFactoryCodeFixTests
         var fixedSource = (await fixedDocument.GetTextAsync()).ToString();
 
         Assert.Contains("[RegisterFactory(\"premium-factory\", typeof(IProductFactory))]", fixedSource, StringComparison.Ordinal);
+    }
+}
+
+public sealed class RegisterFactoryCodeFixTests
+{
+    [Fact]
+    public async Task FixesDp021ByAddingContractInterface()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Produce();
+            }
+
+            [RegisterFactory("standard", typeof(IProductFactory))]
+            public class StandardFactory
+            {
+                public string Produce() => "standard";
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<RegisterFactoryGenerator>(
+            source,
+            "DP021",
+            new AddContractImplementationCodeFixProvider());
+
+        Assert.Contains("IProductFactory", fixedSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task FixesDp022ByAddingParameterlessConstructor()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Produce();
+            }
+
+            [RegisterFactory("standard", typeof(IProductFactory))]
+            public class StandardFactory : IProductFactory
+            {
+                public StandardFactory(string ignored) { }
+
+                public string Produce() => "standard";
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<RegisterFactoryGenerator>(
+            source,
+            "DP022",
+            new AddParameterlessConstructorCodeFixProvider());
+
+        Assert.Contains("public StandardFactory()", fixedSource, StringComparison.Ordinal);
     }
 }
