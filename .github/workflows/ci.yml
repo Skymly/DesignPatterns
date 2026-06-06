@@ -47,6 +47,14 @@ jobs:
           path: TestResults/
           if-no-files-found: warn
 
+      - name: Upload code coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
   pack:
     runs-on: ubuntu-latest
     needs: build-test
