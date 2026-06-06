@@ -124,6 +124,55 @@ public sealed class HandlerOrderGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesPipelinesForSameNamedContextsInDifferentNamespaces()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace PublicApi
+            {
+                public sealed class RequestContext
+                {
+                }
+
+                [HandlerOrder<RequestContext>(10)]
+                public sealed class PublicHandler : IHandler<RequestContext>
+                {
+                    public ValueTask InvokeAsync(
+                        RequestContext context,
+                        HandlerDelegate<RequestContext> next,
+                        CancellationToken cancellationToken = default) =>
+                        next(context, cancellationToken);
+                }
+            }
+
+            namespace AdminApi
+            {
+                public sealed class RequestContext
+                {
+                }
+
+                [HandlerOrder<RequestContext>(10)]
+                public sealed class AdminHandler : IHandler<RequestContext>
+                {
+                    public ValueTask InvokeAsync(
+                        RequestContext context,
+                        HandlerDelegate<RequestContext> next,
+                        CancellationToken cancellationToken = default) =>
+                        next(context, cancellationToken);
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp005DuplicateOrderOnSameClass()
     {
         const string source = """

@@ -130,6 +130,16 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
             return;
         }
 
+        var contractNamesWithCollisions = new HashSet<string>(
+            registrations
+                .Select(static r => r.Contract)
+                .OfType<INamedTypeSymbol>()
+                .Distinct(SymbolEqualityComparer.Default)
+                .GroupBy(static c => c!.Name, StringComparer.Ordinal)
+                .Where(static g => g.Count() > 1)
+                .Select(static g => g.Key),
+            StringComparer.Ordinal);
+
         foreach (var group in registrations.GroupBy(static r => r.Contract, SymbolEqualityComparer.Default))
         {
             if (group.Key is not INamedTypeSymbol contract)
@@ -156,7 +166,12 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitGeneratedSources(context, contract, valid, enableDiIntegration);
+            EmitGeneratedSources(
+                context,
+                contract,
+                valid,
+                enableDiIntegration,
+                contractNamesWithCollisions.Contains(contract.Name));
         }
     }
 
@@ -203,7 +218,8 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol contract,
         List<FactoryRegistration> registrations,
-        bool enableDiIntegration)
+        bool enableDiIntegration,
+        bool qualifyHintName)
     {
         var namespaceName = contract.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -238,7 +254,7 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
             registryEntries,
             enableDiIntegration);
 
-        var hintPrefix = contract.Name;
+        var hintPrefix = qualifyHintName ? HintNameHelper.FromSymbol(contract) : contract.Name;
         context.AddSource(
             $"{hintPrefix}.{keysClassName}.g.cs",
             SourceText.From(keysUnit.ToFullString(), Encoding.UTF8));
