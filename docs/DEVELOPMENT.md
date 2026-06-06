@@ -120,6 +120,10 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 - [x] `FrozenDictionary` — net8.0 `StrategyRegistry` 查找优化
 - [x] DI 扩展包 — `DesignPatterns.Extensions.DependencyInjection`
 
+### 包边界
+
+当前可打包的 NuGet 入口是元包 `DesignPatterns`（`DesignPatterns.Package/`），用于携带运行时核心、源生成器、Analyzer 与 CodeFix。`DesignPatterns.Extensions.DependencyInjection` 目前作为仓库内独立扩展项目存在，未由元包包含；是否独立发布为 NuGet 包留待 API 稳定与发版流程确定后决策。
+
 ## 编码规范
 
 - 启用 **nullable reference types**（新文件与项目属性逐步开启）。
