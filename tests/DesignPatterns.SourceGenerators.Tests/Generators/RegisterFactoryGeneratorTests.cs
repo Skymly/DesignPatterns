@@ -64,6 +64,47 @@ public sealed class RegisterFactoryGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesSourcesForSameNamedContractsInDifferentNamespaces()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace Catalog
+            {
+                public interface IProductFactory
+                {
+                    string Create();
+                }
+
+                [RegisterFactory<IProductFactory>("standard")]
+                public sealed class StandardProductFactory : IProductFactory
+                {
+                    public string Create() => "standard";
+                }
+            }
+
+            namespace Fulfillment
+            {
+                public interface IProductFactory
+                {
+                    string Create();
+                }
+
+                [RegisterFactory<IProductFactory>("shipment")]
+                public sealed class ShipmentProductFactory : IProductFactory
+                {
+                    public string Create() => "shipment";
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp020DuplicateKey()
     {
         const string source = """

@@ -141,6 +141,16 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             return;
         }
 
+        var contextNamesWithCollisions = new HashSet<string>(
+            registrations
+                .Select(static r => r.ContextType)
+                .OfType<INamedTypeSymbol>()
+                .Distinct(SymbolEqualityComparer.Default)
+                .GroupBy(static c => c!.Name, StringComparer.Ordinal)
+                .Where(static g => g.Count() > 1)
+                .Select(static g => g.Key),
+            StringComparer.Ordinal);
+
         ReportValidationDiagnostics(context, registrations);
 
         foreach (var group in registrations.GroupBy(static r => r.ContextType, SymbolEqualityComparer.Default))
@@ -165,7 +175,12 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitPipeline(context, contextType, valid, enableDiIntegration);
+            EmitPipeline(
+                context,
+                contextType,
+                valid,
+                enableDiIntegration,
+                contextNamesWithCollisions.Contains(contextType.Name));
         }
     }
 
@@ -210,7 +225,8 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol contextType,
         List<HandlerRegistration> handlers,
-        bool enableDiIntegration)
+        bool enableDiIntegration,
+        bool qualifyHintName)
     {
         var namespaceName = contextType.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -229,8 +245,9 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             handlerTypeNames,
             enableDiIntegration);
 
+        var hintPrefix = qualifyHintName ? HintNameHelper.FromSymbol(contextType) : contextType.Name;
         context.AddSource(
-            $"{contextType.Name}.{pipelineClassName}.g.cs",
+            $"{hintPrefix}.{pipelineClassName}.g.cs",
             SourceText.From(compilationUnit.ToFullString(), Encoding.UTF8));
     }
 

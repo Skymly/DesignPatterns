@@ -64,6 +64,47 @@ public sealed class RegisterStrategyGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesSourcesForSameNamedContractsInDifferentNamespaces()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace Sales
+            {
+                public interface IPaymentStrategy
+                {
+                    string Pay();
+                }
+
+                [RegisterStrategy<IPaymentStrategy>("card")]
+                public sealed class CardPayment : IPaymentStrategy
+                {
+                    public string Pay() => "card";
+                }
+            }
+
+            namespace Billing
+            {
+                public interface IPaymentStrategy
+                {
+                    string Pay();
+                }
+
+                [RegisterStrategy<IPaymentStrategy>("invoice")]
+                public sealed class InvoicePayment : IPaymentStrategy
+                {
+                    public string Pay() => "invoice";
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterStrategyGenerator>(
+            ("Strategies.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp003DuplicateKey()
     {
         const string source = """
