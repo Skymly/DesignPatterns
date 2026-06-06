@@ -1,3 +1,4 @@
+using DesignPatterns;
 using DesignPatterns.Creational;
 
 namespace DesignPatterns.Tests.Creational;
@@ -109,6 +110,18 @@ public sealed class FactoryRegistryTests
         var builder = new FactoryRegistryBuilder<string, IProduct>();
 
         Assert.Throws<ArgumentNullException>(() => builder.Register("a", (Func<IProduct>)null!));
+    }
+
+    [Fact]
+    public void TryGet_ImplementsIReadOnlyRegistry()
+    {
+        IReadOnlyRegistry<string, IProduct> registry = new FactoryRegistryBuilder<string, IProduct>()
+            .Register("a", () => new NamedProduct("A"))
+            .Build();
+
+        Assert.True(registry.TryGet("a", out var product));
+        Assert.Equal("A", product.Name);
+        Assert.False(registry.TryGet("missing", out _));
     }
 
     [Fact]
