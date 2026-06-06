@@ -96,7 +96,8 @@ sealed class Build : NukeBuild
                     .SetConfiguration(Configuration)
                     .SetNoBuild(true)
                     .SetResultsDirectory(TestResultsDirectory)
-                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx")
+                    .SetDataCollector("XPlat Code Coverage"));
             }
         });
 
