@@ -23,6 +23,7 @@ sealed class Build : NukeBuild
     AbsolutePath SolutionFile => Root / "DesignPatterns.slnx";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
     AbsolutePath PackageOutputDirectory => Root / "artifacts" / "package";
+    AbsolutePath PackageConsumerDirectory => Root / "artifacts" / "package-consumer";
     AbsolutePath PackProject => Root / "DesignPatterns.Package" / "DesignPatterns.Package.csproj";
 
     static readonly string[] TestProjectRelativePaths =
@@ -127,15 +128,7 @@ sealed class Build : NukeBuild
         .DependsOn(Pack)
         .Executes(() =>
         {
-            IReadOnlyCollection<AbsolutePath> nupkgs = PackageOutputDirectory.GlobFiles("*.nupkg");
-            if (nupkgs.Count == 0)
-            {
-                throw new InvalidOperationException($"No packages found in {PackageOutputDirectory}");
-            }
-
-            AbsolutePath nupkg = nupkgs.SingleOrDefault(p => p.Name.StartsWith(ExpectedPackageId + ".", StringComparison.Ordinal))
-                ?? throw new InvalidOperationException(
-                    $"Expected a single '{ExpectedPackageId}.*.nupkg' package, found: {string.Join(", ", nupkgs.Select(p => p.Name))}");
+            AbsolutePath nupkg = GetExpectedPackage();
 
             using ZipArchive archive = ZipFile.OpenRead(nupkg);
             HashSet<string> entries = archive.Entries
@@ -160,10 +153,105 @@ sealed class Build : NukeBuild
             Assert.True(entries.Contains("LICENSE") || entries.Contains("LICENSE.md"), $"{ExpectedPackageId}: missing LICENSE");
         });
 
+    Target PackConsumerVerify => _ => _
+        .DependsOn(PackVerify)
+        .Executes(() =>
+        {
+            AbsolutePath nupkg = GetExpectedPackage();
+            string packageVersion = GetPackageVersion(nupkg);
+
+            PackageConsumerDirectory.CreateOrCleanDirectory();
+
+            AbsolutePath consumerProject = PackageConsumerDirectory / "PackageConsumer.csproj";
+            File.WriteAllText(consumerProject, $$"""
+                <Project Sdk="Microsoft.NET.Sdk">
+                  <PropertyGroup>
+                    <OutputType>Exe</OutputType>
+                    <TargetFramework>net8.0</TargetFramework>
+                    <ImplicitUsings>enable</ImplicitUsings>
+                    <Nullable>enable</Nullable>
+                  </PropertyGroup>
+
+                  <ItemGroup>
+                    <PackageReference Include="{{ExpectedPackageId}}" Version="{{packageVersion}}" />
+                  </ItemGroup>
+                </Project>
+                """);
+
+            File.WriteAllText(PackageConsumerDirectory / "Program.cs", """
+                using DesignPatterns.Behavioral;
+                using DesignPatterns.Creational;
+
+                var strategy = PackageConsumerStrategyRegistry.Instance.Get("echo");
+                if (strategy.Execute("ok") != "echo:ok")
+                {
+                    throw new InvalidOperationException("Generated strategy registry did not resolve the expected implementation.");
+                }
+
+                if (!ReferenceEquals(PackageConsumerSingleton.Instance, PackageConsumerSingleton.Instance))
+                {
+                    throw new InvalidOperationException("Generated singleton instance was not stable.");
+                }
+
+                Console.WriteLine("Package consumer verification passed.");
+
+                public interface IPackageConsumerStrategy
+                {
+                    string Execute(string value);
+                }
+
+                [RegisterStrategy("echo", typeof(IPackageConsumerStrategy))]
+                public sealed class EchoStrategy : IPackageConsumerStrategy
+                {
+                    public string Execute(string value) => "echo:" + value;
+                }
+
+                [GenerateSingleton]
+                public sealed partial class PackageConsumerSingleton
+                {
+                }
+                """);
+
+            string restoreSources = string.Join(
+                Path.PathSeparator,
+                PackageOutputDirectory,
+                "https://api.nuget.org/v3/index.json");
+
+            DotNetRestore(s => s
+                .SetProjectFile(consumerProject)
+                .SetProperty("RestoreSources", restoreSources));
+
+            DotNetRun(s => s
+                .SetProjectFile(consumerProject)
+                .SetConfiguration(Configuration)
+                .EnableNoRestore());
+        });
+
     Target Ci => _ => _
         .DependsOn(UnitTest)
         .DependsOn(BuildSamples);
 
     Target CiPack => _ => _
-        .DependsOn(PackVerify);
+        .DependsOn(PackConsumerVerify);
+
+    AbsolutePath GetExpectedPackage()
+    {
+        IReadOnlyCollection<AbsolutePath> nupkgs = PackageOutputDirectory.GlobFiles("*.nupkg");
+        if (nupkgs.Count == 0)
+        {
+            throw new InvalidOperationException($"No packages found in {PackageOutputDirectory}");
+        }
+
+        return nupkgs.SingleOrDefault(p => p.Name.StartsWith(ExpectedPackageId + ".", StringComparison.Ordinal))
+            ?? throw new InvalidOperationException(
+                $"Expected a single '{ExpectedPackageId}.*.nupkg' package, found: {string.Join(", ", nupkgs.Select(p => p.Name))}");
+    }
+
+    static string GetPackageVersion(AbsolutePath nupkg)
+    {
+        string fileName = nupkg.Name;
+        string prefix = ExpectedPackageId + ".";
+        const string suffix = ".nupkg";
+        return fileName.Substring(prefix.Length, fileName.Length - prefix.Length - suffix.Length);
+    }
 }
