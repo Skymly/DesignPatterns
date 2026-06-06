@@ -213,7 +213,7 @@ sealed class Build : NukeBuild
                 """);
 
             string restoreSources = string.Join(
-                Path.PathSeparator,
+                ";",
                 PackageOutputDirectory,
                 "https://api.nuget.org/v3/index.json");
 
