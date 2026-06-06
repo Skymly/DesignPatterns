@@ -26,6 +26,9 @@ public sealed class FactoryRegistry<TKey, TProduct> : IFactoryRegistry<TKey, TPr
     public IReadOnlyCollection<TKey> Keys => _factories.Keys.ToArray();
 
     /// <inheritdoc />
+    public bool TryGet(TKey key, out TProduct value) => TryCreate(key, out value);
+
+    /// <inheritdoc />
     public bool TryCreate(TKey key, out TProduct product)
     {
         if (_factories.TryGetValue(key, out var factory))
