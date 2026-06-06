@@ -350,6 +350,34 @@ public sealed class HandlerCodeFixTests
 public sealed class CompositeCodeFixTests
 {
     [Fact]
+    public async Task FixesDp013ByAddingContractInterface()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IMenuNode : ICompositeNode<IMenuNode> { string Title { get; } }
+
+            [CompositePart<IMenuNode>("root")]
+            public class RootMenu
+            {
+                public string Title => "root";
+
+                public IReadOnlyList<IMenuNode> Children => System.Array.Empty<IMenuNode>();
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<CompositePartGenerator>(
+            source,
+            "DP013",
+            new AddContractImplementationCodeFixProvider());
+
+        Assert.Contains("IMenuNode", fixedSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task FixesDp014ByAddingParameterlessConstructor()
     {
         const string source = """
