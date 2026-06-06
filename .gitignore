@@ -64,3 +64,6 @@ _NCrunch_*
 *.received.*
 
 .nuke/temp/
+
+## Local scratch (see Skymly/AGENTS.md § `.Local`)
+.Local/
