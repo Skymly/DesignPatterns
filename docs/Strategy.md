@@ -280,7 +280,7 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 | 2 | `RegisterStrategyAttribute` / `RegisterStrategyAttribute<T>` 定义 | M1 |
 | 3 | `RegisterStrategyGenerator`：扫描特性 → 生成 Keys + 注册表 | R1 |
 | 4 | 诊断 DP003/DP004/DP007（生成器）+ DP006（Analyzer） | R1 |
-| 5 | 示例项目 `samples/Strategy.Sample/` | R1 |
+| 5 | 示例项目 [DesignPatterns.Samples.Strategy](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Strategy) | R1 |
 | 6 | DI 扩展包 + 生成器 `RegisterDi` | 已完成（MSDI） |
 
 ---

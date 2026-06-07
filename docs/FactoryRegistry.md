@@ -149,7 +149,7 @@ ProductFactoryRegistry.RegisterDi(services, implementationLifetime: ServiceLifet
 
 ## 示例
 
-- 手动 Builder：[`samples/Factory.Sample/`](../samples/Factory.Sample/)
+- 手动 Builder：[DesignPatterns.Samples.Factory](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Factory)
 - 生成器 + 集成测试：`tests/DesignPatterns.Tests/Integration/FactoryRegistryIntegrationTests.cs`
 
 ---
