@@ -66,7 +66,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
 | `tests/DesignPatterns.Analyzers.Tests/` | Analyzer/CodeFix 测试（P2 起） |
-| `samples/` | 每个模式一个最小可运行示例；`DependencyInjection.Sample` 演示 `RegisterDi` |
+| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 每个模式一个可运行控制台示例（含 `RegisterDi`）；主仓 CI checkout 并 build + run |
 
 命名空间根：`DesignPatterns`（运行时）、`DesignPatterns.Analyzers`（编译期）。
 
@@ -168,7 +168,7 @@ dotnet test DesignPatterns.slnx
 - 修复分支：`fix/<short-description>`
 - 提交信息：祈使句、英文或中文均可，需说明 **why**（例：`Add RegisterStrategy source generator for strategy registry`）
 
-CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test、samples 编译）。
+CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test；checkout [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 并 build + run；pack 校验）。
 
 ## 相关文档
 

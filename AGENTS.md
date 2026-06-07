@@ -11,6 +11,7 @@
 | **许可证** | [MIT](LICENSE) |
 | **阶段** | **早期预览**：公共 API、生成器产出与 `DP###` 诊断**尚未稳定**（见 [README.md](README.md)） |
 | **NuGet** | 元包 `DesignPatterns` 可本地 `dotnet pack`；nuget.org 正式发布与 SemVer 待 API 稳定后由维护者决定 |
+| **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns.Samples/`、`Skymly/DesignPatterns.Docs/` |
 
 ## 项目是什么
 
@@ -35,7 +36,6 @@ DesignPatterns.slnx
 ├── DesignPatterns.Extensions.DependencyInjection/  # MSDI 扩展 + DI 生成器 targets
 ├── DesignPatterns.Package/                      # NuGet 元包（PackageId=DesignPatterns）
 ├── tests/                                       # 单元 / 生成器 Verify / Analyzer / DI
-├── samples/                                     # 按模式划分的示例
 ├── docs/                                        # DEVELOPMENT、ROADMAP、模式文档
 ├── .github/                                     # Issue/PR 模板、CI
 └── AGENTS.md
@@ -57,9 +57,9 @@ DesignPatterns.slnx
 | **Analyzers** | `DesignPatterns.Analyzers/` + `DesignPatterns.CodeFixes/` |
 | **DependencyInjection** | `DesignPatterns.Extensions.DependencyInjection/`、`build/*.targets` |
 | **Package** | `DesignPatterns.Package/` |
-| **Samples** | `samples/` |
-| **Docs** | `docs/`、根 `README.md`、`CONTRIBUTING.md` |
-| **Repository** | `.github/`、`DesignPatterns.slnx`、`global.json`、`Directory.Build.props` |
+| **Docs** | 本仓 `docs/`（维护者/中文设计笔记）；用户文档站 [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs)（VitePress，分 PR） |
+| **Repository (root README)** | 根 `README.md`、`CONTRIBUTING.md` |
+| **Repository** | `.github/`、`DesignPatterns.slnx`、`global.json`、`Directory.Build.props`、`build/` |
 
 模式域（Behavioral / Creational / Structural）变更仍须落在上表某一模块内；跨模式且跨模块时拆多个 Issue → PR。
 
@@ -70,7 +70,7 @@ DesignPatterns.slnx
 与 CI 一致（Nuke）：
 
 ```powershell
-# 编译 + 测试 + 示例（默认本地 Debug；CI 用 Release）
+# 编译 + 测试（默认本地 Debug；CI 用 Release）
 ./build.ps1 --target Ci --configuration Release
 
 # 打包 + 校验 nupkg → artifacts/package/
@@ -133,12 +133,12 @@ dotnet test DesignPatterns.slnx -c Release
 
 | Nuke 目标 | 说明 |
 |-----------|------|
-| **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` → `BuildSamples` |
-| **CiPack** | `Ci` 链 + `Pack` + `PackVerify` → `artifacts/package/*.nupkg` |
+| **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` |
+| **CiPack** | `Ci` 链 + `Pack` + `PackVerify` + `PackConsumerVerify` → `artifacts/package/*.nupkg` |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | **Ci** + **CiPack**（**不** 发布 NuGet） |
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | **Ci** + sibling **Samples** + **CiPack**（**不** 发布 NuGet） |
 
 提交前：本地 `./build.ps1 --target Ci --configuration Release`（或 `CiPack` 若改打包）。
 
@@ -171,7 +171,7 @@ dotnet test DesignPatterns.slnx -c Release
 | P3 | DI 与生成器打通（`RegisterDi` / `Create(IServiceProvider)`） | 已完成 |
 | — | Nuke `Ci` / `CiPack`、GitHub Actions | 已完成 |
 | — | Handler `AllowMultiple` | 已完成 |
-| — | `DependencyInjection.Sample`（`RegisterDi`） | 已完成 |
+| — | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)（含 `RegisterDi` 示例） | 已完成 |
 | — | DP024 未注册 Handler Analyzer | 已完成 |
 | — | CodeFix + DP006/DP023/DP024 | 已完成 |
 

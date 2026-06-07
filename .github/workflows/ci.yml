@@ -1,85 +1,117 @@
-name: CI
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  build-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Run CI via Nuke
-        run: dotnet run --project build/_build.csproj -- --root . --target Ci --configuration Release
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: TestResults/
-          if-no-files-found: warn
-
-      - name: Upload code coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage
-          path: TestResults/**/coverage.cobertura.xml
-          if-no-files-found: warn
-
-  pack:
-    runs-on: ubuntu-latest
-    needs: build-test
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Pack and verify via Nuke
-        run: dotnet run --project build/_build.csproj -- --root . --target CiPack --configuration Release
-
-      - name: Upload packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: nuget-packages
-          path: artifacts/package/*.nupkg
-          if-no-files-found: error
+name: CI
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run CI via Nuke
+        run: dotnet run --project build/_build.csproj -- --root . --target Ci --configuration Release
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/
+          if-no-files-found: warn
+
+      - name: Upload code coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
+  samples:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DesignPatterns
+        uses: actions/checkout@v4
+        with:
+          path: DesignPatterns
+
+      - name: Checkout DesignPatterns.Samples
+        uses: actions/checkout@v4
+        with:
+          repository: Skymly/DesignPatterns.Samples
+          path: DesignPatterns.Samples
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-dp-samples-${{ hashFiles('DesignPatterns.Samples/**/*.csproj', 'DesignPatterns.Samples/global.json', 'DesignPatterns/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-dp-samples-
+            ${{ runner.os }}-nuget-
+
+      - name: Run sibling samples via Nuke
+        working-directory: DesignPatterns.Samples
+        run: dotnet run --project build/_build.csproj -- --root . --target Ci --configuration Release
+
+  pack:
+    runs-on: ubuntu-latest
+    needs: [build-test, samples]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Pack and verify via Nuke
+        run: dotnet run --project build/_build.csproj -- --root . --target CiPack --configuration Release
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/package/*.nupkg
+          if-no-files-found: error

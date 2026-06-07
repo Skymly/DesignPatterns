@@ -54,7 +54,7 @@ await pipeline.InvokeAsync(new RequestContext("/api/orders", isAuthenticated: tr
 
 ## 示例
 
-见 [samples/Chain.Sample](../samples/Chain.Sample/)：日志 → 鉴权 → 资源 handler，演示授权与未授权两种路径。
+见 [DesignPatterns.Samples.Chain](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Chain)：日志 → 鉴权 → 资源 handler，演示授权与未授权两种路径。
 
 ## 编译期：`[HandlerOrder]` 源生成器
 

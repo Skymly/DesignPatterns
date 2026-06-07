@@ -70,7 +70,7 @@ var root = MenuNodeCompositeCatalog.BuildRoot();
 
 ## 示例
 
-见 [samples/Composite.Sample](../samples/Composite.Sample/)：
+见 [DesignPatterns.Samples.Composite](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Composite)：
 
 1. **Catalog**：`MenuNodeCompositeCatalog.BuildRoot()` + 深度优先遍历（`[CompositePart]` 生成器）
 2. **手动**：`CompositeTreeBuilder<IMenuNode>()` 的 `Leaf` / `Branch` / `Build()`（`ManualMenuNodes`，无 catalog 特性）

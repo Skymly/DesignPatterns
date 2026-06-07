@@ -82,7 +82,7 @@ CodeFix：DP017（加契约接口）、DP019（加无参构造）。DP018 需手
 
 ## 示例
 
-见 [samples/Decorator.Sample](../samples/Decorator.Sample/)：日志 + 耗时装饰，对比 core 与 `PaymentServiceDecoratorStack.Build(core)`。
+见 [DesignPatterns.Samples.Decorator](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Decorator)：日志 + 耗时装饰，对比 core 与 `PaymentServiceDecoratorStack.Build(core)`。
 
 ## v1 不支持
 

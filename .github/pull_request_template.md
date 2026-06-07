@@ -16,8 +16,7 @@ Closes #
 - [ ] Analyzers (`DesignPatterns.Analyzers/` + `DesignPatterns.CodeFixes/`)
 - [ ] DependencyInjection (`DesignPatterns.Extensions.DependencyInjection/`)
 - [ ] Package (`DesignPatterns.Package/`)
-- [ ] Samples (`samples/`)
-- [ ] Docs / Repository (README, `docs/`, `.github/`, `AGENTS.md`)
+- [ ] Docs / Repository (README, `docs/`, `.github/`, `AGENTS.md`, `build/`)
 
 ## Type of change
 
@@ -31,12 +30,8 @@ Closes #
 
 <!-- How did you verify? -->
 
-- [ ] `dotnet build DesignPatterns.slnx -c Release`
-- [ ] `dotnet test DesignPatterns.slnx -c Release`
-- [ ] Samples build (if touched):
-  ```
-  
-  ```
+- [ ] `./build.ps1 --target Ci --configuration Release` (or `CiPack` if packaging changed)
+- [ ] Sibling samples (if API/generator behavior changed): clone [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) beside this repo and run `./build.ps1 --target Ci`
 
 ## Breaking changes
 

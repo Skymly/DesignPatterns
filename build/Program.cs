@@ -66,19 +66,6 @@ sealed class Build : NukeBuild
                 .EnableNoRestore());
         });
 
-    Target BuildSamples => _ => _
-        .DependsOn(Compile)
-        .Executes(() =>
-        {
-            foreach (AbsolutePath sampleProject in Root.GlobFiles("samples/*/*.csproj"))
-            {
-                DotNetBuild(s => s
-                    .SetProjectFile(sampleProject)
-                    .SetConfiguration(Configuration)
-                    .EnableNoRestore());
-            }
-        });
-
     Target UnitTest => _ => _
         .DependsOn(Compile)
         .Executes(() =>
@@ -103,7 +90,6 @@ sealed class Build : NukeBuild
 
     Target Pack => _ => _
         .DependsOn(UnitTest)
-        .DependsOn(BuildSamples)
         .Executes(() =>
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
@@ -230,8 +216,7 @@ sealed class Build : NukeBuild
         });
 
     Target Ci => _ => _
-        .DependsOn(UnitTest)
-        .DependsOn(BuildSamples);
+        .DependsOn(UnitTest);
 
     Target CiPack => _ => _
         .DependsOn(PackConsumerVerify);

@@ -104,7 +104,7 @@ services.AddEventAggregator(); // 默认 Singleton
 
 ## 示例
 
-见 [`samples/EventAggregator.Sample/`](../samples/EventAggregator.Sample/)。
+见 [DesignPatterns.Samples.EventAggregator](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.EventAggregator)。
 
 ---
 

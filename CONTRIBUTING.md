@@ -59,5 +59,5 @@ dotnet test tests/DesignPatterns.SourceGenerators.Tests --filter FullyQualifiedN
 
 ## 文档
 
-- 新模式：增加 `samples/<Pattern>.Sample/`、更新 `docs/` 与 [`AGENTS.md`](AGENTS.md)
+- 新模式：在 [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 增加示例项目、更新本仓 `docs/` 与 [`AGENTS.md`](AGENTS.md)
 - 架构 backlog：见 [`docs/ROADMAP.md`](docs/ROADMAP.md)
