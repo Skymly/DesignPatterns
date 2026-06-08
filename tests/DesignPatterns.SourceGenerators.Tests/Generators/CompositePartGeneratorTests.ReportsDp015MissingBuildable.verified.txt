@@ -1,6 +1,6 @@
 ﻿[
   {
     Id: DP015,
-    Message: Type 'HomeMenu' must implement ICompositeBuildable<TestAssembly.IMenuNode> to be used with generated composite catalogs
+    Message: Type 'HomeMenu' must implement ICompositeBuildable<TestAssembly.IMenuNode> to be used with generated composite catalogs.
   }
 ]

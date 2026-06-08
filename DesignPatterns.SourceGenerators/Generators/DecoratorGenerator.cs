@@ -23,37 +23,17 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
     /// <summary>Metadata name for generic <c>DecoratorAttribute&lt;TService&gt;</c>.</summary>
     public const string DecoratorGenericMetadataName = "DesignPatterns.Structural.DecoratorAttribute`1";
 
-    private static readonly DiagnosticDescriptor DuplicateOrderDescriptor = new(
-        id: DiagnosticIds.DecoratorDuplicateOrder,
-        title: "Duplicate decorator order",
-        messageFormat: "Decorator order '{0}' is already used for service contract '{1}'",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor DuplicateOrderDescriptor =
+        DesignPatternsDiagnosticDescriptors.DecoratorDuplicateOrder;
 
-    private static readonly DiagnosticDescriptor ContractMismatchDescriptor = new(
-        id: DiagnosticIds.DecoratorContractMismatch,
-        title: "Decorator does not implement service contract",
-        messageFormat: "Type '{0}' does not implement service contract '{1}'",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor ContractMismatchDescriptor =
+        DesignPatternsDiagnosticDescriptors.DecoratorContractMismatch;
 
-    private static readonly DiagnosticDescriptor MissingDecoratorInterfaceDescriptor = new(
-        id: DiagnosticIds.DecoratorMissingDecoratorInterface,
-        title: "Decorator does not implement IDecorator",
-        messageFormat: "Type '{0}' does not implement IDecorator<{1}>",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor MissingDecoratorInterfaceDescriptor =
+        DesignPatternsDiagnosticDescriptors.DecoratorMissingDecoratorInterface;
 
-    private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor = new(
-        id: DiagnosticIds.DecoratorMissingParameterlessConstructor,
-        title: "Decorator requires a public parameterless constructor",
-        messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated decorator stacks",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor =
+        DesignPatternsDiagnosticDescriptors.DecoratorMissingParameterlessConstructor;
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

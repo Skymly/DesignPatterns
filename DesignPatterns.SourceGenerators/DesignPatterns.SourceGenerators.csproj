@@ -18,6 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\DesignPatterns.Diagnostics\DesignPatternsDiagnosticDescriptors.cs"
+             Link="DesignPatternsDiagnosticDescriptors.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DesignPatterns.Diagnostics\DesignPatterns.Diagnostics.csproj" />
   </ItemGroup>
 

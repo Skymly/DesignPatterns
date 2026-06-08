@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\DesignPatterns\DesignPatterns.csproj" />
+    <ProjectReference Include="..\..\DesignPatterns.Diagnostics\DesignPatterns.Diagnostics.csproj" />
     <ProjectReference Include="..\..\DesignPatterns.SourceGenerators\DesignPatterns.SourceGenerators.csproj" />
   </ItemGroup>
 

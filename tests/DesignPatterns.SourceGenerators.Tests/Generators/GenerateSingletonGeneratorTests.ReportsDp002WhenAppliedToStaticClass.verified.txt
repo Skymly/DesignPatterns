@@ -1,6 +1,6 @@
 ﻿[
   {
     Id: DP002,
-    Message: GenerateSingleton cannot be applied to 'InvalidStatic'
+    Message: [GenerateSingleton] cannot be applied to 'InvalidStatic'. Apply it only to a non-static, non-generic class.
   }
 ]

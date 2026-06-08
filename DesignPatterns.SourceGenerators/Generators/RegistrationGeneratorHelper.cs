@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Generators;
@@ -27,25 +28,6 @@ internal sealed class KeyedRegistration
     public INamedTypeSymbol Implementation { get; }
 
     public Location Location { get; }
-}
-
-internal readonly struct RegistrationGeneratorDiagnostics
-{
-    public RegistrationGeneratorDiagnostics(
-        DiagnosticDescriptor duplicateKey,
-        DiagnosticDescriptor contractMismatch,
-        DiagnosticDescriptor missingParameterlessConstructor)
-    {
-        DuplicateKey = duplicateKey;
-        ContractMismatch = contractMismatch;
-        MissingParameterlessConstructor = missingParameterlessConstructor;
-    }
-
-    public DiagnosticDescriptor DuplicateKey { get; }
-
-    public DiagnosticDescriptor ContractMismatch { get; }
-
-    public DiagnosticDescriptor MissingParameterlessConstructor { get; }
 }
 
 internal static class RegistrationGeneratorHelper
@@ -102,7 +84,7 @@ internal static class RegistrationGeneratorHelper
         ImmutableArray<KeyedRegistration> nonGeneric,
         ImmutableArray<KeyedRegistration> generic,
         bool enableDiIntegration,
-        RegistrationGeneratorDiagnostics diagnostics,
+        KeyedRegistrationDiagnostics diagnostics,
         Action<SourceProductionContext, INamedTypeSymbol, List<KeyedRegistration>, bool, bool> emitGeneratedSources)
     {
         var registrations = nonGeneric
