@@ -7,4 +7,9 @@
     <RootNamespace>DesignPatterns.Diagnostics</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- DesignPatternsDiagnosticDescriptors.cs is compiled into Roslyn projects via Compile Link. -->
+    <Compile Remove="DesignPatternsDiagnosticDescriptors.cs" />
+  </ItemGroup>
+
 </Project>

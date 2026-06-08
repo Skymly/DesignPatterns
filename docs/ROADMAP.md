@@ -31,7 +31,7 @@
 | 项 | 说明 | 状态 |
 |----|------|------|
 | CompletionProvider | 为生成的 `*Keys` 常量 / 契约键提供 IDE 补全；优先级低于强类型常量与 CodeFix（见架构原则），需权衡维护成本 | [ ] |
-| 诊断信息增强 | 现有 `DP###` 增加更可操作的 message / help link；统一 `DiagnosticDescriptor` 文案风格 | [ ] |
+| 诊断信息增强 | 现有 `DP###` 增加更可操作的 message / help link；统一 `DiagnosticDescriptor` 文案风格 | [x] |
 | CodeFix 补全 | 为尚无 CodeFix 的可机械修复诊断补 Provider；评估 Composite 结构类诊断是否可部分自动化（DP010–012 仍归「明确不做」） | [ ] |
 | 跨编译单元未注册检测 | 评估 DP006/DP023/DP024 在多项目/分部注册场景下的误报与可达性 | [ ] |
 
