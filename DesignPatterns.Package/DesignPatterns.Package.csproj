@@ -19,7 +19,7 @@
     <RepositoryUrl>https://github.com/Skymly/DesignPatterns.git</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
 
-    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeSourceGeneratorInPackage;_IncludeAnalyzersInPackage;_IncludeCodeFixesInPackage</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_IncludeRuntimeInPackage;_IncludeRuntimeNet8InPackage;_IncludeSourceGeneratorInPackage;_IncludeAnalyzersInPackage;_IncludeCodeFixesInPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,6 +49,17 @@
            Text="Runtime assembly not found at '$(_RuntimeDll)'. Build DesignPatterns first." />
     <ItemGroup>
       <TfmSpecificPackageFile Include="$(_RuntimeDll)" PackagePath="lib/netstandard2.0" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_IncludeRuntimeNet8InPackage">
+    <PropertyGroup>
+      <_RuntimeNet8Dll>$(MSBuildThisFileDirectory)..\DesignPatterns\bin\$(Configuration)\net8.0\DesignPatterns.dll</_RuntimeNet8Dll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_RuntimeNet8Dll)')"
+           Text="Runtime assembly not found at '$(_RuntimeNet8Dll)'. Build DesignPatterns (net8.0) first." />
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_RuntimeNet8Dll)" PackagePath="lib/net8.0" />
     </ItemGroup>
   </Target>
 
