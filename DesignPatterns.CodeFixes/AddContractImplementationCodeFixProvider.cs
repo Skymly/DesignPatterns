@@ -24,7 +24,9 @@ public sealed class AddContractImplementationCodeFixProvider : CodeFixProvider
             DiagnosticIds.RegisterStrategyContractMismatch,
             DiagnosticIds.HandlerOrderContractMismatch,
             DiagnosticIds.CompositePartContractMismatch,
-            DiagnosticIds.DecoratorContractMismatch);
+            DiagnosticIds.DecoratorContractMismatch,
+            DiagnosticIds.DecoratorMissingDecoratorInterface,
+            DiagnosticIds.RegisterFactoryContractMismatch);
 
     /// <inheritdoc />
     public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;

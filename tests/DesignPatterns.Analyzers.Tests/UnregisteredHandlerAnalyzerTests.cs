@@ -112,4 +112,59 @@ public sealed class UnregisteredHandlerAnalyzerTests
 
         Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP024");
     }
+
+    [Fact]
+    public async Task ReportsDp024WhenHandlerOrderExistsInReferencedAssembly()
+    {
+        const string registrationSource = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace Registrations;
+
+            public sealed class RequestContext
+            {
+            }
+
+            [HandlerOrder<RequestContext>(10)]
+            public sealed class LoggingHandler : IHandler<RequestContext>
+            {
+                public ValueTask InvokeAsync(
+                    RequestContext context,
+                    HandlerDelegate<RequestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        const string implementationSource = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+            using Registrations;
+
+            namespace Implementations;
+
+            public sealed class AuditHandler : IHandler<RequestContext>
+            {
+                public ValueTask InvokeAsync(
+                    RequestContext context,
+                    HandlerDelegate<RequestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersWithReferencedAssemblyAsync(
+            registrationSource,
+            implementationSource,
+            new UnregisteredHandlerAnalyzer());
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic =>
+                diagnostic.Id == "DP024" &&
+                diagnostic.GetMessage().Contains("AuditHandler", StringComparison.Ordinal));
+    }
 }

@@ -77,11 +77,14 @@ public abstract class UnregisteredContractRegistrationAnalyzerBase : DiagnosticA
     {
         var builder = ImmutableHashSet.CreateBuilder<INamedTypeSymbol>(SymbolEqualityComparer.Default);
 
-        foreach (var typeSymbol in AnalyzerSymbolHelper.GetAllTypes(compilation.Assembly.GlobalNamespace))
+        foreach (var assembly in AnalyzerSymbolHelper.GetAssembliesInCompilation(compilation))
         {
-            foreach (var contract in GetRegistrationContractsFromType(typeSymbol))
+            foreach (var typeSymbol in AnalyzerSymbolHelper.GetAllTypes(assembly.GlobalNamespace))
             {
-                builder.Add(contract);
+                foreach (var contract in GetRegistrationContractsFromType(typeSymbol))
+                {
+                    builder.Add(contract);
+                }
             }
         }
 

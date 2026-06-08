@@ -83,11 +83,14 @@ public sealed class UnregisteredHandlerAnalyzer : DiagnosticAnalyzer
     {
         var builder = ImmutableHashSet.CreateBuilder<INamedTypeSymbol>(SymbolEqualityComparer.Default);
 
-        foreach (var typeSymbol in GetAllTypes(compilation.Assembly.GlobalNamespace))
+        foreach (var assembly in AnalyzerSymbolHelper.GetAssembliesInCompilation(compilation))
         {
-            foreach (var contextType in GetHandlerOrderContextTypes(typeSymbol))
+            foreach (var typeSymbol in AnalyzerSymbolHelper.GetAllTypes(assembly.GlobalNamespace))
             {
-                builder.Add(contextType);
+                foreach (var contextType in GetHandlerOrderContextTypes(typeSymbol))
+                {
+                    builder.Add(contextType);
+                }
             }
         }
 
@@ -166,6 +169,4 @@ public sealed class UnregisteredHandlerAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static IEnumerable<INamedTypeSymbol> GetAllTypes(INamespaceSymbol namespaceSymbol) =>
-        AnalyzerSymbolHelper.GetAllTypes(namespaceSymbol);
 }
