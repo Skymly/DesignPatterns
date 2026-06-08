@@ -11,13 +11,8 @@ namespace DesignPatterns.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnregisteredFactoryAnalyzer : UnregisteredContractRegistrationAnalyzerBase
 {
-    private static readonly DiagnosticDescriptor RuleDefinition = new(
-        DiagnosticIds.RegisterFactoryUnregisteredImplementation,
-        title: "Factory implementation is not registered",
-        messageFormat: "Type '{0}' implements factory contract '{1}' but is missing [RegisterFactory]",
-        category: "DesignPatterns.Analyzers",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor RuleDefinition =
+        DesignPatternsDiagnosticDescriptors.RegisterFactoryUnregisteredImplementation;
 
     protected override DiagnosticDescriptor Rule => RuleDefinition;
 
