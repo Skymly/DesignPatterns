@@ -2,6 +2,8 @@
 
 本仓库处于**早期阶段**，公共 API 与生成器产出可能在没有 major 版本策略的情况下变更。贡献前请阅读根目录 [README.md](README.md) 中的「项目状态」说明。
 
+> **开发规范的权威源是 [AGENTS.md](AGENTS.md)**（编码标准、兼容基线、打包、测试与覆盖率、诊断 ID、语言、版本与发布）。本文与之冲突时以 `AGENTS.md` 为准；功能 backlog 见 [docs/ROADMAP.md](docs/ROADMAP.md)。
+
 - **Issue**：使用 [GitHub Issue 表单](https://github.com/Skymly/DesignPatterns/issues/new/choose)（英语）；范围限定单一模块，见 [AGENTS.md](AGENTS.md)。
 - **Pull Request**：填写 [PR 模板](.github/pull_request_template.md)；一个 PR 只改一个模块。
 
@@ -20,7 +22,7 @@
 
 - 功能：`feature/<short-description>`
 - 修复：`fix/<short-description>`
-- 提交信息说明 **why**（中英文均可）
+- 提交信息说明 **why**，使用**英语**（语言规则见 [AGENTS.md](AGENTS.md)）
 
 ## 测试
 
@@ -47,15 +49,15 @@ dotnet test tests/DesignPatterns.SourceGenerators.Tests --filter FullyQualifiedN
 ## Roslyn 组件结构
 
 - `DesignPatterns.Diagnostics` — 诊断 ID 常量（`DiagnosticIds`）
-- `DesignPatterns.SourceGenerators` — 增量源生成器（DP001–005、DP007–015）
-- `DesignPatterns.Analyzers` — `DiagnosticAnalyzer`（DP006）
+- `DesignPatterns.SourceGenerators` — 增量源生成器（生成器诊断：DP001–005、DP007–022 中的生成器区段）
+- `DesignPatterns.Analyzers` — `DiagnosticAnalyzer`（DP006 / DP023 / DP024）
 - `DesignPatterns.CodeFixes` — `CodeFixProvider`（需 Workspaces）
 
-修改诊断 ID 时同步更新 `DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`。
+完整的 `DP###` 归类以 [AGENTS.md](AGENTS.md)「编译期诊断 ID」为唯一登记源。修改诊断 ID 时同步更新 `DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`。
 
 ## 代码风格
 
-仓库根目录 [`Directory.Build.props`](Directory.Build.props) 与 [`.editorconfig`](.editorconfig) 定义默认约定（nullable、缩进等）。
+仓库根目录 [`Directory.Build.props`](Directory.Build.props) 与 [`.editorconfig`](.editorconfig) 定义默认约定（nullable、缩进等）；完整编码标准见 [AGENTS.md](AGENTS.md)「编码标准」。
 
 ## 文档
 

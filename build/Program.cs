@@ -126,6 +126,10 @@ sealed class Build : NukeBuild
                 && e.EndsWith("DesignPatterns.dll", StringComparison.OrdinalIgnoreCase));
             Assert.True(hasRuntime, $"{ExpectedPackageId}: missing lib/netstandard2.0/DesignPatterns.dll");
 
+            bool hasRuntimeNet8 = entries.Any(e => e.StartsWith("lib/net8.0/", StringComparison.OrdinalIgnoreCase)
+                && e.EndsWith("DesignPatterns.dll", StringComparison.OrdinalIgnoreCase));
+            Assert.True(hasRuntimeNet8, $"{ExpectedPackageId}: missing lib/net8.0/DesignPatterns.dll");
+
             bool hasSourceGenerator = entries.Any(e => e.StartsWith("analyzers/dotnet/cs/", StringComparison.OrdinalIgnoreCase)
                 && e.Contains("DesignPatterns.SourceGenerators", StringComparison.OrdinalIgnoreCase)
                 && e.EndsWith(".dll", StringComparison.OrdinalIgnoreCase));

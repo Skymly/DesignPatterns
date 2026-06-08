@@ -11,7 +11,7 @@
 | **许可证** | [MIT](LICENSE) |
 | **阶段** | **早期预览**：公共 API、生成器产出与 `DP###` 诊断**尚未稳定**（见 [README.md](README.md)） |
 | **NuGet** | 元包 `DesignPatterns` 可本地 `dotnet pack`；nuget.org 正式发布与 SemVer 待 API 稳定后由维护者决定 |
-| **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns.Samples/`、`Skymly/DesignPatterns.Docs/` |
+| **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns/DesignPatterns.Samples/`、`Skymly/DesignPatterns/DesignPatterns.Docs/` |
 
 ## 项目是什么
 
@@ -127,6 +127,48 @@ dotnet test DesignPatterns.slnx -c Release
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
+诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
+
+- 下一个可用 ID：**DP025**；ID 一经发布不复用、不改语义。
+- 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs) 与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
+- 归属：DP006 / DP023 / DP024 属 **Analyzer**；其余属**生成器**。
+
+---
+
+## 编码标准
+
+| 约定 | 要求 |
+|------|------|
+| Nullable | 全仓 `enable`（[`Directory.Build.props`](Directory.Build.props)） |
+| 警告 | `TreatWarningsAsErrors=true`；提交前必须**零警告** |
+| 命名空间 | file-scoped（`.editorconfig` `file_scoped:warning`） |
+| 公共 API | 必带 XML 文档注释（`GenerateDocumentationFile`） |
+| 命名 | 接口 `I` 前缀、异步方法 `Async` 后缀（遵循 [.NET 设计指南](https://learn.microsoft.com/dotnet/standard/design-guidelines/)） |
+| 子命名空间 | 按 GoF 分 `DesignPatterns.Behavioral` / `Creational` / `Structural` |
+| 风格 | 缩进 / 换行 / using 排序以 [`.editorconfig`](.editorconfig) 为准（此处不复制具体规则） |
+
+设计原则（运行时）：primitives 而非框架；Core 不引用 MSDI（DI 归 `DesignPatterns.Extensions.DependencyInjection`）；异步一等（`CancellationToken` / `ValueTask`）；显式失败优先 `TryResolve` 与明确异常，避免静默 `null`。
+
+---
+
+## 兼容基线（TFM 与 Roslyn）
+
+| 项 | 基线 |
+|----|------|
+| 运行时 TFM | `netstandard2.0` + `net8.0`（两者均须可用并随包分发） |
+| Roslyn 组件 | 目标**广泛兼容**的最低 Roslyn 版本，**不**绑定最新 major；调整 `Microsoft.CodeAnalysis.*`（[`Directory.Packages.props`](Directory.Packages.props)）须评估对消费者 SDK 门槛的影响 |
+| 分析器程序集 | `IsRoslynComponent`、`EnforceExtendedAnalyzerRules`、`IncludeBuildOutput=false` |
+| 生成器实现 | `IIncrementalGenerator` + `ForAttributeWithMetadataName` |
+
+---
+
+## 打包策略
+
+- 元包 **`DesignPatterns`**（[`DesignPatterns.Package`](DesignPatterns.Package/DesignPatterns.Package.csproj)）必须打包运行时**所有 TFM** 的 `lib`（`netstandard2.0` **与** `net8.0`），不得只携带 `netstandard2.0`——否则 net8.0 消费者拿不到 `FrozenDictionary` 优化版本。
+- 生成器 / Analyzer / CodeFix 打到 `analyzers/dotnet/cs`。
+- DI 扩展 `DesignPatterns.Extensions.DependencyInjection` 的打包 / 独立发布归属待发版流程确定；当前元包**不含**。
+- 任何打包结构变更须通过 `CiPack` 的 `PackVerify` / `PackConsumerVerify`。
+
 ---
 
 ## 构建与 CI
@@ -146,7 +188,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 ## 版本、Tag 与 NuGet（代理与维护者）
 
-遵循工作区根 [`../AGENTS.md`](../AGENTS.md) 的 Tag / 版本号约定，本仓库补充：
+遵循工作区根 [`AGENTS.md`](../../../AGENTS.md) 的 Tag / 版本号约定，本仓库补充：
 
 | 场景 | 代理行为 |
 |------|----------|
@@ -155,6 +197,12 @@ dotnet test DesignPatterns.slnx -c Release
 | 用户明确要求发版 | 可准备命令草稿，标注**待批准**；预览版与稳定版策略日后与 Observables 对齐时可补 `release.yml` |
 
 **CI 不会在 PR 或 push `main` 时发布 NuGet**；仅验证并上传 pack artifact。
+
+版本与发布基建（形态先行，落地待维护者批准）：
+
+- 版本号用 `VersionPrefix` + 预览后缀（如 `-preview.N`）；API 冻结前保持预览。
+- 变更记录用 `CHANGELOG.md`（Keep a Changelog 风格）。
+- 发版工作流 `release.yml`（tag 触发 Publish）待发布流程确定后添加。
 
 ---
 
@@ -184,9 +232,15 @@ dotnet test DesignPatterns.slnx -c Release
 | 层级 | 项目 |
 |------|------|
 | 单元 / 集成 | `tests/DesignPatterns.Tests` |
-| 生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests` |
+| 生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests`（Verify） |
 | Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` |
 | DI 扩展 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests` |
+
+规范：
+
+- **xunit 版本统一**：测试项目应使用同一 xunit 版本（当前 [`Directory.Packages.props`](Directory.Packages.props) 按 `MSBuildProjectName` 分叉为待整改项，见 [ROADMAP](docs/ROADMAP.md)）。
+- **覆盖率**：所有测试项目统一引用 `coverlet.collector` 并产出 `coverage.cobertura.xml`；覆盖率作为**参考门槛**（暂不硬阻塞）。
+- **生成器快照**：改动生成代码后运行测试并审阅 `*.received.*`，确认后接受为 `*.verified.txt`。
 
 详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
@@ -194,7 +248,9 @@ dotnet test DesignPatterns.slnx -c Release
 
 ## Git / Issue / PR / Commit
 
-- 遵循工作区根 [`../AGENTS.md`](../AGENTS.md)：Issue / PR / Commit 默认**英语**；与用户对话默认**简体中文**。
+- **语言（权威）**：Issue / PR / Commit **一律英语**；与用户对话默认**简体中文**。本条以根 [`AGENTS.md`](../../../AGENTS.md) 为准，**覆盖** `docs/DEVELOPMENT.md`、`CONTRIBUTING.md` 中任何「中英文均可」的旧措辞。
+- 分支：功能 `feature/<short-description>`、修复 `fix/<short-description>`；提交信息祈使句、说明 **why**。
+- **每个 PR 只改一个模块**（边界见上文「跨模块 PR / Issue 边界」）。
 - Issue 模板：[`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/)（Bug / Feature / Generator）。
 - PR 模板：[`.github/pull_request_template.md`](.github/pull_request_template.md)。
 - **禁止**在 Commit / PR 中提及 AI / Agent 工具。
@@ -208,6 +264,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 ## 待用户决策项（非阻塞）
 
-- NuGet 公开发布与 SemVer（API 稳定后）
-- 元包是否同时打包 `net8.0` 运行时 TFM
-- `release.yml`（tag 触发 Publish）是否在发版流程确定后添加
+- NuGet 公开发布时机与 SemVer 起始版本（API 冻结后）。
+- DI 扩展是否独立发布为 NuGet 包，及其与元包的关系。
+
+> 注：元包必须打包 `net8.0` 运行时 TFM 已定为标准（见「打包策略」），其落地作为工程整改项跟踪于 [docs/ROADMAP.md](docs/ROADMAP.md)，不再是开放问题。
