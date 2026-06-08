@@ -1,6 +1,6 @@
 ﻿[
   {
     Id: DP001,
-    Message: Class 'NotPartial' must be declared partial to receive generated singleton members
+    Message: Class 'NotPartial' must be declared partial so [GenerateSingleton] can emit Instance members. Add the partial keyword to the class declaration.
   }
 ]

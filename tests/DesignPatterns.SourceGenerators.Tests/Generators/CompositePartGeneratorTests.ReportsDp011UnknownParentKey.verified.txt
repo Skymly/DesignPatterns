@@ -1,6 +1,6 @@
 ﻿[
   {
     Id: DP011,
-    Message: Composite parent key 'missing' was not found for contract 'TestAssembly.IMenuNode'
+    Message: Composite parent key 'missing' was not found for contract 'TestAssembly.IMenuNode'. Register the parent part first or correct the ParentKey value.
   }
 ]

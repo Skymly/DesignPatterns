@@ -23,28 +23,8 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
     /// <summary>Metadata name for generic <c>RegisterStrategyAttribute&lt;TContract&gt;</c>.</summary>
     public const string RegisterStrategyGenericMetadataName = "DesignPatterns.Behavioral.RegisterStrategyAttribute`1";
 
-    private static readonly RegistrationGeneratorDiagnostics Diagnostics = new(
-        duplicateKey: new DiagnosticDescriptor(
-            id: DiagnosticIds.RegisterStrategyDuplicateKey,
-            title: "Duplicate strategy key",
-            messageFormat: "Strategy key '{0}' is already registered for contract '{1}'",
-            category: "DesignPatterns.Generators",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true),
-        contractMismatch: new DiagnosticDescriptor(
-            id: DiagnosticIds.RegisterStrategyContractMismatch,
-            title: "Strategy does not implement contract",
-            messageFormat: "Type '{0}' does not implement strategy contract '{1}'",
-            category: "DesignPatterns.Generators",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true),
-        missingParameterlessConstructor: new DiagnosticDescriptor(
-            id: DiagnosticIds.RegisterStrategyMissingParameterlessConstructor,
-            title: "Strategy implementation requires a public parameterless constructor",
-            messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated static registration",
-            category: "DesignPatterns.Generators",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true));
+    private static readonly KeyedRegistrationDiagnostics Diagnostics =
+        DesignPatternsDiagnosticDescriptors.RegisterStrategy;
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

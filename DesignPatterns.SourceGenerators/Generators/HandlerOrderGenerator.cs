@@ -23,29 +23,14 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
     /// <summary>Metadata name for generic <c>HandlerOrderAttribute&lt;TContext&gt;</c>.</summary>
     public const string HandlerOrderGenericMetadataName = "DesignPatterns.Behavioral.HandlerOrderAttribute`1";
 
-    private static readonly DiagnosticDescriptor DuplicateOrderDescriptor = new(
-        id: DiagnosticIds.HandlerOrderDuplicateOrder,
-        title: "Duplicate handler order",
-        messageFormat: "Handler order '{0}' is already used for context '{1}'",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor DuplicateOrderDescriptor =
+        DesignPatternsDiagnosticDescriptors.HandlerOrderDuplicateOrder;
 
-    private static readonly DiagnosticDescriptor HandlerContractMismatchDescriptor = new(
-        id: DiagnosticIds.HandlerOrderContractMismatch,
-        title: "Handler does not implement IHandler for context",
-        messageFormat: "Type '{0}' does not implement IHandler<{1}>",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor HandlerContractMismatchDescriptor =
+        DesignPatternsDiagnosticDescriptors.HandlerOrderContractMismatch;
 
-    private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor = new(
-        id: DiagnosticIds.HandlerOrderMissingParameterlessConstructor,
-        title: "Handler requires a public parameterless constructor",
-        messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated handler pipelines",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor =
+        DesignPatternsDiagnosticDescriptors.HandlerOrderMissingParameterlessConstructor;
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

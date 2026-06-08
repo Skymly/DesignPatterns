@@ -23,28 +23,8 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
     /// <summary>Metadata name for generic <c>RegisterFactoryAttribute&lt;TContract&gt;</c>.</summary>
     public const string RegisterFactoryGenericMetadataName = "DesignPatterns.Creational.RegisterFactoryAttribute`1";
 
-    private static readonly RegistrationGeneratorDiagnostics Diagnostics = new(
-        duplicateKey: new DiagnosticDescriptor(
-            id: DiagnosticIds.RegisterFactoryDuplicateKey,
-            title: "Duplicate factory key",
-            messageFormat: "Factory key '{0}' is already registered for contract '{1}'",
-            category: "DesignPatterns.Generators",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true),
-        contractMismatch: new DiagnosticDescriptor(
-            id: DiagnosticIds.RegisterFactoryContractMismatch,
-            title: "Factory does not implement contract",
-            messageFormat: "Type '{0}' does not implement factory contract '{1}'",
-            category: "DesignPatterns.Generators",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true),
-        missingParameterlessConstructor: new DiagnosticDescriptor(
-            id: DiagnosticIds.RegisterFactoryMissingParameterlessConstructor,
-            title: "Factory implementation requires a public parameterless constructor",
-            messageFormat: "Type '{0}' must declare a public parameterless constructor to be used with generated static registration",
-            category: "DesignPatterns.Generators",
-            defaultSeverity: DiagnosticSeverity.Error,
-            isEnabledByDefault: true));
+    private static readonly KeyedRegistrationDiagnostics Diagnostics =
+        DesignPatternsDiagnosticDescriptors.RegisterFactory;
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

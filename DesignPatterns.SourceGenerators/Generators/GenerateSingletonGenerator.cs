@@ -19,21 +19,11 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
     /// <summary>Full metadata name of <c>GenerateSingletonAttribute</c>.</summary>
     public const string AttributeMetadataName = "DesignPatterns.Creational.GenerateSingletonAttribute";
 
-    private static readonly DiagnosticDescriptor NotPartialDescriptor = new(
-        id: DiagnosticIds.GenerateSingletonNotPartial,
-        title: "GenerateSingleton requires a partial class",
-        messageFormat: "Class '{0}' must be declared partial to receive generated singleton members",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor NotPartialDescriptor =
+        DesignPatternsDiagnosticDescriptors.GenerateSingletonNotPartial;
 
-    private static readonly DiagnosticDescriptor InvalidTargetDescriptor = new(
-        id: DiagnosticIds.GenerateSingletonInvalidTarget,
-        title: "GenerateSingleton target is invalid",
-        messageFormat: "GenerateSingleton cannot be applied to '{0}'",
-        category: "DesignPatterns.Generators",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor InvalidTargetDescriptor =
+        DesignPatternsDiagnosticDescriptors.GenerateSingletonInvalidTarget;
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)

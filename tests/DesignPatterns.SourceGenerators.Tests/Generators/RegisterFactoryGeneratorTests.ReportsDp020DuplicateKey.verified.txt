@@ -1,10 +1,10 @@
 ﻿[
   {
     Id: DP020,
-    Message: Factory key 'standard' is already registered for contract 'TestAssembly.IProductFactory'
+    Message: Factory key 'standard' is already registered for contract 'TestAssembly.IProductFactory'. Use a unique key or remove the duplicate [RegisterFactory] attribute.
   },
   {
     Id: DP020,
-    Message: Factory key 'standard' is already registered for contract 'TestAssembly.IProductFactory'
+    Message: Factory key 'standard' is already registered for contract 'TestAssembly.IProductFactory'. Use a unique key or remove the duplicate [RegisterFactory] attribute.
   }
 ]
