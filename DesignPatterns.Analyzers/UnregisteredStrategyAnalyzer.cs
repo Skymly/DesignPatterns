@@ -11,13 +11,8 @@ namespace DesignPatterns.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnregisteredStrategyAnalyzer : UnregisteredContractRegistrationAnalyzerBase
 {
-    private static readonly DiagnosticDescriptor RuleDefinition = new(
-        DiagnosticIds.RegisterStrategyUnregisteredImplementation,
-        title: "Strategy implementation is not registered",
-        messageFormat: "Type '{0}' implements strategy contract '{1}' but is missing [RegisterStrategy]",
-        category: "DesignPatterns.Analyzers",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor RuleDefinition =
+        DesignPatternsDiagnosticDescriptors.RegisterStrategyUnregisteredImplementation;
 
     protected override DiagnosticDescriptor Rule => RuleDefinition;
 

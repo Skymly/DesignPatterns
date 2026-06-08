@@ -13,13 +13,8 @@ namespace DesignPatterns.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UnregisteredHandlerAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor Rule = new(
-        DiagnosticIds.HandlerOrderUnregisteredImplementation,
-        title: "Handler implementation is not registered",
-        messageFormat: "Type '{0}' implements IHandler<{1}> but is missing [HandlerOrder]",
-        category: "DesignPatterns.Analyzers",
-        defaultSeverity: DiagnosticSeverity.Info,
-        isEnabledByDefault: true);
+    private static readonly DiagnosticDescriptor Rule =
+        DesignPatternsDiagnosticDescriptors.HandlerOrderUnregisteredImplementation;
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
