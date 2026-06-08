@@ -1,12 +1,12 @@
 # 开发文档
 
-本文档说明如何在本地搭建环境、构建项目、参与贡献，以及当前阶段的架构与路线图。
+本文档是**操作手册**（环境、构建、测试、架构）。**项目级开发规范的权威源是 [`../AGENTS.md`](../AGENTS.md)**（编码标准、兼容基线、打包、测试与覆盖率、诊断 ID、语言、版本与发布）；功能与工程 backlog 见 [`ROADMAP.md`](ROADMAP.md)。本文与上述文档冲突时，以 `AGENTS.md` 为准。
 
 ## 环境要求
 
 | 工具 | 版本建议 |
 |------|----------|
-| [.NET SDK](https://dotnet.microsoft.com/download) | 8.0 或更高（仓库当前目标 `netstandard2.0`，后续将增加 `net8.0` 多目标） |
+| [.NET SDK](https://dotnet.microsoft.com/download) | 8.0 或更高（运行时多目标 `netstandard2.0` + `net8.0`，见 [`../AGENTS.md`](../AGENTS.md) 兼容基线） |
 | Git | 2.x |
 | IDE | Visual Studio 2022、Rider 或 VS Code + C# Dev Kit |
 
@@ -56,16 +56,19 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 - `docs/` — 人类可读的设计与开发说明
 - `AGENTS.md` — AI 助手专用上下文（与本文档互补，更偏「操作清单」）
 
-### 规划（按里程碑引入）
+### 已实现的模块
 
 | 路径 | 职责 |
 |------|------|
 | `DesignPatterns.Diagnostics/` | 诊断 ID 常量 |
-| `DesignPatterns.Analyzers/` | `DiagnosticAnalyzer`（DP006、DP023） |
+| `DesignPatterns.Analyzers/` | `DiagnosticAnalyzer`（DP006 / DP023 / DP024） |
 | `DesignPatterns.CodeFixes/` | `CodeFixProvider` |
+| `DesignPatterns.Extensions.DependencyInjection/` | MSDI 扩展 + DI 生成器 targets |
+| `DesignPatterns.Package/` | NuGet 元包（`PackageId=DesignPatterns`） |
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
-| `tests/DesignPatterns.Analyzers.Tests/` | Analyzer/CodeFix 测试（P2 起） |
+| `tests/DesignPatterns.Analyzers.Tests/` | Analyzer / CodeFix 测试 |
+| `tests/DesignPatterns.Extensions.DependencyInjection.Tests/` | DI 注册与解析测试 |
 | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 每个模式一个可运行控制台示例（含 `RegisterDi`）；主仓 CI checkout 并 build + run |
 
 命名空间根：`DesignPatterns`（运行时）、`DesignPatterns.Analyzers`（编译期）。
@@ -92,9 +95,11 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 - 不重复实现 MediatR、Polly、`Microsoft.Extensions.ObjectPool` 的完整能力；文档中说明何时引用官方包。
 - Singleton 不作为卖点；诊断可提示静态可变单例，推荐 DI 生命周期。
 
-## 设计模式实施优先级
+## 设计模式实施情况（历史）
 
-### 运行时（M1 建议）
+> 以下模式与生成器均**已落地**。后续功能 backlog 见 [ROADMAP.md](ROADMAP.md)，架构原则见 [`../AGENTS.md`](../AGENTS.md)。
+
+### 运行时（M1）
 
 1. [x] Chain of Responsibility — `IHandler<TContext>` + 管道（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
 2. [x] Strategy — 命名注册与解析（见 [Strategy.md](Strategy.md)）
@@ -126,10 +131,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 ## 编码规范
 
-- 启用 **nullable reference types**（新文件与项目属性逐步开启）。
-- 公共 API 配备 **XML 文档注释**（`GenerateDocumentationFile`）。
-- 遵循 [.NET 设计指南](https://learn.microsoft.com/dotnet/standard/design-guidelines/)：接口以 `I` 开头，异步方法以 `Async` 结尾。
-- 每个公共类型归属清晰命名空间，按 GoF 分类子命名空间（如 `DesignPatterns.Behavioral`）在类型增多后引入，避免过早分层。
+编码标准（nullable、file-scoped namespace、XML 文档、命名、GoF 子命名空间、warnings-as-errors）以 [`../AGENTS.md`](../AGENTS.md) 的「编码标准」「兼容基线」为权威源；风格细则见 [`../.editorconfig`](../.editorconfig)。本节不再重复，避免漂移。
 
 ## 测试
 
@@ -166,7 +168,7 @@ dotnet test DesignPatterns.slnx
 - 默认分支：`main`
 - 功能分支：`feature/<short-description>`
 - 修复分支：`fix/<short-description>`
-- 提交信息：祈使句、英文或中文均可，需说明 **why**（例：`Add RegisterStrategy source generator for strategy registry`）
+- 提交信息：祈使句、**英语**，需说明 **why**（例：`Add RegisterStrategy source generator for strategy registry`）。语言规则以 [`../AGENTS.md`](../AGENTS.md) 为准。
 
 CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test；checkout [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 并 build + run；pack 校验）。
 
@@ -181,5 +183,5 @@ CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（
 ## 待决事项
 
 - [x] 开源许可证（[MIT](../LICENSE)）
-- [ ] 公开发布与 SemVer 流程（API 稳定前 README 标明早期阶段）
-- [ ] NuGet 元包 `net8.0` 运行时 TFM
+- [ ] 公开发布与 SemVer 流程（API 稳定前 README 标明早期阶段；见 [ROADMAP.md](ROADMAP.md) 暂缓支线）
+- [ ] NuGet 元包多目标打包（`net8.0` 运行时 TFM）— 已定为标准（[`../AGENTS.md`](../AGENTS.md) 打包策略），整改跟踪于 [ROADMAP.md](ROADMAP.md)
