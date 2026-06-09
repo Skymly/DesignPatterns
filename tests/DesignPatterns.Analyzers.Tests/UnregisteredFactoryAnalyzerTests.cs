@@ -47,6 +47,50 @@ public sealed class UnregisteredFactoryAnalyzerTests
                 diagnostic.Id == "DP023" &&
                 diagnostic.GetMessage().Contains("PremiumFactory", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public async Task ReportsDp023WhenRegistrationExistsInReferencedAssembly()
+    {
+        const string registrationSource = """
+            using DesignPatterns.Creational;
+
+            namespace Registrations;
+
+            public interface IProductFactory
+            {
+                string Produce();
+            }
+
+            [RegisterFactory("standard", typeof(IProductFactory))]
+            public class StandardFactory : IProductFactory
+            {
+                public string Produce() => "standard";
+            }
+            """;
+
+        const string implementationSource = """
+            using DesignPatterns.Creational;
+            using Registrations;
+
+            namespace Implementations;
+
+            public class PremiumFactory : IProductFactory
+            {
+                public string Produce() => "premium";
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersWithReferencedAssemblyAsync(
+            registrationSource,
+            implementationSource,
+            new UnregisteredFactoryAnalyzer());
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic =>
+                diagnostic.Id == "DP023" &&
+                diagnostic.GetMessage().Contains("PremiumFactory", StringComparison.Ordinal));
+    }
 }
 
 public sealed class AddRegisterFactoryCodeFixTests

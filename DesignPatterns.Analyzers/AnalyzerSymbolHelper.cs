@@ -5,6 +5,19 @@ namespace DesignPatterns.Analyzers;
 
 internal static class AnalyzerSymbolHelper
 {
+    internal static IEnumerable<IAssemblySymbol> GetAssembliesInCompilation(Compilation compilation)
+    {
+        yield return compilation.Assembly;
+
+        foreach (var reference in compilation.References)
+        {
+            if (compilation.GetAssemblyOrModuleSymbol(reference) is IAssemblySymbol assemblySymbol)
+            {
+                yield return assemblySymbol;
+            }
+        }
+    }
+
     internal static IEnumerable<INamedTypeSymbol> GetAllTypes(INamespaceSymbol namespaceSymbol)
     {
         foreach (var member in namespaceSymbol.GetMembers())

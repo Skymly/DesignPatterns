@@ -29,6 +29,20 @@ internal static class AnalyzerTestContext
             .ConfigureAwait(false);
     }
 
+    internal static async Task<ImmutableArray<Diagnostic>> RunAnalyzersWithReferencedAssemblyAsync(
+        string referencedAssemblySource,
+        string implementationAssemblySource,
+        params DiagnosticAnalyzer[] analyzers)
+    {
+        var compilation = CreateCompilationWithReferencedAssembly(
+            referencedAssemblySource,
+            implementationAssemblySource);
+        return await compilation
+            .WithAnalyzers(ImmutableArray.Create(analyzers))
+            .GetAnalyzerDiagnosticsAsync()
+            .ConfigureAwait(false);
+    }
+
     internal static async Task<string> ApplyGeneratorCodeFixAsync<TGenerator>(
         string source,
         string diagnosticId,
@@ -96,6 +110,43 @@ internal static class AnalyzerTestContext
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
 
+    private static CSharpCompilation CreateCompilationWithReferencedAssembly(
+        string referencedAssemblySource,
+        string implementationAssemblySource)
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var referencedTree = CSharpSyntaxTree.ParseText(
+            referencedAssemblySource,
+            parseOptions,
+            path: "Registrations.cs");
+        var referencedCompilation = CSharpCompilation.Create(
+            "Registrations",
+            new[] { referencedTree },
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        using var referencedStream = new MemoryStream();
+        var emitResult = referencedCompilation.Emit(referencedStream);
+        if (!emitResult.Success)
+        {
+            throw new InvalidOperationException(
+                string.Join(Environment.NewLine, emitResult.Diagnostics.Select(diagnostic => diagnostic.ToString())));
+        }
+
+        referencedStream.Position = 0;
+        var referencedAssembly = MetadataReference.CreateFromStream(referencedStream);
+
+        var implementationTree = CSharpSyntaxTree.ParseText(
+            implementationAssemblySource,
+            parseOptions,
+            path: "Implementations.cs");
+        return CSharpCompilation.Create(
+            "Implementations",
+            new[] { implementationTree },
+            References.Add(referencedAssembly),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    }
+
     private static ImmutableArray<MetadataReference> CreateReferences()
     {
         var references = new List<MetadataReference>
@@ -159,6 +210,76 @@ public sealed class UnregisteredStrategyAnalyzerTests
             diagnostic =>
                 diagnostic.Id == "DP006" &&
                 diagnostic.GetMessage().Contains("WechatPayment", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ReportsDp006WhenRegistrationExistsInReferencedAssembly()
+    {
+        const string registrationSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace Registrations;
+
+            public interface IPaymentStrategy
+            {
+                string Pay(decimal amount);
+            }
+
+            [RegisterStrategy("alipay", typeof(IPaymentStrategy))]
+            public class AlipayPayment : IPaymentStrategy
+            {
+                public string Pay(decimal amount) => "alipay";
+            }
+            """;
+
+        const string implementationSource = """
+            using DesignPatterns.Behavioral;
+            using Registrations;
+
+            namespace Implementations;
+
+            public class WechatPayment : IPaymentStrategy
+            {
+                public string Pay(decimal amount) => "wechat";
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersWithReferencedAssemblyAsync(
+            registrationSource,
+            implementationSource,
+            new UnregisteredStrategyAnalyzer());
+
+        Assert.Contains(
+            diagnostics,
+            diagnostic =>
+                diagnostic.Id == "DP006" &&
+                diagnostic.GetMessage().Contains("WechatPayment", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task DoesNotReportWhenNoRegistrationInCompilationOrReferences()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface IPaymentStrategy
+            {
+                string Pay(decimal amount);
+            }
+
+            public class OrphanStrategy : IPaymentStrategy
+            {
+                public string Pay(decimal amount) => "orphan";
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new UnregisteredStrategyAnalyzer());
+
+        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP006");
     }
 }
 
@@ -437,8 +558,62 @@ public sealed class CompositeCodeFixTests
     }
 }
 
+public sealed class SingletonCodeFixTests
+{
+    [Fact]
+    public async Task FixesDp001ByAddingPartialModifier()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateSingleton]
+            public class AppSettings
+            {
+                public string AppName { get; set; } = "DesignPatterns";
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<GenerateSingletonGenerator>(
+            source,
+            "DP001",
+            new AddPartialModifierCodeFixProvider());
+
+        Assert.Contains("public partial class AppSettings", fixedSource, StringComparison.Ordinal);
+    }
+}
+
 public sealed class DecoratorCodeFixTests
 {
+    [Fact]
+    public async Task FixesDp018ByAddingDecoratorInterface()
+    {
+        const string source = """
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public class LoggingPaymentDecorator : IPaymentService
+            {
+                public int Pay(int amount) => amount;
+            }
+            """;
+
+        var fixedSource = await AnalyzerTestContext.ApplyGeneratorCodeFixAsync<DecoratorGenerator>(
+            source,
+            "DP018",
+            new AddContractImplementationCodeFixProvider());
+
+        Assert.Contains("IDecorator<TestAssembly.IPaymentService>", fixedSource, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task FixesDp017ByAddingContractInterface()
     {

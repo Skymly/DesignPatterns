@@ -64,6 +64,18 @@ internal static class CodeFixHelpers
             return false;
         }
 
+        if (diagnostic.Id == DiagnosticIds.DecoratorMissingDecoratorInterface)
+        {
+            var decoratorMatch = Regex.Match(message, @"IDecorator<([^>]+)>", RegexOptions.CultureInvariant);
+            if (decoratorMatch.Success)
+            {
+                contractTypeName = $"IDecorator<{decoratorMatch.Groups[1].Value}>";
+                return true;
+            }
+
+            return false;
+        }
+
         var matches = Regex.Matches(message, "'([^']+)'", RegexOptions.CultureInvariant);
         if (matches.Count < 2)
         {
