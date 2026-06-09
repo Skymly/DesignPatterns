@@ -62,7 +62,7 @@
 
 | 项 | 现状 | 目标 | 状态 |
 |----|------|------|------|
-| 元包多目标缺失 | `DesignPatterns.Package` 仅打包 `netstandard2.0` 运行时 DLL（`_IncludeRuntimeInPackage`），net8.0 消费者拿不到 `FrozenDictionary` 优化版本 | 元包随运行时一并打包 `net8.0` lib | [ ] |
+| 元包多目标缺失 | `DesignPatterns.Package` 仅打包 `netstandard2.0` 运行时 DLL（`_IncludeRuntimeInPackage`），net8.0 消费者拿不到 `FrozenDictionary` 优化版本 | 元包随运行时一并打包 `net8.0` lib | [x] |
 | Roslyn 版本基线 | `Microsoft.CodeAnalysis.CSharp` 版本偏高，抬高消费者 SDK 门槛 | 明确目标 Roslyn 基线并下调到广泛兼容版本 | [ ] |
 | xunit 版本分叉 | `Directory.Packages.props` 按 `MSBuildProjectName` 条件分出 2.9.2 / 2.5.3 | 统一单一 xunit 版本 | [ ] |
 | 覆盖率 collector 缺失 | `SourceGenerators.Tests`、`Analyzers.Tests` 未引用 `coverlet.collector`，CI 报「找不到 XPlat Code Coverage」 | 全部测试项目接入同一 collector | [ ] |
@@ -76,7 +76,7 @@
 当前**不**推进；记录前置条件，待功能主线收敛后由维护者重启。
 
 - **API 冻结**：公共类型 / 特性 / 生成产出 / `DP###` 命名稳定声明（先行条件）。
-- **打包修复**：完成「元包多目标」与「DI 扩展打包归属」整改。
+- **打包修复**：元包多目标（`lib/net8.0`）已完成；「DI 扩展打包归属」仍待确定。
 - **NuGet 首发 / SemVer**：`VersionPrefix` + 预览后缀策略；nuget.org 首个公开版本。
 - **release.yml**：tag 触发 Publish。
 
@@ -102,7 +102,8 @@
 - M2 模式：Composite（`[CompositePart]`，DP010–015）、Decorator（`[Decorator]`，DP016–019）、EventAggregator（`IEventAggregator` / `IEventHandler<T>`）。
 - P3 生态：`[RegisterFactory]`（DP020–022）、`IReadOnlyRegistry<TKey,TValue>`（仅 `IStrategyRegistry` 继承）、net8.0 `FrozenDictionary` 优化、`DesignPatterns.Extensions.DependencyInjection`。
 - DI 与生成器打通：`RegisterDi` + `Create(IServiceProvider)`、`ServiceProviderStrategyRegistry`、集成测试。
-- Analyzer / CodeFix：DP006 未注册策略、DP023 未注册工厂、DP024 未注册 Handler；无参构造 / 接口实现 / RegisterStrategy / RegisterFactory / ICompositeBuildable CodeFix。
+- Analyzer / CodeFix：DP006 未注册策略、DP023 未注册工厂、DP024 未注册 Handler；无参构造 / 接口实现 / RegisterStrategy / RegisterFactory / ICompositeBuildable / `partial`（DP001）/ `IDecorator<T>`（DP018）CodeFix；跨程序集注册收集（DP006/023/024 多项目场景）。
+- F1 诊断增强：集中 `DesignPatternsDiagnosticDescriptors`、可操作 message 与 help link（`DP001`–`DP024`）。
 - Handler `AllowMultiple`：单类多 `[HandlerOrder]` / `[HandlerOrder<TContext>]`。
-- 工程化：Nuke `Ci` / `CiPack`、GitHub Actions、warnings-as-errors、Pack 消费者验证、共享注册生成器 Helper、共享未注册契约 Analyzer 基类。
+- 工程化：Nuke `Ci` / `CiPack`、GitHub Actions、warnings-as-errors、Pack 消费者验证、元包 `lib/net8.0` 打包与校验、共享注册生成器 Helper、共享未注册契约 Analyzer 基类。
 - `Composite.Sample` 手动 `CompositeTreeBuilder` 演示。
