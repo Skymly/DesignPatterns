@@ -29,9 +29,9 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                              # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP024）
+├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP025）
 ├── DesignPatterns.SourceGenerators/             # 增量源生成器
-├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024 Analyzer
+├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
 ├── DesignPatterns.Extensions.DependencyInjection/  # MSDI 扩展 + DI 生成器 targets
 ├── DesignPatterns.Package/                      # NuGet 元包（PackageId=DesignPatterns）
@@ -41,7 +41,7 @@ DesignPatterns.slnx
 └── AGENTS.md
 ```
 
-规划但**尚未实现**：CompletionProvider。
+**不**经 NuGet 元包实现：自定义 Roslyn `CompletionProvider`（IDE 宿主不加载项目引用的 Provider；成员补全已由 `*Keys` 的 `public const string` 与 DP025 字面量键校验覆盖）。独立 VSIX/Rider 插件暂不排期（见 [ROADMAP](docs/ROADMAP.md) F1）。
 
 ---
 
@@ -118,9 +118,10 @@ dotnet test DesignPatterns.slnx -c Release
 | DP001–DP002 | GenerateSingleton |
 | DP003–DP004、DP007 | RegisterStrategy（生成器） |
 | DP005、DP008–DP009 | HandlerOrder（生成器） |
-| DP006 | 未注册策略（Analyzer） |
-| DP023 | 未注册工厂（Analyzer） |
+| DP006 | 未注册策略（Analyzer + CodeFix） |
+| DP023 | 未注册工厂（Analyzer + CodeFix） |
 | DP024 | 未注册 Handler（Analyzer + CodeFix） |
+| DP025 | 未知注册表键字面量（Analyzer + CodeFix；Strategy/Factory `Get`/`TryGet`/`Create`/`TryCreate`） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -129,9 +130,9 @@ dotnet test DesignPatterns.slnx -c Release
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP025**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP026**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
-- 归属：DP006 / DP023 / DP024 属 **Analyzer**；其余属**生成器**。
+- 归属：DP006 / DP023 / DP024 / DP025 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
 
 ---
@@ -223,6 +224,8 @@ dotnet test DesignPatterns.slnx -c Release
 | — | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)（含 `RegisterDi` 示例） | 已完成 |
 | — | DP024 未注册 Handler Analyzer | 已完成 |
 | — | CodeFix + DP006/DP023/DP024 | 已完成 |
+| — | DP025 字面量键校验 Analyzer + CodeFix | 已完成 |
+| — | F1 IDE 体验（诊断增强 / CodeFix / 跨程序集 / 字面量键校验） | 已完成 |
 
 功能 backlog：[docs/ROADMAP.md](docs/ROADMAP.md)。
 
