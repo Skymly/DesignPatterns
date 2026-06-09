@@ -18,7 +18,7 @@
 | Decorator | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP025**。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP026**。
 
 ---
 
@@ -30,7 +30,8 @@
 
 | 项 | 说明 | 状态 |
 |----|------|------|
-| CompletionProvider | 为生成的 `*Keys` 常量 / 契约键提供 IDE 补全；优先级低于强类型常量与 CodeFix（见架构原则），需权衡维护成本 | [ ] |
+| CompletionProvider | 自定义 Roslyn CompletionProvider 经 NuGet 元包不可被 IDE 加载；需独立 VSIX/Rider 插件，暂不排期。成员补全已由 `public const string` 覆盖 | [ ] |
+| 字面量键校验 | DP025：对生成器管理的 Strategy/Factory 注册表调用点校验常量字符串键，并提供最近键 CodeFix | [x] |
 | 诊断信息增强 | 现有 `DP###` 增加更可操作的 message / help link；统一 `DiagnosticDescriptor` 文案风格 | [x] |
 | CodeFix 补全 | 为尚无 CodeFix 的可机械修复诊断补 Provider；评估 Composite 结构类诊断是否可部分自动化（DP010–012 仍归「明确不做」） | [x] |
 | 跨编译单元未注册检测 | 评估 DP006/DP023/DP024 在多项目/分部注册场景下的误报与可达性 | [x] |
@@ -102,7 +103,7 @@
 - M2 模式：Composite（`[CompositePart]`，DP010–015）、Decorator（`[Decorator]`，DP016–019）、EventAggregator（`IEventAggregator` / `IEventHandler<T>`）。
 - P3 生态：`[RegisterFactory]`（DP020–022）、`IReadOnlyRegistry<TKey,TValue>`（仅 `IStrategyRegistry` 继承）、net8.0 `FrozenDictionary` 优化、`DesignPatterns.Extensions.DependencyInjection`。
 - DI 与生成器打通：`RegisterDi` + `Create(IServiceProvider)`、`ServiceProviderStrategyRegistry`、集成测试。
-- Analyzer / CodeFix：DP006 未注册策略、DP023 未注册工厂、DP024 未注册 Handler；无参构造 / 接口实现 / RegisterStrategy / RegisterFactory / ICompositeBuildable / `partial`（DP001）/ `IDecorator<T>`（DP018）CodeFix；跨程序集注册收集（DP006/023/024 多项目场景）。
+- Analyzer / CodeFix：DP006 未注册策略、DP023 未注册工厂、DP024 未注册 Handler、DP025 未知注册表键；无参构造 / 接口实现 / RegisterStrategy / RegisterFactory / ICompositeBuildable / `partial`（DP001）/ `IDecorator<T>`（DP018）/ 最近键替换 CodeFix；跨程序集注册收集（DP006/023/024/025 多项目场景）。
 - F1 诊断增强：集中 `DesignPatternsDiagnosticDescriptors`、可操作 message 与 help link（`DP001`–`DP024`）。
 - Handler `AllowMultiple`：单类多 `[HandlerOrder]` / `[HandlerOrder<TContext>]`。
 - 工程化：Nuke `Ci` / `CiPack`、GitHub Actions、warnings-as-errors、Pack 消费者验证、元包 `lib/net8.0` 打包与校验、共享注册生成器 Helper、共享未注册契约 Analyzer 基类。
