@@ -215,6 +215,14 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         AnalyzerCategory);
 
+    public static DiagnosticDescriptor RegistryKeyNotRegistered { get; } = Create(
+        DiagnosticIds.RegistryKeyNotRegistered,
+        "Registry key is not registered",
+        "Key '{0}' is not registered for contract '{1}'. Registered keys: {2}.",
+        "Registry lookups should use keys declared by [RegisterStrategy] or [RegisterFactory] attributes.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

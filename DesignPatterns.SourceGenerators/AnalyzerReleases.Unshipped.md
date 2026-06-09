@@ -26,3 +26,4 @@ DP022    | DesignPatterns.Generators | Error    | Factory implementation missing
 DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing RegisterStrategy attribute
 DP023    | DesignPatterns.Analyzers | Info     | Factory implementation missing RegisterFactory attribute
 DP024    | DesignPatterns.Analyzers | Info     | Handler implementation missing HandlerOrder attribute
+DP025    | DesignPatterns.Analyzers | Info     | Registry key is not registered for contract

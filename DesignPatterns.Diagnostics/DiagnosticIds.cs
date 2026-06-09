@@ -29,4 +29,5 @@ public static class DiagnosticIds
     public const string RegisterFactoryMissingParameterlessConstructor = "DP022";
     public const string RegisterFactoryUnregisteredImplementation = "DP023";
     public const string HandlerOrderUnregisteredImplementation = "DP024";
+    public const string RegistryKeyNotRegistered = "DP025";
 }

@@ -109,4 +109,18 @@ internal static class CodeFixHelpers
 
         return new string(buffer, 0, index);
     }
+
+    internal const string SuggestedRegistryKeyPropertyName = "SuggestedRegistryKey";
+
+    internal static bool TryGetSuggestedRegistryKey(Diagnostic diagnostic, out string? suggestedKey)
+    {
+        suggestedKey = null;
+        if (diagnostic.Id != DiagnosticIds.RegistryKeyNotRegistered)
+        {
+            return false;
+        }
+
+        return diagnostic.Properties.TryGetValue(SuggestedRegistryKeyPropertyName, out suggestedKey) &&
+               !string.IsNullOrWhiteSpace(suggestedKey);
+    }
 }
