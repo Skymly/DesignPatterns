@@ -5,7 +5,7 @@
 > **开发规范的权威源是 [AGENTS.md](AGENTS.md)**（编码标准、兼容基线、打包、测试与覆盖率、诊断 ID、语言、版本与发布）。本文与之冲突时以 `AGENTS.md` 为准；功能 backlog 见 [docs/ROADMAP.md](docs/ROADMAP.md)。
 
 - **Issue**：使用 [GitHub Issue 表单](https://github.com/Skymly/DesignPatterns/issues/new/choose)（英语）；范围限定单一模块，见 [AGENTS.md](AGENTS.md)。
-- **Pull Request**：填写 [PR 模板](.github/pull_request_template.md)；一个 PR 只改一个模块。
+- **Pull Request**：填写 [PR 模板](.github/pull_request_template.md)；一个 PR 只改一个模块。PR 描述用**英语**，且与 commit 相同——**不要**写入 AI/Agent/Cursor 等工具 attribution 或 IDE 自动插入的 summary 块。
 
 ## 环境
 
@@ -61,5 +61,6 @@ dotnet test tests/DesignPatterns.SourceGenerators.Tests --filter FullyQualifiedN
 
 ## 文档
 
+- 用户可见变更：更新根目录 [`CHANGELOG.md`](CHANGELOG.md)（英语，Keep a Changelog；发版时将 `[Unreleased]` 条目迁入版本节）
 - 新模式：在 [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 增加示例项目、更新本仓 `docs/` 与 [`AGENTS.md`](AGENTS.md)
 - 架构 backlog：见 [`docs/ROADMAP.md`](docs/ROADMAP.md)
