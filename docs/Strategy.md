@@ -75,6 +75,28 @@ public sealed class StrategyRegistryBuilder<TKey, TStrategy> where TKey : notnul
 }
 ```
 
+### 异步策略解析
+
+`IAsyncStrategy<TInput, TOutput>` 与 `[RegisterStrategy]` 使用**同一套** Keys / Registry / `RegisterDi` 路径；契约可以是继承 `IAsyncStrategy<,>` 的专用接口，无需额外 attribute 或并行注册表类型。
+
+`StrategyRegistryExtensions` 提供按 key 解析并执行的便利方法：
+
+```csharp
+// 注册表值为 IAsyncStrategy<TInput, TOutput>
+var result = await registry.ExecuteAsync(PaymentAsyncStrategyKeys.Stripe, amount);
+
+// 注册表值为继承 IAsyncStrategy<,> 的契约（需显式指定 TContract / TOutput / TInput）
+var length = await registry.ExecuteAsync<ITextProcessor, int, string>(
+    TextProcessorKeys.Length, "hello");
+
+// 或等价写法
+var length = await registry.Get(TextProcessorKeys.Length).ExecuteAsync("hello");
+```
+
+`TryExecuteAsync` 与 `ExecuteAsync` 对称，未命中 key 时返回 `false` 而不抛异常。
+
+DI 场景：`{Contract}Registry.RegisterDi(services)` 后从容器解析 `IStrategyRegistry<string, TContract>`，再 `await registry.ExecuteAsync<...>(...)` 或 `Get(key).ExecuteAsync(...)`。
+
 ---
 
 ## 编译期：`[RegisterStrategy]` 源生成器
