@@ -11,7 +11,7 @@ namespace DesignPatterns.Behavioral;
 /// <typeparam name="TContext">The context type flowing through the pipeline.</typeparam>
 public sealed class HandlerPipelineBuilder<TContext>
 {
-    private readonly List<IHandler<TContext>> _handlers = new();
+    private readonly List<HandlerPipelineRegistration<TContext>> _handlers = new();
 
     /// <summary>
     /// Adds a handler to the pipeline. Handlers run in registration order.
@@ -23,7 +23,7 @@ public sealed class HandlerPipelineBuilder<TContext>
             throw new ArgumentNullException(nameof(handler));
         }
 
-        _handlers.Add(handler);
+        _handlers.Add(new HandlerPipelineRegistration<TContext>(handler, handler.GetType().Name));
         return this;
     }
 
@@ -38,7 +38,7 @@ public sealed class HandlerPipelineBuilder<TContext>
             throw new ArgumentNullException(nameof(handler));
         }
 
-        return Use(new DelegateHandler(handler));
+        return Use(new DelegateHandler(handler), "<delegate>");
     }
 
     /// <summary>
@@ -46,17 +46,23 @@ public sealed class HandlerPipelineBuilder<TContext>
     /// </summary>
     public HandlerPipeline<TContext> Build() => new(_handlers);
 
+    private HandlerPipelineBuilder<TContext> Use(IHandler<TContext> handler, string displayName)
+    {
+        _handlers.Add(new HandlerPipelineRegistration<TContext>(handler, displayName));
+        return this;
+    }
+
     private sealed class DelegateHandler : IHandler<TContext>
     {
-        private readonly Func<TContext, HandlerDelegate<TContext>, CancellationToken, ValueTask> _handler;
-
         public DelegateHandler(Func<TContext, HandlerDelegate<TContext>, CancellationToken, ValueTask> handler) =>
-            _handler = handler;
+            Handler = handler;
+
+        public Func<TContext, HandlerDelegate<TContext>, CancellationToken, ValueTask> Handler { get; }
 
         public ValueTask InvokeAsync(
             TContext context,
             HandlerDelegate<TContext> next,
             CancellationToken cancellationToken = default) =>
-            _handler(context, next, cancellationToken);
+            Handler(context, next, cancellationToken);
     }
 }
