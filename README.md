@@ -28,7 +28,7 @@
 |------|----------|--------|----------|
 | Singleton | `DesignPatterns.Creational` | `[GenerateSingleton]` | `Lazy<T>` + `Instance` |
 | Factory Registry | `DesignPatterns.Creational` | `IFactoryRegistry` / `FactoryRegistryBuilder` | `[RegisterFactory]` → Keys + Registry |
-| Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder | `[RegisterStrategy]` → Keys + Registry |
+| Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder / `ExecuteAsync` | `[RegisterStrategy]` → Keys + Registry |
 | Chain of Responsibility | `DesignPatterns.Behavioral` | `IHandler<T>` / `HandlerPipeline` | `[HandlerOrder]` → `{Context}HandlerPipeline` |
 | Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser`（`Traverse` / `TraverseForest`） | `[CompositePart]` → Keys + Catalog + `BuildRoot()` / `BuildForest()` |
 | Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder`（条件 `Add`） | `[Decorator]` → `{Contract}DecoratorStack` + `{Contract}DecoratorOrder` |
