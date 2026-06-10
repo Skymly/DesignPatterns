@@ -41,7 +41,7 @@
 | 项 | 说明 | 状态 |
 |----|------|------|
 | Composite 多根 / 森林 | 多根 catalog（`AssembleForest` / `BuildForest`）与森林遍历（`TraverseForest`），保持 `BuildRoot()` 向后兼容 | [x] |
-| Decorator 排序 / 条件 | 条件装饰（按运行时谓词启用）、显式 `DecoratorOrder` 校验诊断 | [ ] |
+| Decorator 排序 / 条件 | 条件装饰（`DecoratorStackBuilder` 谓词 `Add`）、`{Contract}DecoratorOrder` int 常量（DP016 重复 Order 校验保留） | [x] |
 | Strategy 异步路径 | 补全 `IAsyncStrategy` 的注册表 / 解析 / DI 路径与文档对齐 | [ ] |
 | Handler 增强 | 评估管道分支 / 短路可观测性（不引入完整中间件框架） | [ ] |
 
@@ -109,3 +109,4 @@
 - 工程化：Nuke `Ci` / `CiPack`、GitHub Actions、warnings-as-errors、Pack 消费者验证、元包 `lib/net8.0` 打包与校验、共享注册生成器 Helper、共享未注册契约 Analyzer 基类。
 - `Composite.Sample` 手动 `CompositeTreeBuilder` 演示。
 - F2 Composite 多根 / 森林：`AssembleForest`、`BuildForest()`、`TraverseForest` / `TraverseForestAsync`（见 [Composite.md](Composite.md)）。
+- F2 Decorator 排序 / 条件：`DecoratorStackBuilder` 谓词 `Add`、`{Contract}DecoratorOrder` 常量（见 [Decorator.md](Decorator.md)）。
