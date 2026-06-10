@@ -42,6 +42,36 @@ public sealed class GeneratedRegisterDiIntegrationTests
     }
 
     [Fact]
+    public async Task TextProcessorRegistry_RegisterDi_ExecuteAsyncViaExtension()
+    {
+        var services = new ServiceCollection();
+        TextProcessorRegistry.RegisterDi(services);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IStrategyRegistry<string, ITextProcessor>>();
+
+        var length = await registry.ExecuteAsync<ITextProcessor, int, string>(TextProcessorKeys.Length, "hello");
+        var doubleLength = await registry.ExecuteAsync<ITextProcessor, int, string>(TextProcessorKeys.DoubleLength, "hi");
+
+        Assert.Equal(5, length);
+        Assert.Equal(4, doubleLength);
+    }
+
+    [Fact]
+    public async Task TextProcessorRegistry_Create_ExecuteAsyncViaExtension()
+    {
+        var services = new ServiceCollection();
+        TextProcessorRegistry.RegisterDi(services);
+
+        var provider = services.BuildServiceProvider();
+        var registry = TextProcessorRegistry.Create(provider);
+
+        var result = await registry.ExecuteAsync<ITextProcessor, int, string>(TextProcessorKeys.Length, "abc");
+
+        Assert.Equal(3, result);
+    }
+
+    [Fact]
     public void ProductFactoryRegistry_RegisterDi_CreatesProductsFromContainer()
     {
         var services = new ServiceCollection();
