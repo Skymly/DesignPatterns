@@ -18,7 +18,10 @@
 | `HandlerDelegate<TContext>` | 调用链中下一阶段的委托 |
 | `IHandler<TContext>` | 单个 handler：`InvokeAsync(context, next, ct)` |
 | `HandlerPipelineBuilder<TContext>` | `Use(handler)` / `Use(delegate)`，`Build()` |
-| `HandlerPipeline<TContext>` | 不可变管道，`InvokeAsync(context, ct)` |
+| `HandlerPipeline<TContext>` | 不可变管道，`InvokeAsync(context, ct)`、`InvokeTracedAsync`（见下文） |
+| `HandlerPipelineTrace` | 一次 traced 调用的逐步结果 |
+| `HandlerPipelineStep` | 单步：索引、handler 显示名、状态 |
+| `HandlerPipelineStepStatus` | `Completed` / `ShortCircuited` / `NotReached` |
 
 ## 用法
 
@@ -41,8 +44,41 @@ await pipeline.InvokeAsync(new RequestContext("/api/orders", isAuthenticated: tr
 
 | 场景 | 行为 |
 |------|------|
-| 空管道 | `InvokeAsync` 正常完成，不抛异常 |
+| 空管道 | `InvokeAsync` / `InvokeTracedAsync` 正常完成，trace 为空 |
 | `Use(null)` | `ArgumentNullException` |
+
+### 短路可观测性（`InvokeTracedAsync`）
+
+F2 增强：在不引入完整中间件框架的前提下，记录**每个已注册 handler** 在一次调用中的结局，便于调试鉴权拦截、早退逻辑等。
+
+```csharp
+var trace = await pipeline.InvokeTracedAsync(context, cancellationToken);
+
+foreach (var step in trace.Steps)
+{
+    Console.WriteLine($"{step.Index}: {step.Name} → {step.Status}");
+}
+
+if (trace.Steps.Any(s => s.Status == HandlerPipelineStepStatus.NotReached))
+{
+    // 有 handler 因更早的短路而从未执行
+}
+```
+
+| `HandlerPipelineStepStatus` | 含义 |
+|----------------------------|------|
+| **Completed** | Handler 已执行且调用了 `next` |
+| **ShortCircuited** | Handler 已执行但**未**调用 `next`（管道在此 handler 之后不再向下） |
+| **NotReached** | Handler **未执行**（因更早的 handler 短路） |
+
+**与 `InvokeAsync` 的关系**：`InvokeTracedAsync` 不改变执行顺序与短路语义，仅额外返回 `HandlerPipelineTrace`；委托 handler 在 trace 中显示名为 `"<delegate>"`。
+
+**解读提示**：
+
+- 区分「提前拦截」与「正常终端」：看**后续** handler 是否为 `NotReached`。例如鉴权 handler 不写 `401` 且不调用 `next` 时，其后 handler 应为 `NotReached`；而链末 handler 不调用 `next` 属于常见终端写法，其自身为 `ShortCircuited`，但**不代表**前面 handler 失败。
+- `HandlerPipelineTrace.WasShortCircuited` 为「是否存在任一步为 `ShortCircuited`」；终端 handler 不调用 `next` 时也会为 `true`，不宜单独作为「业务短路」判据。
+
+集成测试见 `tests/DesignPatterns.Tests/Integration/HandlerPipelineIntegrationTests.cs`（生成管道 + 鉴权通过 / 失败两条 trace 路径）。
 
 ## 与 Strategy / Factory 的边界
 
