@@ -42,5 +42,6 @@ Closes #
 
 - [ ] This PR touches **only one** solution module (see [AGENTS.md](AGENTS.md))
 - [ ] Commit messages are in **English** (no AI/agent tooling mentions in commits)
+- [ ] PR description is **English** only — no AI/agent/Cursor tool attribution, no auto-generated summary blocks (e.g. `CURSOR_SUMMARY`, "Made with …")
 - [ ] No version bumps, tags, releases, or NuGet publish steps included unless explicitly requested
 - [ ] Public API / diagnostic / generated code changes are documented if user-visible
