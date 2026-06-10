@@ -44,6 +44,32 @@ public sealed class StrategyRegistryAsyncExtensionsTests
     }
 
     [Fact]
+    public async Task TryExecuteAsync_WorksWithDerivedAsyncStrategyContract()
+    {
+        var registry = new StrategyRegistryBuilder<string, ILengthProcessor>()
+            .Register("length", new LengthProcessor())
+            .Build();
+
+        var found = registry.TryExecuteAsync<ILengthProcessor, int, string>("length", "hello", out var result);
+
+        Assert.True(found);
+        Assert.Equal(5, await result);
+    }
+
+    [Fact]
+    public async Task TryExecuteAsync_ReturnsFalseForMissingDerivedContractKey()
+    {
+        var registry = new StrategyRegistryBuilder<string, ILengthProcessor>()
+            .Register("length", new LengthProcessor())
+            .Build();
+
+        var found = registry.TryExecuteAsync<ILengthProcessor, int, string>("missing", "hello", out var result);
+
+        Assert.False(found);
+        Assert.Equal(default(ValueTask<int>), result);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_ReturnsExpectedResult()
     {
         var registry = new StrategyRegistryBuilder<string, IAsyncStrategy<int, int>>()
