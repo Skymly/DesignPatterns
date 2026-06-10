@@ -220,6 +220,20 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         context.AddSource(
             $"{serviceType.Name}.{stackClassName}.g.cs",
             SourceText.From(compilationUnit.ToFullString(), Encoding.UTF8));
+
+        var orderClassName = DecoratorStackSyntaxFactory.GetOrderClassName(serviceType);
+        var orderEntries = decorators
+            .Select(d => (ConstantName: d.DecoratorType.Name, OrderValue: d.Order))
+            .ToList();
+
+        var orderCompilationUnit = DecoratorStackSyntaxFactory.CreateOrderCompilationUnit(
+            namespaceName,
+            orderClassName,
+            orderEntries);
+
+        context.AddSource(
+            $"{serviceType.Name}.{orderClassName}.g.cs",
+            SourceText.From(orderCompilationUnit.ToFullString(), Encoding.UTF8));
     }
 
     private static bool ImplementsContract(INamedTypeSymbol decoratorType, INamedTypeSymbol serviceType)
