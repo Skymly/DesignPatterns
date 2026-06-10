@@ -87,4 +87,46 @@ public sealed class HandlerPipelineIntegrationTests
         Assert.Equal("401", context.Response);
         Assert.Equal(1, IntegrationLoggingHandler.InvokeCount);
     }
+
+    [Fact]
+    public async Task GeneratedPipeline_InvokeTracedAsync_AllHandlersRun_TerminalDoesNotCallNext()
+    {
+        IntegrationLoggingHandler.InvokeCount = 0;
+        var pipeline = IntegrationRequestContextHandlerPipeline.Instance;
+        var context = new IntegrationRequestContext(isAuthenticated: true);
+
+        var trace = await pipeline.InvokeTracedAsync(context);
+
+        Assert.Equal("200", context.Response);
+        Assert.Equal(1, IntegrationLoggingHandler.InvokeCount);
+        Assert.Equal(3, trace.Steps.Count);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[0].Status);
+        Assert.Equal(nameof(IntegrationLoggingHandler), trace.Steps[0].Name);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[1].Status);
+        Assert.Equal(nameof(IntegrationAuthHandler), trace.Steps[1].Name);
+        Assert.Equal(HandlerPipelineStepStatus.ShortCircuited, trace.Steps[2].Status);
+        Assert.Equal(nameof(IntegrationTerminalHandler), trace.Steps[2].Name);
+        Assert.NotEqual(HandlerPipelineStepStatus.NotReached, trace.Steps[2].Status);
+    }
+
+    [Fact]
+    public async Task GeneratedPipeline_InvokeTracedAsync_ShortCircuit_MarksTerminalNotReached()
+    {
+        IntegrationLoggingHandler.InvokeCount = 0;
+        var pipeline = IntegrationRequestContextHandlerPipeline.Instance;
+        var context = new IntegrationRequestContext(isAuthenticated: false);
+
+        var trace = await pipeline.InvokeTracedAsync(context);
+
+        Assert.Equal("401", context.Response);
+        Assert.Equal(1, IntegrationLoggingHandler.InvokeCount);
+        Assert.Equal(3, trace.Steps.Count);
+        Assert.True(trace.WasShortCircuited);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[0].Status);
+        Assert.Equal(nameof(IntegrationLoggingHandler), trace.Steps[0].Name);
+        Assert.Equal(HandlerPipelineStepStatus.ShortCircuited, trace.Steps[1].Status);
+        Assert.Equal(nameof(IntegrationAuthHandler), trace.Steps[1].Name);
+        Assert.Equal(HandlerPipelineStepStatus.NotReached, trace.Steps[2].Status);
+        Assert.Equal(nameof(IntegrationTerminalHandler), trace.Steps[2].Name);
+    }
 }
