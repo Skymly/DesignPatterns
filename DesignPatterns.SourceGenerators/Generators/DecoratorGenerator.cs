@@ -222,9 +222,21 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             SourceText.From(compilationUnit.ToFullString(), Encoding.UTF8));
 
         var orderClassName = DecoratorStackSyntaxFactory.GetOrderClassName(serviceType);
-        var orderEntries = decorators
-            .Select(d => (ConstantName: d.DecoratorType.Name, OrderValue: d.Order))
-            .ToList();
+        var constantNames = new HashSet<string>(StringComparer.Ordinal);
+        var orderEntries = new List<(string ConstantName, int OrderValue)>();
+        foreach (var decorator in decorators)
+        {
+            var baseConstantName = decorator.DecoratorType.Name;
+            var constantName = baseConstantName;
+            var suffix = 1;
+            while (!constantNames.Add(constantName))
+            {
+                constantName = baseConstantName + "_" + suffix;
+                suffix++;
+            }
+
+            orderEntries.Add((constantName, decorator.Order));
+        }
 
         var orderCompilationUnit = DecoratorStackSyntaxFactory.CreateOrderCompilationUnit(
             namespaceName,

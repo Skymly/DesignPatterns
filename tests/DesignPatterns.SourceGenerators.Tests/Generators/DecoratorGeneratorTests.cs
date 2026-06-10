@@ -87,6 +87,53 @@ public sealed class DecoratorGeneratorTests
     }
 
     [Fact]
+    public void GeneratesUniqueDecoratorOrderConstantsForCollidingTypeNames()
+    {
+        const string source = """
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly
+            {
+                public interface IPaymentService
+                {
+                    int Pay(int amount);
+                }
+            }
+
+            namespace First
+            {
+                [Decorator<TestAssembly.IPaymentService>(10)]
+                public sealed class LoggingDecorator : TestAssembly.IPaymentService, IDecorator<TestAssembly.IPaymentService>
+                {
+                    public TestAssembly.IPaymentService Decorate(TestAssembly.IPaymentService inner) => inner;
+
+                    public int Pay(int amount) => amount;
+                }
+            }
+
+            namespace Second
+            {
+                [Decorator<TestAssembly.IPaymentService>(20)]
+                public sealed class LoggingDecorator : TestAssembly.IPaymentService, IDecorator<TestAssembly.IPaymentService>
+                {
+                    public TestAssembly.IPaymentService Decorate(TestAssembly.IPaymentService inner) => inner;
+
+                    public int Pay(int amount) => amount;
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<DecoratorGenerator>(
+            ("Decorators.cs", source));
+
+        var generated = SourceGeneratorTestContext.GetGeneratedSources(runResult);
+        var orderSource = generated["IPaymentService.PaymentServiceDecoratorOrder.g.cs"];
+
+        Assert.Contains("public const int LoggingDecorator = 10;", orderSource, StringComparison.Ordinal);
+        Assert.Contains("public const int LoggingDecorator_1 = 20;", orderSource, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public Task GeneratesStackWithNonGenericAttribute()
     {
         const string source = """
