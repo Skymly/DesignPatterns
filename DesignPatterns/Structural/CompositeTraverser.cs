@@ -34,6 +34,32 @@ public static class CompositeTraverser
     }
 
     /// <summary>
+    /// Traverses a forest (multiple root trees) synchronously.
+    /// </summary>
+    /// <param name="roots">Root nodes to traverse, in forest order.</param>
+    /// <param name="visitor">Callback invoked for each visited node (node, depth, siblingIndex).</param>
+    /// <param name="options">Optional traversal options.</param>
+    public static void TraverseForest<TNode>(
+        IReadOnlyList<TNode> roots,
+        Action<TNode, int, int> visitor,
+        CompositeTraversalOptions<TNode>? options = null)
+        where TNode : ICompositeNode<TNode>
+    {
+        if (roots is null)
+        {
+            throw new ArgumentNullException(nameof(roots));
+        }
+
+        if (visitor is null)
+        {
+            throw new ArgumentNullException(nameof(visitor));
+        }
+
+        options ??= new CompositeTraversalOptions<TNode>();
+        TraverseForestCore(roots, visitor, options, CancellationToken.None);
+    }
+
+    /// <summary>
     /// Traverses the tree asynchronously.
     /// </summary>
     public static async ValueTask TraverseAsync<TNode>(
@@ -57,6 +83,75 @@ public static class CompositeTraverser
         await TraverseAsyncCore(root, visitor, options, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Traverses a forest (multiple root trees) asynchronously.
+    /// </summary>
+    /// <param name="roots">Root nodes to traverse, in forest order.</param>
+    /// <param name="visitor">Async callback invoked for each visited node (node, depth, siblingIndex, cancellationToken).</param>
+    /// <param name="options">Optional traversal options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public static async ValueTask TraverseForestAsync<TNode>(
+        IReadOnlyList<TNode> roots,
+        Func<TNode, int, int, CancellationToken, ValueTask> visitor,
+        CompositeTraversalOptions<TNode>? options = null,
+        CancellationToken cancellationToken = default)
+        where TNode : ICompositeNode<TNode>
+    {
+        if (roots is null)
+        {
+            throw new ArgumentNullException(nameof(roots));
+        }
+
+        if (visitor is null)
+        {
+            throw new ArgumentNullException(nameof(visitor));
+        }
+
+        options ??= new CompositeTraversalOptions<TNode>();
+        await TraverseForestAsyncCore(roots, visitor, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static void TraverseForestCore<TNode>(
+        IReadOnlyList<TNode> roots,
+        Action<TNode, int, int> visitor,
+        CompositeTraversalOptions<TNode> options,
+        CancellationToken cancellationToken)
+        where TNode : ICompositeNode<TNode>
+    {
+        switch (options.Order)
+        {
+            case CompositeTraversalOrder.DepthFirstPreOrder:
+                for (var i = 0; i < roots.Count; i++)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    DepthFirstPreOrderWithSibling(roots[i], visitor, options, cancellationToken, depth: 0, i);
+                }
+
+                break;
+            case CompositeTraversalOrder.DepthFirstPostOrder:
+                for (var i = 0; i < roots.Count; i++)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+
+                    DepthFirstPostOrderWithSibling(roots[i], visitor, options, cancellationToken, depth: 0, i);
+                }
+
+                break;
+            case CompositeTraversalOrder.BreadthFirst:
+                BreadthFirstForest(roots, visitor, options, cancellationToken);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(options.Order));
+        }
+    }
+
     private static void TraverseCore<TNode>(
         TNode root,
         Action<TNode, int, int> visitor,
@@ -74,6 +169,61 @@ public static class CompositeTraverser
                 break;
             case CompositeTraversalOrder.BreadthFirst:
                 BreadthFirst(root, visitor, options, cancellationToken);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(options.Order));
+        }
+    }
+
+    private static async ValueTask TraverseForestAsyncCore<TNode>(
+        IReadOnlyList<TNode> roots,
+        Func<TNode, int, int, CancellationToken, ValueTask> visitor,
+        CompositeTraversalOptions<TNode> options,
+        CancellationToken cancellationToken)
+        where TNode : ICompositeNode<TNode>
+    {
+        switch (options.Order)
+        {
+            case CompositeTraversalOrder.DepthFirstPreOrder:
+                for (var i = 0; i < roots.Count; i++)
+                {
+                    await DepthFirstPreOrderWithSiblingAsync(
+                            roots[i],
+                            visitor,
+                            options,
+                            cancellationToken,
+                            depth: 0,
+                            i)
+                        .ConfigureAwait(false);
+
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                }
+
+                break;
+            case CompositeTraversalOrder.DepthFirstPostOrder:
+                for (var i = 0; i < roots.Count; i++)
+                {
+                    await DepthFirstPostOrderWithSiblingAsync(
+                            roots[i],
+                            visitor,
+                            options,
+                            cancellationToken,
+                            depth: 0,
+                            i)
+                        .ConfigureAwait(false);
+
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                }
+
+                break;
+            case CompositeTraversalOrder.BreadthFirst:
+                await BreadthFirstForestAsync(roots, visitor, options, cancellationToken).ConfigureAwait(false);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(options.Order));
@@ -276,7 +426,32 @@ public static class CompositeTraverser
     {
         var queue = new Queue<(TNode Node, int Depth, int SiblingIndex)>();
         queue.Enqueue((root, 0, 0));
+        BreadthFirstCore(queue, visitor, options, cancellationToken);
+    }
 
+    private static void BreadthFirstForest<TNode>(
+        IReadOnlyList<TNode> roots,
+        Action<TNode, int, int> visitor,
+        CompositeTraversalOptions<TNode> options,
+        CancellationToken cancellationToken)
+        where TNode : ICompositeNode<TNode>
+    {
+        var queue = new Queue<(TNode Node, int Depth, int SiblingIndex)>();
+        for (var i = 0; i < roots.Count; i++)
+        {
+            queue.Enqueue((roots[i], 0, i));
+        }
+
+        BreadthFirstCore(queue, visitor, options, cancellationToken);
+    }
+
+    private static void BreadthFirstCore<TNode>(
+        Queue<(TNode Node, int Depth, int SiblingIndex)> queue,
+        Action<TNode, int, int> visitor,
+        CompositeTraversalOptions<TNode> options,
+        CancellationToken cancellationToken)
+        where TNode : ICompositeNode<TNode>
+    {
         while (queue.Count > 0)
         {
             if (cancellationToken.IsCancellationRequested)
@@ -443,7 +618,32 @@ public static class CompositeTraverser
     {
         var queue = new Queue<(TNode Node, int Depth, int SiblingIndex)>();
         queue.Enqueue((root, 0, 0));
+        await BreadthFirstCoreAsync(queue, visitor, options, cancellationToken).ConfigureAwait(false);
+    }
 
+    private static async ValueTask BreadthFirstForestAsync<TNode>(
+        IReadOnlyList<TNode> roots,
+        Func<TNode, int, int, CancellationToken, ValueTask> visitor,
+        CompositeTraversalOptions<TNode> options,
+        CancellationToken cancellationToken)
+        where TNode : ICompositeNode<TNode>
+    {
+        var queue = new Queue<(TNode Node, int Depth, int SiblingIndex)>();
+        for (var i = 0; i < roots.Count; i++)
+        {
+            queue.Enqueue((roots[i], 0, i));
+        }
+
+        await BreadthFirstCoreAsync(queue, visitor, options, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async ValueTask BreadthFirstCoreAsync<TNode>(
+        Queue<(TNode Node, int Depth, int SiblingIndex)> queue,
+        Func<TNode, int, int, CancellationToken, ValueTask> visitor,
+        CompositeTraversalOptions<TNode> options,
+        CancellationToken cancellationToken)
+        where TNode : ICompositeNode<TNode>
+    {
         while (queue.Count > 0)
         {
             if (cancellationToken.IsCancellationRequested)

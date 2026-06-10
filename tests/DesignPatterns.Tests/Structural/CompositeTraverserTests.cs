@@ -250,6 +250,121 @@ public sealed class CompositeTraverserTests
         Assert.Contains("empty", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void TraverseForest_DepthFirstPreOrder_VisitsAllTreesInForestOrder()
+    {
+        var forest = BuildSampleForest();
+        var visited = new List<string>();
+        var rootIndices = new List<int>();
+
+        CompositeTraverser.TraverseForest(
+            forest,
+            (node, _, siblingIndex) =>
+            {
+                visited.Add(node.Name);
+                if (node.Name is "root-a" or "root-b")
+                {
+                    rootIndices.Add(siblingIndex);
+                }
+            });
+
+        Assert.Equal(new[] { "root-a", "child-a", "grandchild-a", "root-b", "child-b" }, visited);
+        Assert.Equal(new[] { 0, 1 }, rootIndices);
+    }
+
+    [Fact]
+    public void TraverseForest_DepthFirstPostOrder_VisitsChildrenBeforeParentsAcrossTrees()
+    {
+        var forest = BuildSampleForest();
+        var visited = new List<string>();
+
+        CompositeTraverser.TraverseForest(
+            forest,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { Order = CompositeTraversalOrder.DepthFirstPostOrder });
+
+        Assert.Equal(new[] { "grandchild-a", "child-a", "root-a", "child-b", "root-b" }, visited);
+    }
+
+    [Fact]
+    public void TraverseForest_BreadthFirst_VisitsLevelByLevelAcrossTrees()
+    {
+        var forest = BuildSampleForest();
+        var visited = new List<string>();
+
+        CompositeTraverser.TraverseForest(
+            forest,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { Order = CompositeTraversalOrder.BreadthFirst });
+
+        Assert.Equal(new[] { "root-a", "root-b", "child-a", "child-b", "grandchild-a" }, visited);
+    }
+
+    [Fact]
+    public void TraverseForest_EmptyForest_DoesNotInvokeVisitor()
+    {
+        var visited = new List<string>();
+
+        CompositeTraverser.TraverseForest(
+            Array.Empty<ITestNode>(),
+            (node, _, _) => visited.Add(node.Name));
+
+        Assert.Empty(visited);
+    }
+
+    [Fact]
+    public void TraverseForest_MaxDepth_AppliesAcrossAllRoots()
+    {
+        var forest = BuildSampleForest();
+        var visited = new List<string>();
+
+        CompositeTraverser.TraverseForest(
+            forest,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { MaxDepth = 1 });
+
+        Assert.Equal(new[] { "root-a", "child-a", "root-b", "child-b" }, visited);
+    }
+
+    [Fact]
+    public async Task TraverseForestAsync_CancellationRequested_StopsEarly()
+    {
+        var forest = BuildSampleForest();
+        using var cts = new CancellationTokenSource();
+        var visited = new List<string>();
+
+        await CompositeTraverser.TraverseForestAsync(
+            forest,
+            (node, _, _, _) =>
+            {
+                visited.Add(node.Name);
+                if (node.Name == "child-a")
+                {
+                    cts.Cancel();
+                }
+
+                return default;
+            },
+            cancellationToken: cts.Token);
+
+        Assert.Equal(new[] { "root-a", "child-a" }, visited);
+    }
+
+    private static IReadOnlyList<ITestNode> BuildSampleForest()
+    {
+        var rootA = new TestNode("root-a");
+        var childA = new TestNode("child-a");
+        var grandchildA = new TestNode("grandchild-a");
+        var rootB = new TestNode("root-b");
+        var childB = new TestNode("child-b");
+
+        childA.SetChildren(new[] { grandchildA });
+        rootA.SetChildren(new[] { childA });
+        rootB.SetChildren(new[] { childB });
+
+        return new ITestNode[] { rootA, rootB };
+    }
+
     private static ITestNode BuildSampleTree()
     {
         var root = new TestNode("root");
