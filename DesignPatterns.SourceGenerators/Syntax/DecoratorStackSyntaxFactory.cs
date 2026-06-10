@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -10,6 +11,41 @@ internal static class DecoratorStackSyntaxFactory
 {
     public static string GetStackClassName(INamedTypeSymbol serviceType) =>
         GetBaseName(serviceType) + "DecoratorStack";
+
+    public static string GetOrderClassName(INamedTypeSymbol serviceType) =>
+        GetBaseName(serviceType) + "DecoratorOrder";
+
+    public static CompilationUnitSyntax CreateOrderCompilationUnit(
+        string? namespaceName,
+        string orderClassName,
+        IReadOnlyList<(string ConstantName, int OrderValue)> orders)
+    {
+        var members = orders.Select(order =>
+            SyntaxFactory.FieldDeclaration(
+                    SyntaxFactory.VariableDeclaration(
+                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)))
+                        .AddVariables(
+                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(order.ConstantName))
+                                .WithInitializer(
+                                    SyntaxFactory.EqualsValueClause(
+                                        SyntaxFactory.LiteralExpression(
+                                            SyntaxKind.NumericLiteralExpression,
+                                            SyntaxFactory.Literal(order.OrderValue))))))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.ConstKeyword))));
+
+        var orderClass = SyntaxFactory.ClassDeclaration(orderClassName)
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .AddMembers(members.ToArray());
+
+        return WrapInCompilationUnit(namespaceName, orderClass);
+    }
 
     public static CompilationUnitSyntax CreateStackCompilationUnit(
         string? namespaceName,

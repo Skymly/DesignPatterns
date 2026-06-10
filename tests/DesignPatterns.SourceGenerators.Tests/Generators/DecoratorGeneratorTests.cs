@@ -51,6 +51,42 @@ public sealed class DecoratorGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesDecoratorOrderConstants()
+    {
+        const string source = """
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(20)]
+            public sealed class MetricsPaymentDecorator : IPaymentService, IDecorator<IPaymentService>
+            {
+                public IPaymentService Decorate(IPaymentService inner) => inner;
+
+                public int Pay(int amount) => amount;
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public sealed class LoggingPaymentDecorator : IPaymentService, IDecorator<IPaymentService>
+            {
+                public IPaymentService Decorate(IPaymentService inner) => inner;
+
+                public int Pay(int amount) => amount;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<DecoratorGenerator>(
+            ("Decorators.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task GeneratesStackWithNonGenericAttribute()
     {
         const string source = """
