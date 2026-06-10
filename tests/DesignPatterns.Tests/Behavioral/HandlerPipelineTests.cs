@@ -181,6 +181,84 @@ public sealed class HandlerPipelineTests
         Assert.Equal(cts.Token, captured);
     }
 
+    [Fact]
+    public async Task InvokeTracedAsync_EmptyPipeline_ReturnsEmptyTrace()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>().Build();
+
+        var trace = await pipeline.InvokeTracedAsync("req");
+
+        Assert.Empty(trace.Steps);
+        Assert.False(trace.WasShortCircuited);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_AllHandlersContinue_MarksCompleted()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        var trace = await pipeline.InvokeTracedAsync("hi");
+
+        Assert.Equal(2, trace.Steps.Count);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[0].Status);
+        Assert.Equal(nameof(AppendHandler), trace.Steps[0].Name);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[1].Status);
+        Assert.Equal("<delegate>", trace.Steps[1].Name);
+        Assert.False(trace.WasShortCircuited);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_ShortCircuit_MarksRemainingNotReached()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((_, _, _) => default)
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        var trace = await pipeline.InvokeTracedAsync("hi");
+
+        Assert.Equal(3, trace.Steps.Count);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[0].Status);
+        Assert.Equal(HandlerPipelineStepStatus.ShortCircuited, trace.Steps[1].Status);
+        Assert.Equal(HandlerPipelineStepStatus.NotReached, trace.Steps[2].Status);
+        Assert.True(trace.WasShortCircuited);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_MatchesInvokeAsyncBehavior()
+    {
+        string? tracedResult = null;
+        string? plainResult = null;
+
+        var tracedPipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((ctx, _, _) =>
+            {
+                tracedResult = ctx;
+                return default;
+            })
+            .Build();
+
+        var plainPipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((ctx, _, _) =>
+            {
+                plainResult = ctx;
+                return default;
+            })
+            .Build();
+
+        await tracedPipeline.InvokeTracedAsync("hi");
+        await plainPipeline.InvokeAsync("hi");
+
+        Assert.Equal("hi!", tracedResult);
+        Assert.Equal(plainResult, tracedResult);
+    }
+
     private sealed class AppendHandler : IHandler<string>
     {
         private readonly string _suffix;
