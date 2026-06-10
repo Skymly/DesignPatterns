@@ -37,6 +37,41 @@ public sealed class RegisterStrategyGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesKeysAndRegistryForAsyncStrategyContract()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface IProcessor : IAsyncStrategy<string, int>
+            {
+            }
+
+            [RegisterStrategy<IProcessor>("fast")]
+            public sealed class FastProcessor : IProcessor
+            {
+                public ValueTask<int> ExecuteAsync(string input, CancellationToken cancellationToken = default) =>
+                    new ValueTask<int>(input.Length);
+            }
+
+            [RegisterStrategy<IProcessor>("slow")]
+            public sealed class SlowProcessor : IProcessor
+            {
+                public ValueTask<int> ExecuteAsync(string input, CancellationToken cancellationToken = default) =>
+                    new ValueTask<int>(input.Length * 2);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterStrategyGenerator>(
+            ("AsyncStrategies.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task GeneratesKeysAndRegistryWithNonGenericAttribute()
     {
         const string source = """
