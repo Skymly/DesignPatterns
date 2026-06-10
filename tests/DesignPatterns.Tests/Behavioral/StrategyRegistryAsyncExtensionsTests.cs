@@ -21,6 +21,28 @@ public sealed class StrategyRegistryAsyncExtensionsTests
             new ValueTask<int>(input.Length);
     }
 
+    private interface ILengthProcessor : IAsyncStrategy<string, int>
+    {
+    }
+
+    private sealed class LengthProcessor : ILengthProcessor
+    {
+        public ValueTask<int> ExecuteAsync(string input, CancellationToken cancellationToken = default) =>
+            new ValueTask<int>(input.Length);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WorksWithDerivedAsyncStrategyContract()
+    {
+        var registry = new StrategyRegistryBuilder<string, ILengthProcessor>()
+            .Register("length", new LengthProcessor())
+            .Build();
+
+        var result = await registry.ExecuteAsync<ILengthProcessor, int, string>("length", "hello");
+
+        Assert.Equal(5, result);
+    }
+
     [Fact]
     public async Task ExecuteAsync_ReturnsExpectedResult()
     {
