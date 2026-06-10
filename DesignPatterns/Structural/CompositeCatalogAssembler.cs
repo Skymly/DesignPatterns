@@ -30,23 +30,8 @@ public static class CompositeCatalogAssembler
             throw new CompositeAssemblyException("Composite catalog is empty.");
         }
 
-        var entryByKey = entries.ToDictionary(entry => entry.Key, StringComparer.Ordinal);
-        var childrenByParent = entries
-            .Where(entry => entry.ParentKey is not null)
-            .GroupBy(entry => entry.ParentKey!, StringComparer.Ordinal)
-            .ToDictionary(
-                group => group.Key,
-                group => (IReadOnlyList<CompositeCatalogEntry<TNode>>)group
-                    .OrderBy(entry => entry.Order)
-                    .ThenBy(entry => entry.Key, StringComparer.Ordinal)
-                    .ToList(),
-                StringComparer.Ordinal);
-
-        var roots = entries
-            .Where(entry => entry.ParentKey is null)
-            .OrderBy(entry => entry.Order)
-            .ThenBy(entry => entry.Key, StringComparer.Ordinal)
-            .ToList();
+        var (entryByKey, childrenByParent) = BuildMaps(entries);
+        var roots = GetRootEntries(entries);
 
         if (roots.Count != 1)
         {
@@ -60,6 +45,70 @@ public static class CompositeCatalogAssembler
         AssembleSubtree(roots[0].Key, entryByKey, childrenByParent, instances);
         return instances[roots[0].Key];
     }
+
+    /// <summary>
+    /// Builds a forest (one or more root trees) from catalog entries.
+    /// </summary>
+    /// <typeparam name="TNode">The composite contract type.</typeparam>
+    /// <param name="entries">Catalog entries describing the forest.</param>
+    /// <returns>Root nodes ordered by <see cref="CompositeCatalogEntry{TNode}.Order"/> then key.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="entries"/> is null.</exception>
+    public static IReadOnlyList<TNode> AssembleForest<TNode>(IReadOnlyList<CompositeCatalogEntry<TNode>> entries)
+        where TNode : class, ICompositeNode<TNode>
+    {
+        if (entries is null)
+        {
+            throw new ArgumentNullException(nameof(entries));
+        }
+
+        if (entries.Count == 0)
+        {
+            return Array.Empty<TNode>();
+        }
+
+        var (entryByKey, childrenByParent) = BuildMaps(entries);
+        var roots = GetRootEntries(entries);
+        var instances = new Dictionary<string, TNode>(StringComparer.Ordinal);
+        var forest = new List<TNode>(roots.Count);
+
+        foreach (var root in roots)
+        {
+            AssembleSubtree(root.Key, entryByKey, childrenByParent, instances);
+            forest.Add(instances[root.Key]);
+        }
+
+        return forest;
+    }
+
+    private static (
+        IReadOnlyDictionary<string, CompositeCatalogEntry<TNode>> EntryByKey,
+        IReadOnlyDictionary<string, IReadOnlyList<CompositeCatalogEntry<TNode>>> ChildrenByParent) BuildMaps<TNode>(
+        IReadOnlyList<CompositeCatalogEntry<TNode>> entries)
+        where TNode : ICompositeNode<TNode>
+    {
+        var entryByKey = entries.ToDictionary(entry => entry.Key, StringComparer.Ordinal);
+        var childrenByParent = entries
+            .Where(entry => entry.ParentKey is not null)
+            .GroupBy(entry => entry.ParentKey!, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => (IReadOnlyList<CompositeCatalogEntry<TNode>>)group
+                    .OrderBy(entry => entry.Order)
+                    .ThenBy(entry => entry.Key, StringComparer.Ordinal)
+                    .ToList(),
+                StringComparer.Ordinal);
+
+        return (entryByKey, childrenByParent);
+    }
+
+    private static List<CompositeCatalogEntry<TNode>> GetRootEntries<TNode>(
+        IReadOnlyList<CompositeCatalogEntry<TNode>> entries)
+        where TNode : ICompositeNode<TNode> =>
+        entries
+            .Where(entry => entry.ParentKey is null)
+            .OrderBy(entry => entry.Order)
+            .ThenBy(entry => entry.Key, StringComparer.Ordinal)
+            .ToList();
 
     private static void AssembleSubtree<TNode>(
         string key,
