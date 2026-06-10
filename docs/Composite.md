@@ -108,7 +108,7 @@ var forest = CompositeCatalogAssembler.AssembleForest(entries);
 
 见 [DesignPatterns.Samples.Composite](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Composite)：
 
-1. **Catalog**：`MenuNodeCompositeCatalog.BuildRoot()` + 深度优先遍历（`[CompositePart]` 生成器）
+1. **Catalog 森林**：`MenuNodeCompositeCatalog.BuildForest()` + `TraverseForest`（多根 `[CompositePart]`；多根时 `BuildRoot()` 抛错）
 2. **手动**：`CompositeTreeBuilder<IMenuNode>()` 的 `Leaf` / `Branch` / `Build()`（`ManualMenuNodes`，无 catalog 特性）
 
 ## 编译期：`[CompositePart]` 源生成器
