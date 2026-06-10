@@ -31,7 +31,7 @@
 | Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder | `[RegisterStrategy]` → Keys + Registry |
 | Chain of Responsibility | `DesignPatterns.Behavioral` | `IHandler<T>` / `HandlerPipeline` | `[HandlerOrder]` → `{Context}HandlerPipeline` |
 | Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser`（`Traverse` / `TraverseForest`） | `[CompositePart]` → Keys + Catalog + `BuildRoot()` / `BuildForest()` |
-| Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder` | `[Decorator]` → `{Contract}DecoratorStack.Build` |
+| Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder`（条件 `Add`） | `[Decorator]` → `{Contract}DecoratorStack` + `{Contract}DecoratorOrder` |
 | Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | — |
 
 另可选 **`DesignPatterns.Extensions.DependencyInjection`**：手动 `AddStrategyRegistry` / `AddFactoryRegistry` / `AddHandlerPipeline`，以及引用该扩展项目/包时由源生成器输出的 **`{Contract}Registry.RegisterDi(services)`**（Strategy / Factory / Handler 从容器解析，见 [docs/Strategy.md](docs/Strategy.md)）。当前本仓库的元包 **`DesignPatterns`** 不包含该 DI 扩展；独立 NuGet 发布策略待 API 与发版流程稳定后再确定。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
