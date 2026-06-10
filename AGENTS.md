@@ -242,7 +242,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 规范：
 
-- **xunit 版本统一**：测试项目应使用同一 xunit 版本（当前 [`Directory.Packages.props`](Directory.Packages.props) 按 `MSBuildProjectName` 分叉为待整改项，见 [ROADMAP](docs/ROADMAP.md)）。
+- **xunit 版本统一**：全部测试项目使用 [`Directory.Packages.props`](Directory.Packages.props) 中的单一 xunit / runner 版本（当前 2.9.2 / 2.8.2）。
 - **覆盖率**：所有测试项目统一引用 `coverlet.collector` 并产出 `coverage.cobertura.xml`；覆盖率作为**参考门槛**（暂不硬阻塞）。
 - **生成器快照**：改动生成代码后运行测试并审阅 `*.received.*`，确认后接受为 `*.verified.txt`。
 
