@@ -64,7 +64,7 @@
 |----|------|------|------|
 | 元包多目标缺失 | `DesignPatterns.Package` 仅打包 `netstandard2.0` 运行时 DLL（`_IncludeRuntimeInPackage`），net8.0 消费者拿不到 `FrozenDictionary` 优化版本 | 元包随运行时一并打包 `net8.0` lib | [x] |
 | Roslyn 版本基线 | `Microsoft.CodeAnalysis.CSharp` 版本偏高，抬高消费者 SDK 门槛 | 明确目标 Roslyn 基线并下调到广泛兼容版本 | [ ] |
-| xunit 版本分叉 | `Directory.Packages.props` 按 `MSBuildProjectName` 条件分出 2.9.2 / 2.5.3 | 统一单一 xunit 版本 | [ ] |
+| xunit 版本分叉 | `Directory.Packages.props` 按 `MSBuildProjectName` 条件分出 2.9.2 / 2.5.3 | 统一单一 xunit 版本 | [x] |
 | 覆盖率 collector 缺失 | `SourceGenerators.Tests`、`Analyzers.Tests` 未引用 `coverlet.collector`，CI 报「找不到 XPlat Code Coverage」 | 全部测试项目接入同一 collector | [ ] |
 | 缺 CHANGELOG | 无变更记录 | 引入 `CHANGELOG.md`（Keep a Changelog 风格） | [ ] |
 | 缺发布工作流 | 无 `release.yml` | 发版流程确定后补 tag 触发 Publish（见暂缓支线） | [ ] |

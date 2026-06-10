@@ -12,10 +12,8 @@
     <PackageVersion Include="Nuke.Common" Version="9.0.4" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageVersion Include="Verify.Xunit" Version="28.3.2" />
-    <PackageVersion Include="xunit" Version="2.9.2" Condition="'$(MSBuildProjectName)' == 'DesignPatterns.SourceGenerators.Tests'" />
-    <PackageVersion Include="xunit" Version="2.5.3" Condition="'$(MSBuildProjectName)' != 'DesignPatterns.SourceGenerators.Tests'" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" Condition="'$(MSBuildProjectName)' == 'DesignPatterns.SourceGenerators.Tests'" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.3" Condition="'$(MSBuildProjectName)' != 'DesignPatterns.SourceGenerators.Tests'" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
