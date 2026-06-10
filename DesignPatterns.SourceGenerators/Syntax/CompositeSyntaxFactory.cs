@@ -144,13 +144,39 @@ internal static class CompositeSyntaxFactory
                     SyntaxFactory.SingletonList<StatementSyntax>(
                         SyntaxFactory.ReturnStatement(assembleInvocation))));
 
+        var assembleForestInvocation = SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("CompositeCatalogAssembler"),
+                    SyntaxFactory.IdentifierName("AssembleForest")))
+            .WithArgumentList(
+                SyntaxFactory.ArgumentList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_entries")))));
+
+        var forestReturnType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("IReadOnlyList"))
+            .WithTypeArgumentList(
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                        SyntaxFactory.ParseTypeName(contractTypeName))));
+
+        var buildForestMethod = SyntaxFactory.MethodDeclaration(
+                forestReturnType,
+                SyntaxFactory.Identifier("BuildForest"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .WithBody(
+                SyntaxFactory.Block(
+                    SyntaxFactory.SingletonList<StatementSyntax>(
+                        SyntaxFactory.ReturnStatement(assembleForestInvocation))));
+
         var catalogClass = SyntaxFactory.ClassDeclaration(catalogClassName)
             .WithModifiers(
                 SyntaxFactory.TokenList(
                     SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                     SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(entriesField, buildRootMethod);
+            .AddMembers(entriesField, buildRootMethod, buildForestMethod);
 
         return WrapInCompilationUnit(
             namespaceName,

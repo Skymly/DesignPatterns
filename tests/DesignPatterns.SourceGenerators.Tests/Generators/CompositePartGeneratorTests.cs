@@ -71,6 +71,44 @@ public sealed class CompositePartGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesForestCatalogWithMultipleRoots()
+    {
+        var source = MenuUsings + MenuInterface + """
+
+            [CompositePart<IMenuNode>("root-a")]
+            public sealed class HomeMenu : IMenuNode, ICompositeBuildable<IMenuNode>
+            {
+                private IReadOnlyList<IMenuNode> _children = System.Array.Empty<IMenuNode>();
+
+                public string Title => "Home";
+
+                public IReadOnlyList<IMenuNode> Children => _children;
+
+                public void SetChildren(IReadOnlyList<IMenuNode> children) =>
+                    _children = children;
+            }
+
+            [CompositePart<IMenuNode>("root-b", Order = 10)]
+            public sealed class SecondaryMenu : IMenuNode, ICompositeBuildable<IMenuNode>
+            {
+                private IReadOnlyList<IMenuNode> _children = System.Array.Empty<IMenuNode>();
+
+                public string Title => "Secondary";
+
+                public IReadOnlyList<IMenuNode> Children => _children;
+
+                public void SetChildren(IReadOnlyList<IMenuNode> children) =>
+                    _children = children;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<CompositePartGenerator>(
+            ("ForestMenus.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task GeneratesKeysAndCatalogWithNonGenericAttribute()
     {
         var source = MenuUsings + MenuInterface + """
