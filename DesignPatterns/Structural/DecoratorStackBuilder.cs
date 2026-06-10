@@ -37,6 +37,34 @@ public sealed class DecoratorStackBuilder<TService>
     }
 
     /// <summary>
+    /// Registers a decorator type when <paramref name="condition"/> evaluates to <see langword="true"/> at build time.
+    /// </summary>
+    public DecoratorStackBuilder<TService> Add<TDecorator>(Func<bool> condition)
+        where TDecorator : class, IDecorator<TService>, new()
+    {
+        return Add(new TDecorator(), condition);
+    }
+
+    /// <summary>
+    /// Registers a decorator instance when <paramref name="condition"/> evaluates to <see langword="true"/> at build time.
+    /// </summary>
+    public DecoratorStackBuilder<TService> Add(IDecorator<TService> decorator, Func<bool> condition)
+    {
+        if (decorator is null)
+        {
+            throw new ArgumentNullException(nameof(decorator));
+        }
+
+        if (condition is null)
+        {
+            throw new ArgumentNullException(nameof(condition));
+        }
+
+        _decorators.Add(inner => condition() ? decorator.Decorate(inner) : inner);
+        return this;
+    }
+
+    /// <summary>
     /// Applies all registered decorators to <paramref name="core"/>.
     /// Returns <paramref name="core"/> unchanged when no decorators were registered.
     /// </summary>
