@@ -30,7 +30,7 @@
 | Factory Registry | `DesignPatterns.Creational` | `IFactoryRegistry` / `FactoryRegistryBuilder` | `[RegisterFactory]` → Keys + Registry |
 | Strategy | `DesignPatterns.Behavioral` | `IStrategyRegistry` / Builder | `[RegisterStrategy]` → Keys + Registry |
 | Chain of Responsibility | `DesignPatterns.Behavioral` | `IHandler<T>` / `HandlerPipeline` | `[HandlerOrder]` → `{Context}HandlerPipeline` |
-| Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser` | `[CompositePart]` → Keys + Catalog + `BuildRoot()` |
+| Composite | `DesignPatterns.Structural` | `ICompositeNode<T>` / `CompositeTraverser`（`Traverse` / `TraverseForest`） | `[CompositePart]` → Keys + Catalog + `BuildRoot()` / `BuildForest()` |
 | Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder` | `[Decorator]` → `{Contract}DecoratorStack.Build` |
 | Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | — |
 
