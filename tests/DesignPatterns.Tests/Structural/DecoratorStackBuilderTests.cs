@@ -101,4 +101,75 @@ public sealed class DecoratorStackBuilderTests
         Assert.Throws<ArgumentNullException>(() =>
             new DecoratorStackBuilder<ICounter>().Add(null!));
     }
+
+    [Fact]
+    public void Add_WithConditionTrue_AppliesDecorator()
+    {
+        var result = new DecoratorStackBuilder<ICounter>()
+            .Add(new AddOneDecorator(), () => true)
+            .Build(new CoreCounter());
+
+        Assert.Equal(2, result.Invoke());
+    }
+
+    [Fact]
+    public void Add_WithConditionFalse_SkipsDecorator()
+    {
+        TrackingDecorator.DecorateCallCount = 0;
+
+        var core = new CoreCounter();
+        var result = new DecoratorStackBuilder<ICounter>()
+            .Add(new TrackingDecorator(), () => false)
+            .Build(core);
+
+        Assert.Same(core, result);
+        Assert.Equal(0, TrackingDecorator.DecorateCallCount);
+    }
+
+    [Fact]
+    public void Add_WithCondition_ReEvaluatesOnEachBuild()
+    {
+        var enabled = false;
+
+        var builder = new DecoratorStackBuilder<ICounter>()
+            .Add(new AddOneDecorator(), () => enabled);
+
+        var first = builder.Build(new CoreCounter());
+        Assert.Equal(1, first.Invoke());
+
+        enabled = true;
+        var second = builder.Build(new CoreCounter());
+        Assert.Equal(2, second.Invoke());
+    }
+
+    [Fact]
+    public void Add_WithConditionNull_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new DecoratorStackBuilder<ICounter>().Add(new AddOneDecorator(), null!));
+    }
+
+    [Fact]
+    public void Add_WithConditionGeneric_UsesParameterlessConstructor()
+    {
+        TrackingDecorator.DecorateCallCount = 0;
+
+        new DecoratorStackBuilder<ICounter>()
+            .Add<TrackingDecorator>(() => true)
+            .Build(new CoreCounter());
+
+        Assert.Equal(1, TrackingDecorator.DecorateCallCount);
+    }
+
+    [Fact]
+    public void Build_MixedConditionalAndUnconditional_PreservesRegistrationOrder()
+    {
+        var result = new DecoratorStackBuilder<ICounter>()
+            .Add<AddOneDecorator>()
+            .Add(new MultiplyDecorator(), () => false)
+            .Add<MultiplyDecorator>()
+            .Build(new CoreCounter());
+
+        Assert.Equal(20, result.Invoke());
+    }
 }
