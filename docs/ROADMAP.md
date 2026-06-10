@@ -14,7 +14,7 @@
 |------|----------------|
 | Strategy | `MyContractKeys`、`MyContractRegistry` |
 | Chain | `{Context}HandlerPipeline` |
-| Composite | `MyContractCompositeKeys`、`MyContractCompositeCatalog.BuildRoot()` |
+| Composite | `MyContractCompositeKeys`、`MyContractCompositeCatalog.BuildRoot()` / `BuildForest()` |
 | Decorator | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
 
@@ -40,7 +40,7 @@
 
 | 项 | 说明 | 状态 |
 |----|------|------|
-| Composite 多根 / 森林 | v2 设计：支持多根 catalog 与森林遍历，保持 `BuildRoot()` 向后兼容 | [ ] |
+| Composite 多根 / 森林 | 多根 catalog（`AssembleForest` / `BuildForest`）与森林遍历（`TraverseForest`），保持 `BuildRoot()` 向后兼容 | [x] |
 | Decorator 排序 / 条件 | 条件装饰（按运行时谓词启用）、显式 `DecoratorOrder` 校验诊断 | [ ] |
 | Strategy 异步路径 | 补全 `IAsyncStrategy` 的注册表 / 解析 / DI 路径与文档对齐 | [ ] |
 | Handler 增强 | 评估管道分支 / 短路可观测性（不引入完整中间件框架） | [ ] |
@@ -108,3 +108,4 @@
 - Handler `AllowMultiple`：单类多 `[HandlerOrder]` / `[HandlerOrder<TContext>]`。
 - 工程化：Nuke `Ci` / `CiPack`、GitHub Actions、warnings-as-errors、Pack 消费者验证、元包 `lib/net8.0` 打包与校验、共享注册生成器 Helper、共享未注册契约 Analyzer 基类。
 - `Composite.Sample` 手动 `CompositeTreeBuilder` 演示。
+- F2 Composite 多根 / 森林：`AssembleForest`、`BuildForest()`、`TraverseForest` / `TraverseForestAsync`（见 [Composite.md](Composite.md)）。
