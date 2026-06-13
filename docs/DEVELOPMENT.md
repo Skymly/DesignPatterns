@@ -104,6 +104,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 1. [x] Chain of Responsibility — `IHandler<TContext>` + 管道（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）
 2. [x] Strategy — 命名注册与解析（见 [Strategy.md](Strategy.md)）
 3. [x] Factory Registry — 键到实现的映射（见 [FactoryRegistry.md](FactoryRegistry.md)）
+4. [x] Key 命名约定 — 跨 `[RegisterFactory]` / `[RegisterStrategy]` 的字符串 key 选型与 `"{outer}:{inner}"` 复合 key 形态（见 [FactoryKeyConventions.md](FactoryKeyConventions.md)）
 
 ### Roslyn（R1 建议）
 
