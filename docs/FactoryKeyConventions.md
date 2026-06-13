@@ -98,13 +98,19 @@ internal sealed class CapabilityOuterRegistry
         return i < 0 ? key : key[..i];
     }
 
+    private static string ExtractCapabilityId(string key)
+    {
+        var i = key.IndexOf(':');
+        return i < 0 ? key : key[(i + 1)..];
+    }
+
     private static IFactoryRegistry<string, IAnyToolCapability> BuildSubRegistry(
         IFactoryRegistry<string, IAnyToolCapability> inner, IGrouping<string, string> keys)
     {
         var builder = new FactoryRegistryBuilder<string, IAnyToolCapability>();
         foreach (var k in keys)
         {
-            builder.Register(k, _ => inner.Create(k));
+            builder.Register(ExtractCapabilityId(k), _ => inner.Create(k));
         }
         return builder.Build();
     }
