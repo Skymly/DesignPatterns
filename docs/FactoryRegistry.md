@@ -166,4 +166,5 @@ ProductFactoryRegistry.RegisterDi(services, implementationLifetime: ServiceLifet
 
 - GoF: Factory Method / 注册表变体（Creational）
 - [Strategy.md](Strategy.md) — 策略注册表对比
+- [FactoryKeyConventions.md](FactoryKeyConventions.md) — 字符串 key 命名约定（含 `"{outer}:{inner}"` 复合 key 形态）
 - [AGENTS.md](../AGENTS.md) — 项目规则与里程碑
