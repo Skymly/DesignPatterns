@@ -180,6 +180,8 @@ dotnet test DesignPatterns.slnx -c Release
 | **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` |
 | **CiPack** | `Ci` 链 + `Pack` + `PackVerify` + `PackConsumerVerify` → `artifacts/package/*.nupkg` |
 | **Publish** | `Test` → `Pack` → `PackVerify` → push 到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`） |
+| **NuGetConsumerSmoke** | `PackVerify` 后构建并运行 [`eng/nuget-smoke/MetaPackage.Consumer/`](../eng/nuget-smoke/MetaPackage.Consumer/)（默认本地 pack feed） |
+| **NuGetConsumerSmokePublished** | 同上，但从 nuget.org 还原（`--consumer-feed Published`） |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|

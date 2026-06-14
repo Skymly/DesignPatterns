@@ -31,7 +31,13 @@ sealed class Build : NukeBuild
     AbsolutePath SolutionFile => Root / "DesignPatterns.slnx";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
     AbsolutePath PackageOutputDirectory => Root / "artifacts" / "package";
-    AbsolutePath PackageConsumerDirectory => Root / "artifacts" / "package-consumer";
+    AbsolutePath NuGetSmokeDirectory => Root / "eng" / "nuget-smoke";
+    AbsolutePath NuGetSmokeConsumerProject => NuGetSmokeDirectory / "MetaPackage.Consumer" / "MetaPackage.Consumer.csproj";
+    AbsolutePath NuGetSmokeLocalConfig => NuGetSmokeDirectory / "nuget.config.local";
+
+    [Parameter("NuGet consumer smoke feed: Local (artifacts/package) or Published (nuget.org)")]
+    readonly NuGetConsumerFeed ConsumerFeed = NuGetConsumerFeed.Local;
+
     AbsolutePath PackProject => Root / "DesignPatterns.Package" / "DesignPatterns.Package.csproj";
 
     static readonly string[] TestProjectRelativePaths =
@@ -152,80 +158,44 @@ sealed class Build : NukeBuild
             Assert.True(entries.Contains("LICENSE") || entries.Contains("LICENSE.md"), $"{ExpectedPackageId}: missing LICENSE");
         });
 
-    Target PackConsumerVerify => _ => _
+    Target NuGetConsumerSmoke => _ => _
         .DependsOn(PackVerify)
         .Executes(() =>
         {
-            AbsolutePath nupkg = GetExpectedPackage();
-            string packageVersion = GetPackageVersion(nupkg);
+            Assert.FileExists(NuGetSmokeConsumerProject, $"Consumer project not found: {NuGetSmokeConsumerProject}");
 
-            PackageConsumerDirectory.CreateOrCleanDirectory();
+            string packageVersion = GetPackageVersion(GetExpectedPackage());
+            string? previousNuGetConfig = Environment.GetEnvironmentVariable("NUGET_CONFIG");
 
-            AbsolutePath consumerProject = PackageConsumerDirectory / "PackageConsumer.csproj";
-            File.WriteAllText(consumerProject, $$"""
-                <Project Sdk="Microsoft.NET.Sdk">
-                  <PropertyGroup>
-                    <OutputType>Exe</OutputType>
-                    <TargetFramework>net8.0</TargetFramework>
-                    <ImplicitUsings>enable</ImplicitUsings>
-                    <Nullable>enable</Nullable>
-                    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-                  </PropertyGroup>
+            if (ConsumerFeed == NuGetConsumerFeed.Local)
+            {
+                WriteLocalNuGetConfig();
+                Environment.SetEnvironmentVariable("NUGET_CONFIG", NuGetSmokeLocalConfig);
+            }
 
-                  <ItemGroup>
-                    <PackageReference Include="{{ExpectedPackageId}}" Version="{{packageVersion}}" />
-                  </ItemGroup>
-                </Project>
-                """);
+            try
+            {
+                DotNetBuild(s => s
+                    .SetProjectFile(NuGetSmokeConsumerProject)
+                    .SetConfiguration(Configuration)
+                    .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion));
 
-            File.WriteAllText(PackageConsumerDirectory / "Program.cs", """
-                using DesignPatterns.Behavioral;
-                using DesignPatterns.Creational;
-
-                var strategy = PackageConsumerStrategyRegistry.Instance.Get("echo");
-                if (strategy.Execute("ok") != "echo:ok")
-                {
-                    throw new InvalidOperationException("Generated strategy registry did not resolve the expected implementation.");
-                }
-
-                if (!ReferenceEquals(PackageConsumerSingleton.Instance, PackageConsumerSingleton.Instance))
-                {
-                    throw new InvalidOperationException("Generated singleton instance was not stable.");
-                }
-
-                Console.WriteLine("Package consumer verification passed.");
-
-                public interface IPackageConsumerStrategy
-                {
-                    string Execute(string value);
-                }
-
-                [RegisterStrategy("echo", typeof(IPackageConsumerStrategy))]
-                public sealed class EchoStrategy : IPackageConsumerStrategy
-                {
-                    public string Execute(string value) => "echo:" + value;
-                }
-
-                [GenerateSingleton]
-                public sealed partial class PackageConsumerSingleton
-                {
-                }
-                """);
-
-            string restoreSources = string.Join(
-                ";",
-                PackageOutputDirectory,
-                "https://api.nuget.org/v3/index.json");
-
-            DotNetRestore(s => s
-                .SetProjectFile(consumerProject)
-                .SetProperty("RestoreSources", restoreSources));
-
-            DotNetRun(s => s
-                .SetProjectFile(consumerProject)
-                .SetConfiguration(Configuration)
-                .EnableNoRestore());
+                DotNetRun(s => s
+                    .SetProjectFile(NuGetSmokeConsumerProject)
+                    .SetConfiguration(Configuration)
+                    .EnableNoBuild());
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("NUGET_CONFIG", previousNuGetConfig);
+            }
         });
+
+    Target PackConsumerVerify => _ => _
+        .DependsOn(NuGetConsumerSmoke);
+
+    Target NuGetConsumerSmokePublished => _ => _
+        .DependsOn(NuGetConsumerSmoke);
 
     Target Ci => _ => _
         .DependsOn(UnitTest);
@@ -262,6 +232,21 @@ sealed class Build : NukeBuild
     Target CiPack => _ => _
         .DependsOn(PackConsumerVerify);
 
+    void WriteLocalNuGetConfig()
+    {
+        string localFeed = PackageOutputDirectory.ToString().Replace('\\', '/');
+        File.WriteAllText(NuGetSmokeLocalConfig, $$"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <configuration>
+              <packageSources>
+                <clear />
+                <add key="local" value="{{localFeed}}" />
+                <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+              </packageSources>
+            </configuration>
+            """);
+    }
+
     AbsolutePath GetExpectedPackage()
     {
         IReadOnlyCollection<AbsolutePath> nupkgs = PackageOutputDirectory.GlobFiles("*.nupkg");
@@ -282,4 +267,10 @@ sealed class Build : NukeBuild
         const string suffix = ".nupkg";
         return fileName.Substring(prefix.Length, fileName.Length - prefix.Length - suffix.Length);
     }
+}
+
+enum NuGetConsumerFeed
+{
+    Local,
+    Published
 }
