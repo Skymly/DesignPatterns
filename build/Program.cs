@@ -19,6 +19,14 @@ sealed class Build : NukeBuild
     [Parameter("Package version override")]
     readonly string? Version = Environment.GetEnvironmentVariable("VERSION");
 
+    [Parameter("NuGet API key (required for nuget.org Publish)")]
+    readonly string? NuGetApiKey =
+        Environment.GetEnvironmentVariable("NUGET_API_KEY")
+        ?? Environment.GetEnvironmentVariable("APIKEY");
+
+    [Parameter("GitHub token with packages:write (required for GitHub Packages Publish)")]
+    readonly string? GitHubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+
     AbsolutePath Root => RootDirectory;
     AbsolutePath SolutionFile => Root / "DesignPatterns.slnx";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
@@ -221,6 +229,35 @@ sealed class Build : NukeBuild
 
     Target Ci => _ => _
         .DependsOn(UnitTest);
+
+    Target Test => _ => _
+        .DependsOn(UnitTest);
+
+    Target Publish => _ => _
+        .DependsOn(Test, PackVerify)
+        .Requires(() => !string.IsNullOrWhiteSpace(NuGetApiKey) || !string.IsNullOrWhiteSpace(GitHubToken))
+        .Executes(() =>
+        {
+            AbsolutePath packages = PackageOutputDirectory / "*.nupkg";
+
+            if (!string.IsNullOrWhiteSpace(NuGetApiKey))
+            {
+                DotNetNuGetPush(s => s
+                    .SetTargetPath(packages)
+                    .SetApiKey(NuGetApiKey)
+                    .SetSource("https://api.nuget.org/v3/index.json")
+                    .EnableSkipDuplicate());
+            }
+
+            if (!string.IsNullOrWhiteSpace(GitHubToken))
+            {
+                DotNetNuGetPush(s => s
+                    .SetTargetPath(packages)
+                    .SetApiKey(GitHubToken)
+                    .SetSource("https://nuget.pkg.github.com/Skymly/index.json")
+                    .EnableSkipDuplicate());
+            }
+        });
 
     Target CiPack => _ => _
         .DependsOn(PackConsumerVerify);

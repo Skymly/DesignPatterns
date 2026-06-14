@@ -66,8 +66,8 @@
 | Roslyn 版本基线 | `Microsoft.CodeAnalysis.CSharp` 版本偏高，抬高消费者 SDK 门槛 | 明确目标 Roslyn 基线并下调到广泛兼容版本 | [ ] |
 | xunit 版本分叉 | `Directory.Packages.props` 按 `MSBuildProjectName` 条件分出 2.9.2 / 2.5.3 | 统一单一 xunit 版本 | [x] |
 | 覆盖率 collector 缺失 | `SourceGenerators.Tests`、`Analyzers.Tests` 未引用 `coverlet.collector`，CI 报「找不到 XPlat Code Coverage」 | 全部测试项目接入同一 collector | [x] |
-| 缺 CHANGELOG | 无变更记录 | 引入 `CHANGELOG.md`（Keep a Changelog 风格） | [ ] |
-| 缺发布工作流 | 无 `release.yml` | 发版流程确定后补 tag 触发 Publish（见暂缓支线） | [ ] |
+| 缺 CHANGELOG | 无变更记录 | 引入 `CHANGELOG.md`（Keep a Changelog 风格） | [x] |
+| 缺发布工作流 | 无 `release.yml` | tag 触发 Publish（见 AGENTS.md 维护者发版） | [x] |
 
 ---
 
@@ -77,8 +77,8 @@
 
 - **API 冻结**：公共类型 / 特性 / 生成产出 / `DP###` 命名稳定声明（先行条件）。
 - **打包修复**：元包多目标（`lib/net8.0`）已完成；「DI 扩展打包归属」仍待确定。
-- **NuGet 首发 / SemVer**：`VersionPrefix` + 预览后缀策略；nuget.org 首个公开版本。
-- **release.yml**：tag 触发 Publish。
+- **NuGet 首发 / SemVer**：`0.1.0-preview1` 已发布至 GitHub Packages（tag `v0.1.0-preview1`）；nuget.org 包 ID 冲突待决；稳定版待 API 冻结。
+- ~~**release.yml**~~：tag 触发 Publish — 已完成。
 
 开关条件：F1/F2 主要项落地且无未决破坏性设计时，再评估进入本支线。
 
