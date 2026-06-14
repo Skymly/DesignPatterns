@@ -20,7 +20,7 @@
 
 > - **公共 API 尚未稳定**：类型、特性、源生成器产出、诊断 ID（`DP###`）及命名规则可能在任意版本变更，**不保证**语义化版本下的向后兼容。
 
-> - **NuGet 发布**：首个预览版 **`0.1.0-preview1`** 已发布至 [GitHub Packages](https://github.com/Skymly/DesignPatterns/pkgs/nuget/DesignPatterns)（须配置 `https://nuget.pkg.github.com/Skymly/index.json` feed）；亦支持本地 `./build.ps1 --target CiPack`。nuget.org 上 `DesignPatterns` 包 ID 已被占用，公开 feed 策略待定。
+> - **NuGet 发布**：预览版 **`0.1.0-preview2`**（当前）与 **`0.1.0-preview1`** 已发布至 [GitHub Packages](https://github.com/Skymly/DesignPatterns/pkgs/nuget/DesignPatterns)（须配置 `https://nuget.pkg.github.com/Skymly/index.json` feed）；亦支持本地 `./build.ps1 --target CiPack`。nuget.org 上 `DesignPatterns` 包 ID 已被占用，公开 feed 策略待定。
 
 > - **生产环境**：建议仅在可接受 API 变动的实验、内部工具或学习场景使用；在 API 稳定前请固定 commit 或 fork，并关注 [ROADMAP](docs/ROADMAP.md) 与 breaking changes。
 
@@ -164,12 +164,12 @@ DesignPatterns.slnx
 
 
 
-### NuGet（预览，`0.1.0-preview1`）
+### NuGet（预览，`0.1.0-preview2`）
 
 
 
 ```xml
-<PackageReference Include="DesignPatterns" Version="0.1.0-preview1" />
+<PackageReference Include="DesignPatterns" Version="0.1.0-preview2" />
 ```
 
 

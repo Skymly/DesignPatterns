@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-preview2] - 2026-06-14
+
+Aligns the publish tag with current `main` (includes F2 handler trace, composite forest, decorator conditions, and async strategy paths). Same package surface as `0.1.0-preview1` plus those runtime and generator updates.
+
+### Added
+
+- Same meta-package contents as `0.1.0-preview1`; published from commit synchronized with `main`.
+
 ## [0.1.0-preview1] - 2026-06-14
 
 First public NuGet preview of the `DesignPatterns` meta-package. APIs, generated code shapes, and `DP###` diagnostics remain **unstable** — pin a version or commit if you depend on this library.
@@ -25,4 +33,5 @@ First public NuGet preview of the `DesignPatterns` meta-package. APIs, generated
 - Early preview: breaking changes may land without a major version bump until an API stability announcement.
 - DI extension package publishing strategy is still TBD; reference the project from source or a future package release.
 
+[0.1.0-preview2]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.1.0-preview2
 [0.1.0-preview1]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.1.0-preview1
