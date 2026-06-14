@@ -1,4 +1,4 @@
-﻿{
+{
   Catalog_IProductFactory.ProductFactoryKeys.g.cs:
 using System;
 

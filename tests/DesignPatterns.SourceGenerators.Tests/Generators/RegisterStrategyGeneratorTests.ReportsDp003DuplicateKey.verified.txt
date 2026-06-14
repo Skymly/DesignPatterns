@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP003,
     Message: Strategy key 'alipay' is already registered for contract 'TestAssembly.IPaymentStrategy'. Use a unique key or remove the duplicate [RegisterStrategy] attribute.

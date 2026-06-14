@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP022,
     Message: Type 'CustomFactory' must declare a public parameterless constructor for [RegisterFactory] static registration, or enable DI integration.

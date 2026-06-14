@@ -1,4 +1,4 @@
-﻿{
+{
   IMenuNode.MenuNodeCompositeCatalog.g.cs:
 using System;
 using System.Collections.Generic;

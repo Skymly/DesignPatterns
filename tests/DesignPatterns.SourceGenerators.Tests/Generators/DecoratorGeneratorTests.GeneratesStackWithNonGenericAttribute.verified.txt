@@ -1,4 +1,4 @@
-﻿{
+{
   IPaymentService.PaymentServiceDecoratorOrder.g.cs:
 using System;
 

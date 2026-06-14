@@ -1,4 +1,4 @@
-﻿{
+{
   IPaymentStrategy.PaymentStrategyKeys.g.cs:
 using System;
 

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP013,
     Message: Type 'BrokenMenu' does not implement composite contract 'TestAssembly.IMenuNode'. Implement the contract or fix the [CompositePart] contract argument.

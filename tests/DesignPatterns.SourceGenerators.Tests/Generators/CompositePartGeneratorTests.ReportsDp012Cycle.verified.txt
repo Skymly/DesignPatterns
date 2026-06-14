@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP012,
     Message: Composite key 'a' participates in a parent-key cycle for contract 'TestAssembly.IMenuNode'. Remove or reassign ParentKey values to break the cycle.

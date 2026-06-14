@@ -1,4 +1,4 @@
-﻿{
+{
   AdminApi_RequestContext.RequestContextHandlerPipeline.g.cs:
 using System;
 using DesignPatterns.Behavioral;

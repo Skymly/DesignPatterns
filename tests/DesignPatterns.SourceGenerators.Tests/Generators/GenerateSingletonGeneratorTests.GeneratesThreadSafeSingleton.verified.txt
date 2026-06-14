@@ -1,4 +1,4 @@
-﻿{
+{
   AppSettings.Singleton.g.cs:
 using System;
 using System.Threading;

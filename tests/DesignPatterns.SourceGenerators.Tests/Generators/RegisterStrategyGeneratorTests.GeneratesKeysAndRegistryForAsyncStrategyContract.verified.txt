@@ -1,4 +1,4 @@
-﻿{
+{
   IProcessor.ProcessorKeys.g.cs:
 using System;
 

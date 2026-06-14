@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP004,
     Message: Type 'BrokenPayment' does not implement strategy contract 'TestAssembly.IPaymentStrategy'. Implement the contract or fix the [RegisterStrategy] contract argument.

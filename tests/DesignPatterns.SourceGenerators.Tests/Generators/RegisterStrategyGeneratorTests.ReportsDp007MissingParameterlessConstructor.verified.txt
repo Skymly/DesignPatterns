@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP007,
     Message: Type 'CustomPayment' must declare a public parameterless constructor for [RegisterStrategy] static registration, or enable DI integration.

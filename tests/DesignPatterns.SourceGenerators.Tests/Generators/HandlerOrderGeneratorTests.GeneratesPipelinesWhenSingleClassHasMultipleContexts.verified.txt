@@ -1,4 +1,4 @@
-﻿{
+{
   AuditContext.AuditContextHandlerPipeline.g.cs:
 using System;
 using DesignPatterns.Behavioral;

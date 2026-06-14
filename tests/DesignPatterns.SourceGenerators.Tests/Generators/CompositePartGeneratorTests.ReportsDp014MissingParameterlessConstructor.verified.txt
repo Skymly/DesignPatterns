@@ -1,4 +1,4 @@
-﻿[
+[
   {
     Id: DP014,
     Message: Type 'CustomMenu' must declare a public parameterless constructor for generated composite catalogs.
