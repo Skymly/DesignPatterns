@@ -10,7 +10,7 @@
 | **远端** | https://github.com/Skymly/DesignPatterns（**公开**）；文件夹名 `DesignPatterns` = 仓库名 |
 | **许可证** | [MIT](LICENSE) |
 | **阶段** | **早期预览**：公共 API、生成器产出与 `DP###` 诊断**尚未稳定**（见 [README.md](README.md)） |
-| **NuGet** | 元包 `DesignPatterns` 可本地 `dotnet pack`；nuget.org 正式发布与 SemVer 待 API 稳定后由维护者决定 |
+| **NuGet** | 元包 `DesignPatterns` **`0.1.0-preview1`** 可 `dotnet pack` / tag 触发 Publish；nuget.org 预览首发；SemVer 稳定版待 API 冻结 |
 | **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns/DesignPatterns.Samples/`、`Skymly/DesignPatterns/DesignPatterns.Docs/` |
 
 ## 项目是什么
@@ -179,10 +179,12 @@ dotnet test DesignPatterns.slnx -c Release
 |-----------|------|
 | **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` |
 | **CiPack** | `Ci` 链 + `Pack` + `PackVerify` + `PackConsumerVerify` → `artifacts/package/*.nupkg` |
+| **Publish** | `Test` → `Pack` → `PackVerify` → push 到 nuget.org（`NUGET_API_KEY`）与 GitHub Packages（`GITHUB_TOKEN`） |
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
 | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | **Ci** + sibling **Samples** + **CiPack**（**不** 发布 NuGet） |
+| [`.github/workflows/release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；**不** 创建 GitHub Release） |
 
 提交前：本地 `./build.ps1 --target Ci --configuration Release`（或 `CiPack` 若改打包）。
 
@@ -194,17 +196,37 @@ dotnet test DesignPatterns.slnx -c Release
 
 | 场景 | 代理行为 |
 |------|----------|
-| 用户**未**提及新版本号 / tag | **不得**改 `PackageVersion`、**不得** `git tag` / `gh release` / `dotnet nuget push` |
+| 用户**未**提及新版本号 / tag | **不得**改 `PackageVersion` / `VersionPrefix`、**不得** `git tag` / `gh release` / `dotnet nuget push` |
 | API **未**宣布稳定 | README 保持早期阶段说明；破坏性变更可在无 major 版本策略下合并 |
-| 用户明确要求发版 | 可准备命令草稿，标注**待批准**；预览版与稳定版策略日后与 Observables 对齐时可补 `release.yml` |
+| 用户明确要求发版 | 对齐 `Directory.Build.props` 版本与 `CHANGELOG.md`；可准备 tag / push 命令草稿，标注**待批准** |
 
 **CI 不会在 PR 或 push `main` 时发布 NuGet**；仅验证并上传 pack artifact。
 
-版本与发布基建（形态先行，落地待维护者批准）：
+### 预览版 vs 稳定版
 
-- 版本号用 `VersionPrefix` + 预览后缀（如 `-preview.N`）；API 冻结前保持预览。
-- 变更记录用 `CHANGELOG.md`（Keep a Changelog 风格）。
-- 发版工作流 `release.yml`（tag 触发 Publish）待发布流程确定后添加。
+| 版本类型 | Git tag（`v*`） | NuGet（nuget.org + GitHub Packages） | GitHub Release |
+|----------|-----------------|--------------------------------------|----------------|
+| **预览**（如 `0.1.0-preview1`） | **要** | **要** | **不要** |
+| **稳定**（无 `-preview` 等预发布后缀） | **要** | **要** | **要**（维护者批准） |
+
+### 维护者发版（tag 触发）
+
+1. 在 `main` 上确认 [`Directory.Build.props`](Directory.Build.props) 中 **`PackageVersion` 与 tag 一致**（tag 为 `v` + 版本号，如 `v0.1.0-preview1`）。
+2. 配置仓库 Secrets：`NUGET_API_KEY`；`GITHUB_TOKEN`（或 PAT，`packages:write`，用于 GitHub Packages）。
+3. 推送 **annotated tag**：
+
+```powershell
+git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
+git push origin v0.1.0-preview1
+```
+
+4. [`release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`Test` → `Pack` → `PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。**不**创建 GitHub Release。
+5. 紧急重发可用 **workflow_dispatch** 并手动填写 `version`（仍受 actor 限制）。
+
+版本与变更记录：
+
+- 版本号：`VersionPrefix` + `VersionSuffix`（当前 `0.1.0-preview1`），单一真相源为 [`Directory.Build.props`](Directory.Build.props)；发版时可通过环境变量 `VERSION` 覆盖。
+- 变更记录：[`CHANGELOG.md`](CHANGELOG.md)（Keep a Changelog 风格）。
 
 ---
 

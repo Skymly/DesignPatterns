@@ -31,7 +31,9 @@
         "Pack",
         "PackConsumerVerify",
         "PackVerify",
+        "Publish",
         "Restore",
+        "Test",
         "UnitTest"
       ]
     },
@@ -109,6 +111,14 @@
         "Configuration": {
           "type": "string",
           "description": "Build configuration (Debug/Release)"
+        },
+        "GitHubToken": {
+          "type": "string",
+          "description": "GitHub token with packages:write (required for GitHub Packages Publish)"
+        },
+        "NuGetApiKey": {
+          "type": "string",
+          "description": "NuGet API key (required for nuget.org Publish)"
         },
         "Version": {
           "type": "string",
