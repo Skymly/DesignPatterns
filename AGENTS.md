@@ -10,7 +10,7 @@
 | **远端** | https://github.com/Skymly/DesignPatterns（**公开**）；文件夹名 `DesignPatterns` = 仓库名 |
 | **许可证** | [MIT](LICENSE) |
 | **阶段** | **早期预览**：公共 API、生成器产出与 `DP###` 诊断**尚未稳定**（见 [README.md](README.md)） |
-| **NuGet** | 元包 `DesignPatterns` **`0.1.0-preview2`**（当前）/ **`0.1.0-preview1`** 已发布至 GitHub Packages；`release.yml` + Nuke `Publish`；nuget.org 包 ID 冲突待决 |
+| **NuGet** | 元包 **`Skymly.DesignPatterns`**；当前 **`0.1.0-preview3`**；`release.yml` + Nuke `Publish` → nuget.org + GitHub Packages |
 | **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns/DesignPatterns.Samples/`、`Skymly/DesignPatterns/DesignPatterns.Docs/` |
 
 ## 项目是什么
@@ -34,7 +34,7 @@ DesignPatterns.slnx
 ├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
 ├── DesignPatterns.Extensions.DependencyInjection/  # MSDI 扩展 + DI 生成器 targets
-├── DesignPatterns.Package/                      # NuGet 元包（PackageId=DesignPatterns）
+├── DesignPatterns.Package/                      # NuGet 元包（PackageId=Skymly.DesignPatterns）
 ├── tests/                                       # 单元 / 生成器 Verify / Analyzer / DI
 ├── docs/                                        # DEVELOPMENT、ROADMAP、模式文档
 ├── .github/                                     # Issue/PR 模板、CI
@@ -166,7 +166,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 ## 打包策略
 
-- 元包 **`DesignPatterns`**（[`DesignPatterns.Package`](DesignPatterns.Package/DesignPatterns.Package.csproj)）必须打包运行时**所有 TFM** 的 `lib`（`netstandard2.0` **与** `net8.0`），不得只携带 `netstandard2.0`——否则 net8.0 消费者拿不到 `FrozenDictionary` 优化版本。
+- 元包 **`Skymly.DesignPatterns`**（[`DesignPatterns.Package`](DesignPatterns.Package/DesignPatterns.Package.csproj)）必须打包运行时**所有 TFM** 的 `lib`（`netstandard2.0` **与** `net8.0`），不得只携带 `netstandard2.0`——否则 net8.0 消费者拿不到 `FrozenDictionary` 优化版本。
 - 生成器 / Analyzer / CodeFix 打到 `analyzers/dotnet/cs`。
 - DI 扩展 `DesignPatterns.Extensions.DependencyInjection` 的打包 / 独立发布归属待发版流程确定；当前元包**不含**。
 - 任何打包结构变更须通过 `CiPack` 的 `PackVerify` / `PackConsumerVerify`。
@@ -206,18 +206,18 @@ dotnet test DesignPatterns.slnx -c Release
 
 | 版本类型 | Git tag（`v*`） | NuGet（nuget.org + GitHub Packages） | GitHub Release |
 |----------|-----------------|--------------------------------------|----------------|
-| **预览**（如 `0.1.0-preview1`） | **要** | **要**（当前仅 GitHub Packages；nuget.org 待 `NUGET_API_KEY` 与包 ID 策略） | **不要** |
+| **预览**（如 `0.1.0-preview3`） | **要** | **要**（nuget.org + GitHub Packages） | **不要** |
 | **稳定**（无 `-preview` 等预发布后缀） | **要** | **要** | **要**（维护者批准） |
 
 ### 维护者发版（tag 触发）
 
-1. 在 `main` 上确认 [`Directory.Build.props`](Directory.Build.props) 中 **`PackageVersion` 与 tag 一致**（tag 为 `v` + 版本号，如 `v0.1.0-preview1`）。
+1. 在 `main` 上确认 [`Directory.Build.props`](Directory.Build.props) 中 **`PackageVersion` 与 tag 一致**（tag 为 `v` + 版本号，如 `v0.1.0-preview3`）。
 2. 配置仓库 Secrets：`NUGET_API_KEY`；`GITHUB_TOKEN`（或 PAT，`packages:write`，用于 GitHub Packages）。
 3. 推送 **annotated tag**：
 
 ```powershell
-git tag -a v0.1.0-preview1 -m "0.1.0-preview1"
-git push origin v0.1.0-preview1
+git tag -a v0.1.0-preview3 -m "0.1.0-preview3"
+git push origin v0.1.0-preview3
 ```
 
 4. [`release.yml`](.github/workflows/release.yml) 在 **`push` `v*` tag** 时运行 Nuke **`Publish`**（`Test` → `Pack` → `PackVerify` → nuget.org + GitHub Packages）。仅允许维护者账号（workflow 内 `github.actor` 校验）。**不**创建 GitHub Release。
@@ -225,7 +225,7 @@ git push origin v0.1.0-preview1
 
 版本与变更记录：
 
-- 版本号：`VersionPrefix` + `VersionSuffix`（当前 `0.1.0-preview1`），单一真相源为 [`Directory.Build.props`](Directory.Build.props)；发版时可通过环境变量 `VERSION` 覆盖。
+- 版本号：`VersionPrefix` + `VersionSuffix`（当前 `0.1.0-preview3`），单一真相源为 [`Directory.Build.props`](Directory.Build.props)；发版时可通过环境变量 `VERSION` 覆盖。
 - 变更记录：[`CHANGELOG.md`](CHANGELOG.md)（Keep a Changelog 风格）。
 
 ---

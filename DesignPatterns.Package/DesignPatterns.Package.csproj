@@ -10,8 +10,8 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
 
-    <PackageId>DesignPatterns</PackageId>
-    <Title>DesignPatterns</Title>
+    <PackageId>Skymly.DesignPatterns</PackageId>
+    <Title>Skymly.DesignPatterns</Title>
     <Description>Design patterns toolkit for .NET with compile-time source generators. Early preview — APIs not stable.</Description>
     <PackageTags>design-patterns;roslyn;source-generator</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

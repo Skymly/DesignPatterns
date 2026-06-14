@@ -42,7 +42,7 @@ sealed class Build : NukeBuild
         "tests/DesignPatterns.Extensions.DependencyInjection.Tests/DesignPatterns.Extensions.DependencyInjection.Tests.csproj",
     ];
 
-    const string ExpectedPackageId = "DesignPatterns";
+    const string ExpectedPackageId = "Skymly.DesignPatterns";
 
     public static int Main() => Execute<Build>(x => x.Ci);
 

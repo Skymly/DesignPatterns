@@ -64,7 +64,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 | `DesignPatterns.Analyzers/` | `DiagnosticAnalyzer`（DP006 / DP023 / DP024） |
 | `DesignPatterns.CodeFixes/` | `CodeFixProvider` |
 | `DesignPatterns.Extensions.DependencyInjection/` | MSDI 扩展 + DI 生成器 targets |
-| `DesignPatterns.Package/` | NuGet 元包（`PackageId=DesignPatterns`） |
+| `DesignPatterns.Package/` | NuGet 元包（`PackageId=Skymly.DesignPatterns`） |
 | `tests/DesignPatterns.Tests/` | 运行时 API 单元测试 |
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
 | `tests/DesignPatterns.Analyzers.Tests/` | Analyzer / CodeFix 测试 |
@@ -127,7 +127,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 ### 包边界
 
-当前可打包的 NuGet 入口是元包 `DesignPatterns`（`DesignPatterns.Package/`），用于携带运行时核心、源生成器、Analyzer 与 CodeFix。`DesignPatterns.Extensions.DependencyInjection` 目前作为仓库内独立扩展项目存在，未由元包包含；是否独立发布为 NuGet 包留待 API 稳定与发版流程确定后决策。
+当前可打包的 NuGet 入口是元包 `Skymly.DesignPatterns`（`DesignPatterns.Package/`），用于携带运行时核心、源生成器、Analyzer 与 CodeFix。`DesignPatterns.Extensions.DependencyInjection` 目前作为仓库内独立扩展项目存在，未由元包包含；是否独立发布为 NuGet 包留待 API 稳定与发版流程确定后决策。
 
 ## 编码规范
 

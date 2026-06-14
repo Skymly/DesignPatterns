@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <IsPackable>false</IsPackable>
-    <!-- Avoid NuGet project-name clash with DesignPatterns.Package (PackageId=DesignPatterns) -->
+    <!-- Avoid NuGet project-name clash with DesignPatterns.Package (PackageId=Skymly.DesignPatterns) -->
     <PackageId>DesignPatterns.Runtime</PackageId>
   </PropertyGroup>
 

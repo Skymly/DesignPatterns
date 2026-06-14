@@ -20,7 +20,7 @@
 
 > - **公共 API 尚未稳定**：类型、特性、源生成器产出、诊断 ID（`DP###`）及命名规则可能在任意版本变更，**不保证**语义化版本下的向后兼容。
 
-> - **NuGet 发布**：预览版 **`0.1.0-preview2`**（当前）与 **`0.1.0-preview1`** 已发布至 [GitHub Packages](https://github.com/Skymly/DesignPatterns/pkgs/nuget/DesignPatterns)（须配置 `https://nuget.pkg.github.com/Skymly/index.json` feed）；亦支持本地 `./build.ps1 --target CiPack`。nuget.org 上 `DesignPatterns` 包 ID 已被占用，公开 feed 策略待定。
+> - **NuGet 发布**：元包 **`Skymly.DesignPatterns`** **`0.1.0-preview3`** 发布至 [nuget.org](https://www.nuget.org/packages/Skymly.DesignPatterns) 与 GitHub Packages；亦支持本地 `./build.ps1 --target CiPack`。C# 命名空间仍为 `DesignPatterns.*`；旧 GitHub 包 ID `DesignPatterns`（preview1/2）已弃用。
 
 > - **生产环境**：建议仅在可接受 API 变动的实验、内部工具或学习场景使用；在 API 稳定前请固定 commit 或 fork，并关注 [ROADMAP](docs/ROADMAP.md) 与 breaking changes。
 
@@ -70,11 +70,11 @@
 
 
 
-另可选 **`DesignPatterns.Extensions.DependencyInjection`**：手动 `AddStrategyRegistry` / `AddFactoryRegistry` / `AddHandlerPipeline`，以及引用该扩展项目/包时由源生成器输出的 **`{Contract}Registry.RegisterDi(services)`**（Strategy / Factory / Handler 从容器解析，见 [docs/Strategy.md](docs/Strategy.md)）。当前本仓库的元包 **`DesignPatterns`** 不包含该 DI 扩展；独立 NuGet 发布策略待 API 与发版流程稳定后再确定。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
+另可选 **`DesignPatterns.Extensions.DependencyInjection`**：手动 `AddStrategyRegistry` / `AddFactoryRegistry` / `AddHandlerPipeline`，以及引用该扩展项目/包时由源生成器输出的 **`{Contract}Registry.RegisterDi(services)`**（Strategy / Factory / Handler 从容器解析，见 [docs/Strategy.md](docs/Strategy.md)）。当前元包 **`Skymly.DesignPatterns`** 不包含该 DI 扩展；独立 NuGet 发布策略待 API 与发版流程稳定后再确定。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
 
 
 
-本地或 CI 打包后，元包 **`DesignPatterns`** 可同时引用运行时库与源生成器（见下方「快速开始」）。正式发布到 NuGet 前请以 README 中的项目状态为准。
+本地或 CI 打包后，元包 **`Skymly.DesignPatterns`** 可同时引用运行时库与源生成器（见下方「快速开始」）。正式发布到 NuGet 前请以 README 中的项目状态为准。
 
 
 
@@ -96,7 +96,7 @@ DesignPatterns.slnx
 
 ├── DesignPatterns.CodeFixes/          # CodeFix（含 DP024 HandlerOrder）
 
-├── DesignPatterns.Package/            # NuGet 元包（PackageId=DesignPatterns）
+├── DesignPatterns.Package/            # NuGet 元包（PackageId=Skymly.DesignPatterns）
 
 ├── tests/DesignPatterns.Tests/        # 运行时单元测试（xUnit）
 
@@ -164,17 +164,17 @@ DesignPatterns.slnx
 
 
 
-### NuGet（预览，`0.1.0-preview2`）
+### NuGet（预览，`Skymly.DesignPatterns` `0.1.0-preview3`）
 
 
 
 ```xml
-<PackageReference Include="DesignPatterns" Version="0.1.0-preview2" />
+<PackageReference Include="Skymly.DesignPatterns" Version="0.1.0-preview3" />
 ```
 
 
 
-在 `nuget.config` 中添加 GitHub Packages 源并配置凭据（PAT，`read:packages`）：
+默认从 [nuget.org](https://api.nuget.org/v3/index.json) 还原。GitHub Packages 镜像（可选）：
 
 
 
