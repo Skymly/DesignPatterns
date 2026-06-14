@@ -16,7 +16,9 @@
 ./build.ps1 --target Ci --configuration Release
 ```
 
-（与 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 相同；打包校验用 `--target CiPack`。）
+（与 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 相同；打包与消费者校验用 `--target CiPack`。）
+
+NuGet 消费者 smoke：[`eng/nuget-smoke/MetaPackage.Consumer/`](eng/nuget-smoke/MetaPackage.Consumer/)（`CiPack` 使用本地 pack；对已发布包运行 `NuGetConsumerSmokePublished --consumer-feed Published`）。发版流程见 [`docs/PUBLISHING.md`](docs/PUBLISHING.md)。
 
 ## 分支与提交
 
@@ -30,7 +32,7 @@
 |------|------|----------|
 | 运行时单元 / 集成 | `tests/DesignPatterns.Tests` | 修改 Core API 或生成器消费路径 |
 | 源生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests` | 修改生成代码；运行测试后接受 Verify 快照变更 |
-| Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` | 修改 DP006 / DP023 / DP024 或 CodeFix 行为 |
+| Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` | 修改 DP006 / DP023 / DP024 / DP025 或 CodeFix 行为 |
 
 ### 生成器快照
 
@@ -50,7 +52,7 @@ dotnet test tests/DesignPatterns.SourceGenerators.Tests --filter FullyQualifiedN
 
 - `DesignPatterns.Diagnostics` — 诊断 ID 常量（`DiagnosticIds`）
 - `DesignPatterns.SourceGenerators` — 增量源生成器（生成器诊断：DP001–005、DP007–022 中的生成器区段）
-- `DesignPatterns.Analyzers` — `DiagnosticAnalyzer`（DP006 / DP023 / DP024）
+- `DesignPatterns.Analyzers` — `DiagnosticAnalyzer`（DP006 / DP023 / DP024 / DP025）
 - `DesignPatterns.CodeFixes` — `CodeFixProvider`（需 Workspaces）
 
 完整的 `DP###` 归类以 [AGENTS.md](AGENTS.md)「编译期诊断 ID」为唯一登记源。修改诊断 ID 时同步更新 `DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`。
@@ -63,4 +65,5 @@ dotnet test tests/DesignPatterns.SourceGenerators.Tests --filter FullyQualifiedN
 
 - 用户可见变更：更新根目录 [`CHANGELOG.md`](CHANGELOG.md)（英语，Keep a Changelog；发版时将 `[Unreleased]` 条目迁入版本节）
 - 新模式：在 [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 增加示例项目、更新本仓 `docs/` 与 [`AGENTS.md`](AGENTS.md)
+- key 命名：遵循 [`docs/FactoryKeyConventions.md`](docs/FactoryKeyConventions.md)
 - 架构 backlog：见 [`docs/ROADMAP.md`](docs/ROADMAP.md)

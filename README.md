@@ -92,7 +92,7 @@ DesignPatterns.slnx
 
 ├── DesignPatterns.SourceGenerators/   # 增量源生成器
 
-├── DesignPatterns.Analyzers/          # DP006、DP023、DP024 Analyzer
+├── DesignPatterns.Analyzers/          # DP006、DP023、DP024、DP025 Analyzer
 
 ├── DesignPatterns.CodeFixes/          # CodeFix（含 DP024 HandlerOrder）
 
@@ -138,7 +138,10 @@ DesignPatterns.slnx
 
 | [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) | 面向用户的英文/中文指南（模式、诊断、快速开始） |
 
+| [docs/README.md](docs/README.md) | 内部文档导航（维护者） |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | 环境、构建、测试、架构约定 |
+| [docs/PUBLISHING.md](docs/PUBLISHING.md) | NuGet 发版流程 |
+| [docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md) | Strategy / Factory key 命名约定 |
 
 | [docs/Strategy.md](docs/Strategy.md) | Strategy 模式设计与 API |
 
@@ -253,4 +256,3 @@ cd DesignPatterns.Samples
 
 
 见 [docs/ROADMAP.md](docs/ROADMAP.md)（可选增强项与 CompletionProvider 等）。
-
