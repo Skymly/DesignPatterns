@@ -196,7 +196,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 ## 版本、Tag 与 NuGet（代理与维护者）
 
-遵循工作区根 [`AGENTS.md`](../../../AGENTS.md) 的 Tag / 版本号约定，本仓库补充：
+本仓库 Tag / 版本号约定如下：
 
 | 场景 | 代理行为 |
 |------|----------|
@@ -278,7 +278,7 @@ git push origin v0.1.0-preview3
 
 ## Git / Issue / PR / Commit
 
-- **语言（权威）**：Issue / PR / Commit **一律英语**；与用户对话默认**简体中文**。本条以根 [`AGENTS.md`](../../../AGENTS.md) 为准，**覆盖** `docs/DEVELOPMENT.md`、`CONTRIBUTING.md` 中任何「中英文均可」的旧措辞。
+- **语言（权威）**：Issue / PR / Commit **一律英语**；与用户对话默认**简体中文**。本条为权威表述，**覆盖** `docs/DEVELOPMENT.md`、`CONTRIBUTING.md` 中任何「中英文均可」的旧措辞。
 - 分支：功能 `feature/<short-description>`、修复 `fix/<short-description>`；提交信息祈使句、说明 **why**。
 - **每个 PR 只改一个模块**（边界见上文「跨模块 PR / Issue 边界」）。
 - Issue 模板：[`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/)（Bug / Feature / Generator）。
