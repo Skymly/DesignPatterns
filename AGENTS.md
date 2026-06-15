@@ -108,7 +108,7 @@ dotnet test DesignPatterns.slnx -c Release
 | Event Aggregator | `IEventAggregator` | — |
 | State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
 
-模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/rfc/StateTransitionTable.md](docs/rfc/StateTransitionTable.md)。
+模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/StateTransitionTable.md](docs/StateTransitionTable.md)、[docs/rfc/StateTransitionTable.md](docs/rfc/StateTransitionTable.md)。
 
 ---
 
@@ -160,7 +160,7 @@ dotnet test DesignPatterns.slnx -c Release
 | 项 | 基线 |
 |----|------|
 | 运行时 TFM | `netstandard2.0` + `net8.0`（两者均须可用并随包分发） |
-| Roslyn 组件 | 目标**广泛兼容**的最低 Roslyn 版本，**不**绑定最新 major；调整 `Microsoft.CodeAnalysis.*`（[`Directory.Packages.props`](Directory.Packages.props)）须评估对消费者 SDK 门槛的影响 |
+| Roslyn 组件 | **4.8.0**（`Microsoft.CodeAnalysis.CSharp` / Workspaces；Analyzers 3.3.4）；目标广泛兼容 VS 2022 17.8+ / .NET 8 SDK，**不**绑定最新 major |
 | 分析器程序集 | `IsRoslynComponent`、`EnforceExtendedAnalyzerRules`、`IncludeBuildOutput=false` |
 | 生成器实现 | `IIncrementalGenerator` + `ForAttributeWithMetadataName` |
 
