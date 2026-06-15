@@ -2,11 +2,11 @@
 
 | 字段 | 值 |
 |------|-----|
-| **状态** | Draft（**v1 设计决策已确认**，待 M1 实现） |
+| **状态** | Accepted / Implemented（v1 已于 0.1.0-preview4 发布） |
 | **作者** | 维护者 / 贡献者 |
 | **创建** | 2026-06-14 |
 | **关联** | [ROADMAP.md](../ROADMAP.md) F3、`DP026` 起新诊断区段 |
-| **评审后** | 通过 → 迁入 `docs/StateTransitionTable.md`；实现拆 Issue → 按 [AGENTS.md](../../AGENTS.md) 模块边界 PR |
+| **评审后** | 已迁入 [docs/StateTransitionTable.md](../StateTransitionTable.md) |
 
 ---
 

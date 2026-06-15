@@ -22,6 +22,7 @@
 | [FactoryRegistry.md](FactoryRegistry.md) | Factory Registry + `[RegisterFactory]` |
 | [Decorator.md](Decorator.md) | Decorator + `[Decorator]` |
 | [EventAggregator.md](EventAggregator.md) | Event Aggregator |
+| [StateTransitionTable.md](StateTransitionTable.md) | State 转换表 + `[StateMachine]` / `[Transition]` |
 
 ## 横切约定
 
@@ -29,11 +30,11 @@
 |------|------|
 | [FactoryKeyConventions.md](FactoryKeyConventions.md) | Strategy / Factory 字符串 key 命名与复合 key（`outer:inner`） |
 
-## RFC（评审中）
+## RFC（已落地）
 
 | 文档 | 说明 |
 |------|------|
-| [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md) | State 转换表 — 有限状态图 primitive（Draft） |
+| [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md) | State 转换表 v1 设计记录（已实现于 0.1.0-preview4） |
 
 用户向精简版见 DesignPatterns.Docs：[registry-key-conventions](https://skymly.github.io/DesignPatterns.Docs/registry-key-conventions)。
 

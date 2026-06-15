@@ -68,6 +68,8 @@
 
 | Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | — |
 
+| State transition table | `DesignPatterns.Behavioral` | `ITransitionTable` / `TransitionTableBuilder` | `[StateMachine]` / `[Transition]` → `{State}TransitionTable` |
+
 
 
 另可选 **`DesignPatterns.Extensions.DependencyInjection`**：手动 `AddStrategyRegistry` / `AddFactoryRegistry` / `AddHandlerPipeline`，以及引用该扩展项目/包时由源生成器输出的 **`{Contract}Registry.RegisterDi(services)`**（Strategy / Factory / Handler 从容器解析，见 [docs/Strategy.md](docs/Strategy.md)）。当前元包 **`Skymly.DesignPatterns`** 不包含该 DI 扩展；独立 NuGet 发布策略待 API 与发版流程稳定后再确定。Factory 另支持 `[RegisterFactory]` 源生成器（见 [docs/FactoryRegistry.md](docs/FactoryRegistry.md)）。
@@ -120,7 +122,7 @@ DesignPatterns.slnx
 
 | [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) | 用户文档站（VitePress，[GitHub Pages](https://skymly.github.io/DesignPatterns.Docs/)） |
 
-| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 可运行示例（9 个控制台项目；主仓 CI 会 checkout 并 build + run） |
+| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 可运行示例（10 个控制台项目；主仓 CI 会 checkout 并 build + run） |
 
 
 
@@ -154,6 +156,8 @@ DesignPatterns.slnx
 | [docs/Decorator.md](docs/Decorator.md) | Decorator 模式设计与 API |
 
 | [docs/EventAggregator.md](docs/EventAggregator.md) | Event Aggregator 模式设计与 API |
+
+| [docs/StateTransitionTable.md](docs/StateTransitionTable.md) | State 转换表设计与 API |
 
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 功能与技术 backlog |
 

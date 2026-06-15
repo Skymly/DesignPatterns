@@ -53,9 +53,9 @@
 - 不与生态既有库（MediatR / Polly / `Microsoft.Extensions.*`）重复造轮子；
 - 有真实使用场景与至少一个 Sample 设想。
 
-候选池（仅登记，未排期）：Observer / 轻量 pub-sub 扩展、Builder 生成器、State 转换表。**未通过准入前不实现。**
+候选池（仅登记，未排期）：Observer / 轻量 pub-sub 扩展、Builder 生成器。**未通过准入前不实现。**
 
-**State 转换表**：设计 RFC 见 [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md)（v1 决策已确认，待 M1 实现）。
+State 转换表 v1 已于 0.1.0-preview4 发布；v2 候选（guard、DI、EventAggregator 联动）见 [StateTransitionTable.md](StateTransitionTable.md) 与 [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md)。
 
 ---
 
@@ -66,7 +66,7 @@
 | 项 | 现状 | 目标 | 状态 |
 |----|------|------|------|
 | 元包多目标缺失 | `DesignPatterns.Package` 仅打包 `netstandard2.0` 运行时 DLL（`_IncludeRuntimeInPackage`），net8.0 消费者拿不到 `FrozenDictionary` 优化版本 | 元包随运行时一并打包 `net8.0` lib | [x] |
-| Roslyn 版本基线 | `Microsoft.CodeAnalysis.CSharp` 版本偏高，抬高消费者 SDK 门槛 | 明确目标 Roslyn 基线并下调到广泛兼容版本 | [ ] |
+| Roslyn 版本基线 | `Microsoft.CodeAnalysis.CSharp` 5.3.0 抬高消费者 SDK 门槛 | 下调至 **4.8.0**（与 VS 2022 17.8+ / .NET 8 SDK 对齐）；Analyzers 3.3.4 | [x] |
 | xunit 版本分叉 | `Directory.Packages.props` 按 `MSBuildProjectName` 条件分出 2.9.2 / 2.5.3 | 统一单一 xunit 版本 | [x] |
 | 覆盖率 collector 缺失 | `SourceGenerators.Tests`、`Analyzers.Tests` 未引用 `coverlet.collector`，CI 报「找不到 XPlat Code Coverage」 | 全部测试项目接入同一 collector | [x] |
 | 缺 CHANGELOG | 无变更记录 | 引入 `CHANGELOG.md`（Keep a Changelog 风格） | [x] |
@@ -114,3 +114,4 @@
 - F2 Decorator 排序 / 条件：`DecoratorStackBuilder` 谓词 `Add`、`{Contract}DecoratorOrder` 常量（见 [Decorator.md](Decorator.md)）。
 - F2 Strategy 异步路径：`StrategyRegistryExtensions.ExecuteAsync` / `TryExecuteAsync`、`IAsyncStrategy` 契约的生成器与 DI 测试覆盖（见 [Strategy.md](Strategy.md)）。
 - F2 Handler 增强：`HandlerPipeline.InvokeTracedAsync`、`HandlerPipelineTrace` 短路逐步可观测（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）。
+- State 转换表 v1：`ITransitionTable` / `TransitionTableBuilder`（M1）、`[StateMachine]` / `[Transition]` 生成器（M2，DP026–DP031）；见 [StateTransitionTable.md](StateTransitionTable.md)。
