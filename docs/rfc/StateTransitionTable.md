@@ -298,7 +298,7 @@ v1 **不** 阻塞：表为无状态单例，`new` 或 `Instance` 即可。
 | 阶段 | 范围 | 交付 |
 |------|------|------|
 | **M0 评审** | 本 RFC 定稿 | Issue + 标签 `rfc-approved` |
-| **M1 Runtime** | `ITransitionTable`、`TransitionTableBuilder`、异常、单元测试 | PR → Runtime 模块 |
+| **M1 Runtime** | `ITransitionTable`、`TransitionTableBuilder`、异常、单元测试 | PR → Runtime 模块 | [x] |
 | **M2 Generator** | `[StateMachine]`、`[Transition]`、`{State}TransitionTable`、DP026–DP031 | PR → SourceGenerators + Diagnostics |
 | **M3 Sample + Docs** | Samples 项目、DesignPatterns.Docs 用户页、`docs/StateTransitionTable.md` | 分 PR |
 | **M4（可选）v2** | Guard 委托、DP032、RegisterDi | 单独 RFC 修订 |

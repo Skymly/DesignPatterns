@@ -106,8 +106,9 @@ dotnet test DesignPatterns.slnx -c Release
 | Composite | `[CompositePart]` | `CompositePartGenerator` |
 | Decorator | `[Decorator]` | `DecoratorGenerator` |
 | Event Aggregator | `IEventAggregator` | — |
+| State（M1） | `ITransitionTable`、`TransitionTableBuilder` | —（M2：`[StateMachine]` / `[Transition]`） |
 
-模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)。
+模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/rfc/StateTransitionTable.md](docs/rfc/StateTransitionTable.md)。
 
 ---
 

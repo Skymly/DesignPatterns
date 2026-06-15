@@ -20,4 +20,22 @@ public sealed class NotFoundExceptionTests
 
         Assert.Equal("No factory registered for key '42'.", ex.Message);
     }
+
+    [Fact]
+    public void InvalidTransitionException_ForTransition_IncludesStateAndTriggerInMessage()
+    {
+        var ex = InvalidTransitionException.ForTransition(OrderStatus.Draft, OrderTrigger.Pay);
+
+        Assert.Equal("No transition registered for state 'Draft' and trigger 'Pay'.", ex.Message);
+    }
+
+    private enum OrderStatus
+    {
+        Draft,
+    }
+
+    private enum OrderTrigger
+    {
+        Pay,
+    }
 }
