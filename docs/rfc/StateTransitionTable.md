@@ -199,14 +199,13 @@ public enum OrderStatus { Draft, Submitted, Paid, Cancelled }
 public enum OrderTrigger { Submit, Pay, Cancel }
 
 [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
-public static partial class OrderStatusMachine
-{
-  [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
-  [Transition(OrderStatus.Submitted, OrderTrigger.Pay, OrderStatus.Paid)]
-  [Transition(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled)]
-  [Transition(OrderStatus.Submitted, OrderTrigger.Cancel, OrderStatus.Cancelled)]
-}
+[Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+[Transition(OrderStatus.Submitted, OrderTrigger.Pay, OrderStatus.Paid)]
+[Transition(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+public static partial class OrderStatusMachine;
 ```
+
+`[Transition]` 与 `[StateMachine]` 一样标注在 **holder 类声明**上（`AllowMultiple`），不是方法或嵌套类型。
 
 ### 6.3 生成产物命名
 
@@ -299,7 +298,7 @@ v1 **不** 阻塞：表为无状态单例，`new` 或 `Instance` 即可。
 |------|------|------|
 | **M0 评审** | 本 RFC 定稿 | Issue + 标签 `rfc-approved` |
 | **M1 Runtime** | `ITransitionTable`、`TransitionTableBuilder`、异常、单元测试 | PR → Runtime 模块 | [x] |
-| **M2 Generator** | `[StateMachine]`、`[Transition]`、`{State}TransitionTable`、DP026–DP031 | PR → SourceGenerators + Diagnostics |
+| **M2 Generator** | `[StateMachine]`、`[Transition]`、`{State}TransitionTable`、DP026–DP031 | PR → SourceGenerators + Diagnostics | [x] |
 | **M3 Sample + Docs** | Samples 项目、DesignPatterns.Docs 用户页、`docs/StateTransitionTable.md` | 分 PR |
 | **M4（可选）v2** | Guard 委托、DP032、RegisterDi | 单独 RFC 修订 |
 

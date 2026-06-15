@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP031,
+    Message: State 'Paid' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  }
+]

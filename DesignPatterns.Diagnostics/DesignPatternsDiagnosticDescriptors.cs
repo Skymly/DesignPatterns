@@ -223,6 +223,56 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         AnalyzerCategory);
 
+    // State transition table (DP026–DP031)
+
+    public static DiagnosticDescriptor StateTransitionDuplicateEdge { get; } = Create(
+        DiagnosticIds.StateTransitionDuplicateEdge,
+        "Duplicate state transition edge",
+        "Transition from state '{0}' with trigger '{1}' is already declared. Remove the duplicate [Transition] attribute.",
+        "Each (state, trigger) pair must map to at most one target state.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionInvalidStateMember { get; } = Create(
+        DiagnosticIds.StateTransitionInvalidStateMember,
+        "Transition state is not a declared enum member",
+        "State value '{0}' is not a member of enum '{1}'. Use a declared enum member for [Transition] from/to arguments.",
+        "Transition endpoints must reference declared state enum members.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionInvalidTriggerMember { get; } = Create(
+        DiagnosticIds.StateTransitionInvalidTriggerMember,
+        "Transition trigger is not a declared enum member",
+        "Trigger value '{0}' is not a member of enum '{1}'. Use a declared enum member for [Transition] trigger arguments.",
+        "Transition triggers must reference declared trigger enum members.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionInvalidInitialState { get; } = Create(
+        DiagnosticIds.StateTransitionInvalidInitialState,
+        "Initial state is not a declared enum member",
+        "Initial state '{0}' is not a member of enum '{1}'. Set [StateMachine] Initial to a declared state enum member.",
+        "State machines require a valid initial state enum member.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateMachineHolderInvalid { get; } = Create(
+        DiagnosticIds.StateMachineHolderInvalid,
+        "StateMachine holder must be a static partial class",
+        "Class '{0}' must be declared static and partial so [StateMachine] can emit transition table members.",
+        "StateMachine augments static partial holder classes with generated transition helpers.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionIsolatedState { get; } = Create(
+        DiagnosticIds.StateTransitionIsolatedState,
+        "State is never used as a transition source",
+        "State '{0}' is declared on enum '{1}' but never appears as a [Transition] from state. This is informational for terminal or reserved states.",
+        "States without outgoing transitions may be intentional terminal states.",
+        DiagnosticSeverity.Info,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

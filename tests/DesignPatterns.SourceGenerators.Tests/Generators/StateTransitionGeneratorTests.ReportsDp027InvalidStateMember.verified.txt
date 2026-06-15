@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP031,
+    Message: State 'Submitted' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP027,
+    Message: State value '99' is not a member of enum 'TestAssembly.OrderStatus'. Use a declared enum member for [Transition] from/to arguments.
+  }
+]

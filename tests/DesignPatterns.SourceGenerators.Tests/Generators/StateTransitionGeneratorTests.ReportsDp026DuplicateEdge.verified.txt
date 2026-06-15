@@ -1,0 +1,14 @@
+﻿[
+  {
+    Id: DP031,
+    Message: State 'Submitted' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP026,
+    Message: Transition from state 'Draft' with trigger 'Submit' is already declared. Remove the duplicate [Transition] attribute.
+  },
+  {
+    Id: DP026,
+    Message: Transition from state 'Draft' with trigger 'Submit' is already declared. Remove the duplicate [Transition] attribute.
+  }
+]

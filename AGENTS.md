@@ -106,7 +106,7 @@ dotnet test DesignPatterns.slnx -c Release
 | Composite | `[CompositePart]` | `CompositePartGenerator` |
 | Decorator | `[Decorator]` | `DecoratorGenerator` |
 | Event Aggregator | `IEventAggregator` | — |
-| State（M1） | `ITransitionTable`、`TransitionTableBuilder` | —（M2：`[StateMachine]` / `[Transition]`） |
+| State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
 
 模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/rfc/StateTransitionTable.md](docs/rfc/StateTransitionTable.md)。
 
@@ -123,6 +123,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP023 | 未注册工厂（Analyzer + CodeFix） |
 | DP024 | 未注册 Handler（Analyzer + CodeFix） |
 | DP025 | 未知注册表键字面量（Analyzer + CodeFix；Strategy/Factory `Get`/`TryGet`/`Create`/`TryCreate`） |
+| DP026–DP031 | State 转换表（生成器；重复边、非法 enum、holder、孤立态 Info） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -131,7 +132,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP026**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP032**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。

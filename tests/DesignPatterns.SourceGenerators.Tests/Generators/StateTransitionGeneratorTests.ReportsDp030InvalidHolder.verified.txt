@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP030,
+    Message: Class 'OrderStatusMachine' must be declared static and partial so [StateMachine] can emit transition table members.
+  }
+]

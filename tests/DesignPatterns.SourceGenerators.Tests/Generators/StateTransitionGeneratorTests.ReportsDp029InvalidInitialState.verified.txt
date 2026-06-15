@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP029,
+    Message: Initial state '42' is not a member of enum 'TestAssembly.OrderStatus'. Set [StateMachine] Initial to a declared state enum member.
+  }
+]
