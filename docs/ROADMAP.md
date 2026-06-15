@@ -17,6 +17,7 @@
 | Composite | `MyContractCompositeKeys`、`MyContractCompositeCatalog.BuildRoot()` / `BuildForest()` |
 | Decorator | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
+| State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
 新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP026**。
 
@@ -53,6 +54,8 @@
 - 有真实使用场景与至少一个 Sample 设想。
 
 候选池（仅登记，未排期）：Observer / 轻量 pub-sub 扩展、Builder 生成器、State 转换表。**未通过准入前不实现。**
+
+**State 转换表**：设计 RFC 见 [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md)（v1 决策已确认，待 M1 实现）。
 
 ---
 

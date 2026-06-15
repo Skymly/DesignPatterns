@@ -29,6 +29,12 @@
 |------|------|
 | [FactoryKeyConventions.md](FactoryKeyConventions.md) | Strategy / Factory 字符串 key 命名与复合 key（`outer:inner`） |
 
+## RFC（评审中）
+
+| 文档 | 说明 |
+|------|------|
+| [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md) | State 转换表 — 有限状态图 primitive（Draft） |
+
 用户向精简版见 DesignPatterns.Docs：[registry-key-conventions](https://skymly.github.io/DesignPatterns.Docs/registry-key-conventions)。
 
 ## 与用户文档站的分工
