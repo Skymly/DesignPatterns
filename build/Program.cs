@@ -165,30 +165,38 @@ sealed class Build : NukeBuild
             Assert.FileExists(NuGetSmokeConsumerProject, $"Consumer project not found: {NuGetSmokeConsumerProject}");
 
             string packageVersion = GetPackageVersion(GetExpectedPackage());
-            string? previousNuGetConfig = Environment.GetEnvironmentVariable("NUGET_CONFIG");
+            AbsolutePath? restoreConfig = null;
 
             if (ConsumerFeed == NuGetConsumerFeed.Local)
             {
                 WriteLocalNuGetConfig();
-                Environment.SetEnvironmentVariable("NUGET_CONFIG", NuGetSmokeLocalConfig);
+                restoreConfig = NuGetSmokeLocalConfig;
             }
 
-            try
+            if (restoreConfig is not null)
+            {
+                DotNetRestore(s => s
+                    .SetProjectFile(NuGetSmokeConsumerProject)
+                    .SetConfigFile(restoreConfig));
+
+                DotNetBuild(s => s
+                    .SetProjectFile(NuGetSmokeConsumerProject)
+                    .SetConfiguration(Configuration)
+                    .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion)
+                    .EnableNoRestore());
+            }
+            else
             {
                 DotNetBuild(s => s
                     .SetProjectFile(NuGetSmokeConsumerProject)
                     .SetConfiguration(Configuration)
                     .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion));
+            }
 
-                DotNetRun(s => s
-                    .SetProjectFile(NuGetSmokeConsumerProject)
-                    .SetConfiguration(Configuration)
-                    .EnableNoBuild());
-            }
-            finally
-            {
-                Environment.SetEnvironmentVariable("NUGET_CONFIG", previousNuGetConfig);
-            }
+            DotNetRun(s => s
+                .SetProjectFile(NuGetSmokeConsumerProject)
+                .SetConfiguration(Configuration)
+                .EnableNoBuild());
         });
 
     Target PackConsumerVerify => _ => _
