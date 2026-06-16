@@ -174,7 +174,7 @@ sealed class Build : NukeBuild
             }
 
             RunNuGetConsumerSmoke(NuGetSmokeConsumerProject, packageVersion, restoreConfig, runAfterBuild: true);
-            RunNuGetConsumerSmoke(NuGetSmokeConsumerNet48Project, packageVersion, restoreConfig, runAfterBuild: true);
+            RunNuGetConsumerSmoke(NuGetSmokeConsumerNet48Project, packageVersion, restoreConfig, runAfterBuild: false);
         });
 
     void RunNuGetConsumerSmoke(

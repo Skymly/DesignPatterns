@@ -5,7 +5,7 @@ Verifies that packed **`Skymly.DesignPatterns`** restores, runs source generator
 | Project | TFM | What it proves |
 |---------|-----|----------------|
 | [`MetaPackage.Consumer/`](MetaPackage.Consumer/) | `net8.0` | Strategy registry, singleton generator; `dotnet run` after local or published pack |
-| [`MetaPackage.Consumer.Net48/`](MetaPackage.Consumer.Net48/) | `net48` | Same meta-package on .NET Framework; `RegisterStrategy` + generated `*Keys` / `*Registry` |
+| [`MetaPackage.Consumer.Net48/`](MetaPackage.Consumer.Net48/) | `net48` | Same meta-package on .NET Framework; `RegisterStrategy` + generated `*Keys` / `*Registry` (`CiPack` build-only; run the `.exe` manually on Windows) |
 
 ## Local pack feed
 
