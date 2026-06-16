@@ -5,6 +5,8 @@
   <Folder Name="/tests/">
     <Project Path="tests/DesignPatterns.Extensions.DependencyInjection.Tests/DesignPatterns.Extensions.DependencyInjection.Tests.csproj" />
     <Project Path="tests/DesignPatterns.Extensions.Autofac.Tests/DesignPatterns.Extensions.Autofac.Tests.csproj" />
+    <Project Path="tests/DesignPatterns.Extensions.AppSettings.Tests/DesignPatterns.Extensions.AppSettings.Tests.csproj" />
+    <Project Path="tests/DesignPatterns.Extensions.AppSettings.Tests.Net48/DesignPatterns.Extensions.AppSettings.Tests.Net48.csproj" />
     <Project Path="tests/DesignPatterns.Extensions.Configuration.Tests/DesignPatterns.Extensions.Configuration.Tests.csproj" />
     <Project Path="tests/DesignPatterns.Extensions.Configuration.Tests.Net48/DesignPatterns.Extensions.Configuration.Tests.Net48.csproj" />
   </Folder>
@@ -12,6 +14,7 @@
   <Project Path="DesignPatterns.CodeFixes/DesignPatterns.CodeFixes.csproj" />
   <Project Path="DesignPatterns.Extensions.DependencyInjection/DesignPatterns.Extensions.DependencyInjection.csproj" />
   <Project Path="DesignPatterns.Extensions.Autofac/DesignPatterns.Extensions.Autofac.csproj" />
+  <Project Path="DesignPatterns.Extensions.AppSettings/DesignPatterns.Extensions.AppSettings.csproj" />
   <Project Path="DesignPatterns.Extensions.Configuration/DesignPatterns.Extensions.Configuration.csproj" />
   <Project Path="DesignPatterns.Package/DesignPatterns.Package.csproj" />
   <Project Path="tests/DesignPatterns.Tests/DesignPatterns.Tests.csproj" />

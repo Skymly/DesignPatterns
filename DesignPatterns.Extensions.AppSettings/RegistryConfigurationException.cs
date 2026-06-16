@@ -1,9 +1,9 @@
 using System;
 
-namespace DesignPatterns.Extensions.Configuration;
+namespace DesignPatterns.Extensions.AppSettings;
 
 /// <summary>
-/// Thrown when a configuration-backed strategy key cannot be resolved from a registry.
+/// Thrown when an AppSettings-backed strategy key cannot be resolved from a registry.
 /// </summary>
 public sealed class RegistryConfigurationException : Exception
 {

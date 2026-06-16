@@ -1,7 +1,7 @@
 using System;
 using System.Configuration;
 
-namespace DesignPatterns.Extensions.Configuration;
+namespace DesignPatterns.Extensions.AppSettings;
 
 internal static class RegistryConfigurationAppSettings
 {

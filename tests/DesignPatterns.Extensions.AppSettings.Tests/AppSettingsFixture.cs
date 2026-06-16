@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Specialized;
+using DesignPatterns.Extensions.AppSettings;
 
-namespace DesignPatterns.Extensions.Configuration.Tests;
+namespace DesignPatterns.Extensions.AppSettings.Tests;
 
 public sealed class AppSettingsFixture : IDisposable
 {
