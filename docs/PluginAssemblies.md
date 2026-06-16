@@ -123,7 +123,7 @@ v1 **不**提供 `[RegisterStrategyBundle]`；若样板过多再评估（见 #10
 
 ## 6. 配置选型
 
-`App.config` / `ConfigurationManager` 桥接由 `DesignPatterns.Extensions.Configuration` 提供（`RegistryConfiguration.ResolveConfigured`，跟踪 #107）。
+`App.config` / `ConfigurationManager` 桥接由 `DesignPatterns.Extensions.AppSettings` 提供（`RegistryConfiguration.ResolveConfigured` / `TryResolveConfigured`，见 [AppSettings.md](AppSettings.md)）。
 
 在桥接落地前，宿主可：
 

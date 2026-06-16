@@ -48,6 +48,8 @@ sealed class Build : NukeBuild
         "tests/DesignPatterns.Analyzers.Tests/DesignPatterns.Analyzers.Tests.csproj",
         "tests/DesignPatterns.Extensions.DependencyInjection.Tests/DesignPatterns.Extensions.DependencyInjection.Tests.csproj",
         "tests/DesignPatterns.Extensions.Autofac.Tests/DesignPatterns.Extensions.Autofac.Tests.csproj",
+        "tests/DesignPatterns.Extensions.AppSettings.Tests/DesignPatterns.Extensions.AppSettings.Tests.csproj",
+        "tests/DesignPatterns.Extensions.Configuration.Tests/DesignPatterns.Extensions.Configuration.Tests.csproj",
     ];
 
     const string ExpectedPackageId = "Skymly.DesignPatterns";
