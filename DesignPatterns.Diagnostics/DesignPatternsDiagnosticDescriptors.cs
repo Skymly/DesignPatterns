@@ -223,6 +223,14 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         AnalyzerCategory);
 
+    public static DiagnosticDescriptor PluginRegistryDuplicateKeyAcrossAssemblies { get; } = Create(
+        DiagnosticIds.PluginRegistryDuplicateKeyAcrossAssemblies,
+        "Duplicate registry key across assemblies",
+        "Strategy key '{0}' for contract '{1}' is registered in multiple assemblies ({2}). Use unique keys per provider assembly or reference only one provider per contract dimension.",
+        "Plugin provider assemblies must not register the same strategy key for the same contract when both are referenced by the host.",
+        DiagnosticSeverity.Error,
+        AnalyzerCategory);
+
     // State transition table (DP026–DP031)
 
     public static DiagnosticDescriptor StateTransitionDuplicateEdge { get; } = Create(

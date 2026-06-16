@@ -127,6 +127,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP023 | 未注册工厂（Analyzer + CodeFix） |
 | DP024 | 未注册 Handler（Analyzer + CodeFix） |
 | DP025 | 未知注册表键字面量（Analyzer + CodeFix；Strategy/Factory `Get`/`TryGet`/`Create`/`TryCreate`） |
+| DP033 | 跨程序集重复 strategy key（Analyzer；多供应商宿主引用冲突） |
 | DP026–DP031 | State 转换表（生成器；重复边、非法 enum、holder、孤立态 Info） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |

@@ -52,6 +52,13 @@ internal static class AnalyzerSymbolHelper
 
     internal static INamedTypeSymbol? TryGetContractTypeFromAttribute(AttributeData attribute)
     {
+        if (attribute.AttributeClass is INamedTypeSymbol attributeClass &&
+            attributeClass.TypeArguments.Length == 1 &&
+            attributeClass.TypeArguments[0] is INamedTypeSymbol typeArgumentContract)
+        {
+            return typeArgumentContract;
+        }
+
         if (attribute.AttributeClass?.IsGenericType == true)
         {
             return attribute.AttributeClass.TypeArguments.Length == 1
