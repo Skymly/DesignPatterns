@@ -6,6 +6,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DesignPatterns.SourceGenerators.Syntax;
 
+internal enum RegistrationResolveTarget
+{
+    DirectNew,
+    ServiceProvider,
+    ComponentContext,
+}
+
 internal static class DiIntegrationSyntaxHelper
 {
     internal static MemberDeclarationSyntax CreateDiEntriesField(
@@ -133,7 +140,10 @@ internal static class DiIntegrationSyntaxHelper
             .WithType(SyntaxFactory.ParseTypeName("global::System.IServiceProvider"));
 
         var returnType = CreateFactoryRegistryInterfaceType(contractTypeName);
-        var buildCall = CreateFactoryRegistryBuilderExpression(contractTypeName, entries, useServiceProvider: true);
+        var buildCall = CreateFactoryRegistryBuilderExpression(
+            contractTypeName,
+            entries,
+            RegistrationResolveTarget.ServiceProvider);
 
         return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
             .WithModifiers(
@@ -158,7 +168,10 @@ internal static class DiIntegrationSyntaxHelper
                     SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
                         SyntaxFactory.ParseTypeName(contextTypeName))));
 
-        var buildCall = CreateHandlerPipelineBuilderExpression(contextTypeName, handlerTypeNames, useServiceProvider: true);
+        var buildCall = CreateHandlerPipelineBuilderExpression(
+            contextTypeName,
+            handlerTypeNames,
+            RegistrationResolveTarget.ServiceProvider);
 
         return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
             .WithModifiers(
@@ -173,7 +186,7 @@ internal static class DiIntegrationSyntaxHelper
     internal static ExpressionSyntax CreateFactoryRegistryBuilderExpression(
         string contractTypeName,
         IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
-        bool useServiceProvider)
+        RegistrationResolveTarget resolveTarget)
     {
         var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("FactoryRegistryBuilder"))
             .WithTypeArgumentList(
@@ -190,10 +203,15 @@ internal static class DiIntegrationSyntaxHelper
 
         foreach (var entry in entries)
         {
-            ExpressionSyntax lambdaBody = useServiceProvider
-                ? CreateGetRequiredServiceCastExpression(entry.ImplementationTypeName, contractTypeName)
-                : SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
-                    .WithArgumentList(SyntaxFactory.ArgumentList());
+            ExpressionSyntax lambdaBody = resolveTarget switch
+            {
+                RegistrationResolveTarget.ServiceProvider =>
+                    CreateResolveCastExpression(entry.ImplementationTypeName, contractTypeName, resolveTarget),
+                RegistrationResolveTarget.ComponentContext =>
+                    CreateResolveCastExpression(entry.ImplementationTypeName, contractTypeName, resolveTarget),
+                _ => SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
+                    .WithArgumentList(SyntaxFactory.ArgumentList()),
+            };
 
             var lambda = SyntaxFactory.ParenthesizedLambdaExpression()
                 .WithParameterList(SyntaxFactory.ParameterList())
@@ -226,7 +244,7 @@ internal static class DiIntegrationSyntaxHelper
     internal static ExpressionSyntax CreateHandlerPipelineBuilderExpression(
         string contextTypeName,
         IReadOnlyList<string> handlerTypeNames,
-        bool useServiceProvider)
+        RegistrationResolveTarget resolveTarget)
     {
         var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipelineBuilder"))
             .WithTypeArgumentList(
@@ -239,10 +257,13 @@ internal static class DiIntegrationSyntaxHelper
 
         foreach (var handlerTypeName in handlerTypeNames)
         {
-            ExpressionSyntax handlerExpression = useServiceProvider
-                ? CreateGetRequiredServiceExpression(handlerTypeName)
-                : SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(handlerTypeName))
-                    .WithArgumentList(SyntaxFactory.ArgumentList());
+            ExpressionSyntax handlerExpression = resolveTarget switch
+            {
+                RegistrationResolveTarget.ServiceProvider or RegistrationResolveTarget.ComponentContext =>
+                    CreateResolveExpression(handlerTypeName, resolveTarget),
+                _ => SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(handlerTypeName))
+                    .WithArgumentList(SyntaxFactory.ArgumentList()),
+            };
 
             builderExpression = SyntaxFactory.InvocationExpression(
                     SyntaxFactory.MemberAccessExpression(
@@ -292,25 +313,48 @@ internal static class DiIntegrationSyntaxHelper
                             SyntaxFactory.ParseTypeName(contractTypeName),
                         })));
 
-    private static ExpressionSyntax CreateGetRequiredServiceExpression(string implementationTypeName) =>
-        SyntaxFactory.InvocationExpression(
+    private static ExpressionSyntax CreateResolveExpression(
+        string implementationTypeName,
+        RegistrationResolveTarget resolveTarget) =>
+        resolveTarget switch
+        {
+            RegistrationResolveTarget.ComponentContext => SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("serviceProvider"),
-                    SyntaxFactory.GenericName(
-                            SyntaxFactory.Identifier("GetRequiredService"))
+                    SyntaxFactory.IdentifierName("lifetimeScope"),
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("Resolve"))
                         .WithTypeArgumentList(
                             SyntaxFactory.TypeArgumentList(
                                 SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
-                                    SyntaxFactory.ParseTypeName(implementationTypeName))))))
-            .WithArgumentList(SyntaxFactory.ArgumentList());
+                                    SyntaxFactory.ParseTypeName(implementationTypeName))))),
+                SyntaxFactory.ArgumentList()),
+            _ => SyntaxFactory.InvocationExpression(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("serviceProvider"),
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("GetRequiredService"))
+                        .WithTypeArgumentList(
+                            SyntaxFactory.TypeArgumentList(
+                                SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                    SyntaxFactory.ParseTypeName(implementationTypeName))))),
+                SyntaxFactory.ArgumentList()),
+        };
+
+    private static ExpressionSyntax CreateResolveCastExpression(
+        string implementationTypeName,
+        string contractTypeName,
+        RegistrationResolveTarget resolveTarget) =>
+        SyntaxFactory.CastExpression(
+            SyntaxFactory.ParseTypeName(contractTypeName),
+            CreateResolveExpression(implementationTypeName, resolveTarget));
+
+    private static ExpressionSyntax CreateGetRequiredServiceExpression(string implementationTypeName) =>
+        CreateResolveExpression(implementationTypeName, RegistrationResolveTarget.ServiceProvider);
 
     private static ExpressionSyntax CreateGetRequiredServiceCastExpression(
         string implementationTypeName,
         string contractTypeName) =>
-        SyntaxFactory.CastExpression(
-            SyntaxFactory.ParseTypeName(contractTypeName),
-            CreateGetRequiredServiceExpression(implementationTypeName));
+        CreateResolveCastExpression(implementationTypeName, contractTypeName, RegistrationResolveTarget.ServiceProvider);
 
     private static StatementSyntax CreateTryAddImplementationStatement(string implementationTypeName)
     {

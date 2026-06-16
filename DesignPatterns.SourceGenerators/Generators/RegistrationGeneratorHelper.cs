@@ -83,9 +83,9 @@ internal static class RegistrationGeneratorHelper
         SourceProductionContext context,
         ImmutableArray<KeyedRegistration> nonGeneric,
         ImmutableArray<KeyedRegistration> generic,
-        bool enableDiIntegration,
+        GeneratorIntegrationOptions integrationOptions,
         KeyedRegistrationDiagnostics diagnostics,
-        Action<SourceProductionContext, INamedTypeSymbol, List<KeyedRegistration>, bool, bool> emitGeneratedSources)
+        Action<SourceProductionContext, INamedTypeSymbol, List<KeyedRegistration>, GeneratorIntegrationOptions, bool> emitGeneratedSources)
     {
         var registrations = nonGeneric
             .Concat(generic)
@@ -136,7 +136,7 @@ internal static class RegistrationGeneratorHelper
                 context,
                 contract,
                 valid,
-                enableDiIntegration,
+                integrationOptions,
                 contractNamesWithCollisions.Contains(contract.Name));
         }
     }

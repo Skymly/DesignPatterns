@@ -39,10 +39,10 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
             static (node, _) => node is ClassDeclarationSyntax,
             static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: true));
 
-        var diEnabled = GeneratorConfigHelper.CreateDiIntegrationEnabledProvider(context);
+        var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(diEnabled),
+            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
             static (spc, source) => RegistrationGeneratorHelper.Execute(
                 spc,
                 source.Left.Left.SelectMany(static list => list).ToImmutableArray(),
@@ -56,7 +56,7 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol contract,
         List<KeyedRegistration> registrations,
-        bool enableDiIntegration,
+        GeneratorIntegrationOptions integrationOptions,
         bool qualifyHintName)
     {
         var namespaceName = contract.ContainingNamespace.IsGlobalNamespace
@@ -90,7 +90,7 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
             registryClassName,
             contractTypeName,
             registryEntries,
-            enableDiIntegration);
+            integrationOptions);
 
         var hintPrefix = qualifyHintName ? HintNameHelper.FromSymbol(contract) : contract.Name;
         context.AddSource(

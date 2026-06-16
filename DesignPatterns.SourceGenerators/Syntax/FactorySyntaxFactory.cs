@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DesignPatterns.SourceGenerators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -46,13 +47,13 @@ internal static class FactorySyntaxFactory
         string registryClassName,
         string contractTypeName,
         IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
-        bool enableDiIntegration = false)
+        GeneratorIntegrationOptions integrationOptions = default)
     {
         var returnType = CreateFactoryRegistryInterfaceType(contractTypeName);
         var buildCall = DiIntegrationSyntaxHelper.CreateFactoryRegistryBuilderExpression(
             contractTypeName,
             entries,
-            useServiceProvider: false);
+            RegistrationResolveTarget.DirectNew);
 
         var members = new List<MemberDeclarationSyntax>
         {
@@ -65,10 +66,18 @@ internal static class FactorySyntaxFactory
                 .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
         };
 
-        if (enableDiIntegration)
+        if (integrationOptions.EnableDi)
         {
             members.Add(DiIntegrationSyntaxHelper.CreateFactoryCreateFromServiceProviderMethod(contractTypeName, entries));
             members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                returnType));
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(AutofacIntegrationSyntaxHelper.CreateFactoryCreateFromComponentContextMethod(contractTypeName, entries));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 returnType));
         }
@@ -82,9 +91,14 @@ internal static class FactorySyntaxFactory
             .AddMembers(members.ToArray());
 
         var additionalUsings = new List<string> { "System", "DesignPatterns.Creational" };
-        if (enableDiIntegration)
+        if (integrationOptions.EnableDi)
         {
             additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            additionalUsings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
         }
 
         return WrapInCompilationUnit(namespaceName, registryClass, additionalUsings.ToArray());

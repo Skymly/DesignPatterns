@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DesignPatterns.SourceGenerators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -16,12 +17,12 @@ internal static class HandlerPipelineSyntaxFactory
         string pipelineClassName,
         string contextTypeName,
         IReadOnlyList<string> handlerTypeNames,
-        bool enableDiIntegration = false)
+        GeneratorIntegrationOptions integrationOptions = default)
     {
         var buildInvocation = DiIntegrationSyntaxHelper.CreateHandlerPipelineBuilderExpression(
             contextTypeName,
             handlerTypeNames,
-            useServiceProvider: false);
+            RegistrationResolveTarget.DirectNew);
 
         var instanceField = SyntaxFactory.FieldDeclaration(
                 SyntaxFactory.VariableDeclaration(
@@ -60,7 +61,7 @@ internal static class HandlerPipelineSyntaxFactory
 
         var members = new List<MemberDeclarationSyntax> { instanceField, instanceProperty };
 
-        if (enableDiIntegration)
+        if (integrationOptions.EnableDi)
         {
             members.Add(DiIntegrationSyntaxHelper.CreateHandlerCreateFromServiceProviderMethod(contextTypeName, handlerTypeNames));
             var pipelineType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
@@ -69,6 +70,17 @@ internal static class HandlerPipelineSyntaxFactory
                         SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
                             SyntaxFactory.ParseTypeName(contextTypeName))));
             members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(handlerTypeNames, pipelineType));
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(AutofacIntegrationSyntaxHelper.CreateHandlerCreateFromComponentContextMethod(contextTypeName, handlerTypeNames));
+            var pipelineType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
+                .WithTypeArgumentList(
+                    SyntaxFactory.TypeArgumentList(
+                        SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                            SyntaxFactory.ParseTypeName(contextTypeName))));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(handlerTypeNames, pipelineType));
         }
 
         var pipelineClass = SyntaxFactory.ClassDeclaration(pipelineClassName)
@@ -80,10 +92,19 @@ internal static class HandlerPipelineSyntaxFactory
             .AddMembers(members.ToArray());
 
         var additionalUsings = new List<string> { "DesignPatterns.Behavioral" };
-        if (enableDiIntegration)
+        if (integrationOptions.EnableDi || integrationOptions.EnableAutofac)
         {
             additionalUsings.Insert(0, "System");
+        }
+
+        if (integrationOptions.EnableDi)
+        {
             additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            additionalUsings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
         }
 
         return WrapInCompilationUnit(namespaceName, pipelineClass, additionalUsings.ToArray());
