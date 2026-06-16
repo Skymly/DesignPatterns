@@ -19,7 +19,7 @@
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP032**。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP034**（DP032 预留给 App.config 静态分析，**未实现**；DP033 为跨程序集重复 strategy key）。
 
 ---
 

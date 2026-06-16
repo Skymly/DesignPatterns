@@ -119,6 +119,8 @@ FCErrorRegistry.RegisterAutofac(builder);
 
 v1 **不**提供 `[RegisterStrategyBundle]`；若样板过多再评估（见 #108）。
 
+同一实现需在 Autofac 中暴露多个接口时，在模块中手动补充 `builder.RegisterType<Impl>().As<IContract>().As<IAdditional>()`；仅当样例摩擦证明有必要时再评估生成器 `AdditionalContracts` 参数。
+
 ---
 
 ## 6. 配置选型
@@ -138,7 +140,8 @@ v1 **不**提供 `[RegisterStrategyBundle]`；若样板过多再评估（见 #10
 |----|------|
 | DP003 | 同一编译单元内重复 key（已有） |
 | DP025 | 未知字面量 key（已有） |
-| **DP033** | 跨程序集重复 key 合并 — **暂不实现**：`partial` 无法跨程序集，重复 key 表现为多个同名 Registry 类型或宿主歧义，应在 **引用图 / 部署** 层保证单供应商维度 |
+| **DP033** | 宿主同时引用多个供应商程序集时，**同一契约**出现**相同 strategy key**（Analyzer Error） |
+| **DP034** | 供应商已引用但 key 未出现在样例/配置文档 — 可选 Info，**未实现** |
 
 ---
 

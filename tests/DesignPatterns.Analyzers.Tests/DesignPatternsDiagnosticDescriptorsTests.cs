@@ -10,6 +10,7 @@ public sealed class DesignPatternsDiagnosticDescriptorsTests
     [InlineData("DP006")]
     [InlineData("DP024")]
     [InlineData("DP025")]
+    [InlineData("DP033")]
     public void Help_link_uses_diagnostics_page_fragment(string diagnosticId)
     {
         var helpLink = DiagnosticHelpLinks.For(diagnosticId);
@@ -37,5 +38,16 @@ public sealed class DesignPatternsDiagnosticDescriptorsTests
         Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
         Assert.Equal(DiagnosticHelpLinks.For(descriptor.Id), descriptor.HelpLinkUri);
         Assert.Contains("Registered keys", descriptor.MessageFormat.ToString());
+    }
+
+    [Fact]
+    public void Cross_assembly_registry_key_descriptor_exposes_help_link_and_description()
+    {
+        var descriptor = new CrossAssemblyRegistryKeyAnalyzer().SupportedDiagnostics[0];
+
+        Assert.Equal(DiagnosticIds.PluginRegistryDuplicateKeyAcrossAssemblies, descriptor.Id);
+        Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
+        Assert.Equal(DiagnosticHelpLinks.For(descriptor.Id), descriptor.HelpLinkUri);
+        Assert.Contains("multiple assemblies", descriptor.MessageFormat.ToString());
     }
 }

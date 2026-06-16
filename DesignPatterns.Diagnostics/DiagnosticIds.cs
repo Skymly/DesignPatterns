@@ -30,6 +30,7 @@ public static class DiagnosticIds
     public const string RegisterFactoryUnregisteredImplementation = "DP023";
     public const string HandlerOrderUnregisteredImplementation = "DP024";
     public const string RegistryKeyNotRegistered = "DP025";
+    public const string PluginRegistryDuplicateKeyAcrossAssemblies = "DP033";
     public const string StateTransitionDuplicateEdge = "DP026";
     public const string StateTransitionInvalidStateMember = "DP027";
     public const string StateTransitionInvalidTriggerMember = "DP028";

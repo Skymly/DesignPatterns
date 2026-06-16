@@ -27,6 +27,7 @@ DP006    | DesignPatterns.Analyzers | Info     | Strategy implementation missing
 DP023    | DesignPatterns.Analyzers | Info     | Factory implementation missing RegisterFactory attribute
 DP024    | DesignPatterns.Analyzers | Info     | Handler implementation missing HandlerOrder attribute
 DP025    | DesignPatterns.Analyzers | Info     | Registry key is not registered for contract
+DP033    | DesignPatterns.Analyzers | Error    | Duplicate strategy key across referenced provider assemblies
 DP026    | DesignPatterns.Generators | Error    | Duplicate state transition edge
 DP027    | DesignPatterns.Generators | Error    | Transition state is not a declared enum member
 DP028    | DesignPatterns.Generators | Error    | Transition trigger is not a declared enum member

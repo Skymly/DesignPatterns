@@ -43,6 +43,22 @@ internal static class AnalyzerTestContext
             .ConfigureAwait(false);
     }
 
+    internal static async Task<ImmutableArray<Diagnostic>> RunAnalyzersWithTwoReferencedAssembliesAndHostAsync(
+        string firstReferencedAssemblySource,
+        string secondReferencedAssemblySource,
+        string hostAssemblySource,
+        params DiagnosticAnalyzer[] analyzers)
+    {
+        var compilation = CreateCompilationWithTwoReferencedAssembliesAndHost(
+            firstReferencedAssemblySource,
+            secondReferencedAssemblySource,
+            hostAssemblySource);
+        return await compilation
+            .WithAnalyzers(ImmutableArray.Create(analyzers))
+            .GetAnalyzerDiagnosticsAsync()
+            .ConfigureAwait(false);
+    }
+
     internal static async Task<string> ApplyGeneratorCodeFixAsync<TGenerator>(
         string source,
         string diagnosticId,
@@ -145,6 +161,59 @@ internal static class AnalyzerTestContext
             new[] { implementationTree },
             References.Add(referencedAssembly),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    }
+
+    private static CSharpCompilation CreateCompilationWithTwoReferencedAssembliesAndHost(
+        string firstReferencedAssemblySource,
+        string secondReferencedAssemblySource,
+        string hostAssemblySource)
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var firstReference = EmitCompilationReference(
+            "ProviderAlpha",
+            firstReferencedAssemblySource,
+            "Alpha.cs",
+            parseOptions);
+        var secondReference = EmitCompilationReference(
+            "ProviderBeta",
+            secondReferencedAssemblySource,
+            "Beta.cs",
+            parseOptions);
+
+        var hostTree = CSharpSyntaxTree.ParseText(
+            hostAssemblySource,
+            parseOptions,
+            path: "Host.cs");
+        return CSharpCompilation.Create(
+            "Host",
+            new[] { hostTree },
+            References.Add(firstReference).Add(secondReference),
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication));
+    }
+
+    private static MetadataReference EmitCompilationReference(
+        string assemblyName,
+        string source,
+        string fileName,
+        CSharpParseOptions parseOptions)
+    {
+        var tree = CSharpSyntaxTree.ParseText(source, parseOptions, path: fileName);
+        var compilation = CSharpCompilation.Create(
+            assemblyName,
+            new[] { tree },
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        using var stream = new MemoryStream();
+        var emitResult = compilation.Emit(stream);
+        if (!emitResult.Success)
+        {
+            throw new InvalidOperationException(
+                string.Join(Environment.NewLine, emitResult.Diagnostics.Select(diagnostic => diagnostic.ToString())));
+        }
+
+        stream.Position = 0;
+        return MetadataReference.CreateFromStream(stream);
     }
 
     private static ImmutableArray<MetadataReference> CreateReferences()
