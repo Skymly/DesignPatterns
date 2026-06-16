@@ -45,10 +45,10 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             static (node, _) => node is ClassDeclarationSyntax,
             static (ctx, _) => Transform(ctx, isGenericAttribute: true));
 
-        var diEnabled = GeneratorConfigHelper.CreateDiIntegrationEnabledProvider(context);
+        var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(diEnabled),
+            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
             static (spc, source) => Execute(spc,
                 source.Left.Left.SelectMany(static list => list).ToImmutableArray(),
                 source.Left.Right.SelectMany(static list => list).ToImmutableArray(),
@@ -115,7 +115,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         SourceProductionContext context,
         ImmutableArray<HandlerRegistration> nonGeneric,
         ImmutableArray<HandlerRegistration> generic,
-        bool enableDiIntegration)
+        GeneratorIntegrationOptions integrationOptions)
     {
         var registrations = nonGeneric
             .Concat(generic)
@@ -164,7 +164,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 context,
                 contextType,
                 valid,
-                enableDiIntegration,
+                integrationOptions,
                 contextNamesWithCollisions.Contains(contextType.Name));
         }
     }
@@ -210,7 +210,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         SourceProductionContext context,
         INamedTypeSymbol contextType,
         List<HandlerRegistration> handlers,
-        bool enableDiIntegration,
+        GeneratorIntegrationOptions integrationOptions,
         bool qualifyHintName)
     {
         var namespaceName = contextType.ContainingNamespace.IsGlobalNamespace
@@ -228,7 +228,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             pipelineClassName,
             contextTypeName,
             handlerTypeNames,
-            enableDiIntegration);
+            integrationOptions);
 
         var hintPrefix = qualifyHintName ? HintNameHelper.FromSymbol(contextType) : contextType.Name;
         context.AddSource(

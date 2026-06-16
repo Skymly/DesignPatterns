@@ -185,7 +185,7 @@ public static partial class PaymentStrategyKeys
 // PaymentStrategyRegistry.g.cs
 public static partial class PaymentStrategyRegistry
 {
-    private static readonly IStrategyRegistry<string, IPaymentStrategy> _instance = 
+    private static readonly IStrategyRegistry<string, IPaymentStrategy> _instance =
         new StrategyRegistry<string, IPaymentStrategy>(
             new Dictionary<string, IPaymentStrategy>
             {
@@ -276,7 +276,7 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 
 - 生命周期由 DI 控制；注册表通过 `ServiceProviderStrategyRegistry` 在 `TryGet` 时解析实现类型。
 - Core 不引用 DI；启用 DI 生成路径需引用扩展包（targets 打开 `DesignPatterns_EnableDiIntegration`）。
-- **后续可选**：Autofac / DryIoc 独立扩展包（与 MSDI 对称的 `RegisterDi` 包装）。
+- **后续可选**：Autofac 扩展包 `DesignPatterns.Extensions.Autofac` 提供 `RegisterAutofac` / `Create(ILifetimeScope)`（见 [Autofac.md](Autofac.md)）；DryIoc 仍不在范围。
 
 ---
 

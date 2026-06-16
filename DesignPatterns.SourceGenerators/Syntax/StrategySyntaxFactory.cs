@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DesignPatterns.SourceGenerators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -46,7 +47,7 @@ internal static class StrategySyntaxFactory
         string registryClassName,
         string contractTypeName,
         IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
-        bool enableDiIntegration = false)
+        GeneratorIntegrationOptions integrationOptions = default)
     {
         var dictionaryType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Dictionary"))
             .WithTypeArgumentList(
@@ -139,11 +140,23 @@ internal static class StrategySyntaxFactory
 
         var members = new List<MemberDeclarationSyntax> { registryField, instanceProperty };
 
-        if (enableDiIntegration)
+        if (integrationOptions.NeedsRegistrationEntries)
         {
             members.Add(DiIntegrationSyntaxHelper.CreateDiEntriesField(entries));
+        }
+
+        if (integrationOptions.EnableDi)
+        {
             members.Add(DiIntegrationSyntaxHelper.CreateStrategyCreateFromServiceProviderMethod(contractTypeName));
             members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                CreateStrategyRegistryInterfaceType(contractTypeName)));
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(AutofacIntegrationSyntaxHelper.CreateStrategyCreateFromComponentContextMethod(contractTypeName));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 CreateStrategyRegistryInterfaceType(contractTypeName)));
         }
@@ -157,9 +170,14 @@ internal static class StrategySyntaxFactory
             .AddMembers(members.ToArray());
 
         var additionalUsings = new List<string> { "System.Collections.Generic", "DesignPatterns.Behavioral" };
-        if (enableDiIntegration)
+        if (integrationOptions.EnableDi)
         {
             additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            additionalUsings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
         }
 
         return WrapInCompilationUnit(namespaceName, registryClass, additionalUsings.ToArray());

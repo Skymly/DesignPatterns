@@ -30,6 +30,12 @@
 |------|------|
 | [FactoryKeyConventions.md](FactoryKeyConventions.md) | Strategy / Factory 字符串 key 命名与复合 key（`outer:inner`） |
 
+## DI 容器扩展
+
+| 文档 | 说明 |
+|------|------|
+| [Autofac.md](Autofac.md) | Autofac `RegisterAutofac` 源生成器集成 |
+
 ## RFC（已落地）
 
 | 文档 | 说明 |

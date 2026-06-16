@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <Import Project="..\..\DesignPatterns.Extensions.Autofac\build\DesignPatterns.Extensions.Autofac.targets" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\DesignPatterns\DesignPatterns.csproj" />
+    <ProjectReference Include="..\..\DesignPatterns.Extensions.Autofac\DesignPatterns.Extensions.Autofac.csproj" />
+    <ProjectReference Include="..\..\DesignPatterns.SourceGenerators\DesignPatterns.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

@@ -34,6 +34,7 @@ DesignPatterns.slnx
 ├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
 ├── DesignPatterns.Extensions.DependencyInjection/  # MSDI 扩展 + DI 生成器 targets
+├── DesignPatterns.Extensions.Autofac/              # Autofac 扩展 + Autofac 生成器 targets
 ├── DesignPatterns.Package/                      # NuGet 元包（PackageId=Skymly.DesignPatterns）
 ├── tests/                                       # 单元 / 生成器 Verify / Analyzer / DI
 ├── docs/                                        # DEVELOPMENT、ROADMAP、模式文档
@@ -56,6 +57,7 @@ DesignPatterns.slnx
 | **SourceGenerators** | `DesignPatterns.SourceGenerators/` |
 | **Analyzers** | `DesignPatterns.Analyzers/` + `DesignPatterns.CodeFixes/` |
 | **DependencyInjection** | `DesignPatterns.Extensions.DependencyInjection/`、`build/*.targets` |
+| **Autofac** | `DesignPatterns.Extensions.Autofac/`、`build/*.targets` |
 | **Package** | `DesignPatterns.Package/` |
 | **Docs** | 本仓 `docs/`（维护者/中文设计笔记）；用户文档站 [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs)（VitePress，分 PR） |
 | **Repository (root README)** | 根 `README.md`、`CONTRIBUTING.md` |
@@ -92,6 +94,8 @@ dotnet test DesignPatterns.slnx -c Release
 ```
 
 启用生成器 DI 路径：引用 `DesignPatterns.Extensions.DependencyInjection`（自动 Import `build/DesignPatterns.Extensions.DependencyInjection.targets`）。
+
+启用生成器 Autofac 路径：引用 `DesignPatterns.Extensions.Autofac`（自动 Import `build/DesignPatterns.Extensions.Autofac.targets`）。
 
 ---
 
@@ -265,6 +269,7 @@ git push origin v0.1.0-preview3
 | 生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests`（Verify） |
 | Analyzer / CodeFix | `tests/DesignPatterns.Analyzers.Tests` |
 | DI 扩展 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests` |
+| Autofac 扩展 | `tests/DesignPatterns.Extensions.Autofac.Tests` |
 
 规范：
 
