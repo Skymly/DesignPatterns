@@ -33,6 +33,7 @@ sealed class Build : NukeBuild
     AbsolutePath PackageOutputDirectory => Root / "artifacts" / "package";
     AbsolutePath NuGetSmokeDirectory => Root / "eng" / "nuget-smoke";
     AbsolutePath NuGetSmokeConsumerProject => NuGetSmokeDirectory / "MetaPackage.Consumer" / "MetaPackage.Consumer.csproj";
+    AbsolutePath NuGetSmokeConsumerNet48Project => NuGetSmokeDirectory / "MetaPackage.Consumer.Net48" / "MetaPackage.Consumer.Net48.csproj";
     AbsolutePath NuGetSmokeLocalConfig => NuGetSmokeDirectory / "nuget.config.local";
 
     [Parameter("NuGet consumer smoke feed: Local (artifacts/package) or Published (nuget.org)")]
@@ -163,8 +164,6 @@ sealed class Build : NukeBuild
         .DependsOn(PackVerify)
         .Executes(() =>
         {
-            Assert.FileExists(NuGetSmokeConsumerProject, $"Consumer project not found: {NuGetSmokeConsumerProject}");
-
             string packageVersion = GetPackageVersion(GetExpectedPackage());
             AbsolutePath? restoreConfig = null;
 
@@ -174,31 +173,46 @@ sealed class Build : NukeBuild
                 restoreConfig = NuGetSmokeLocalConfig;
             }
 
-            if (restoreConfig is not null)
-            {
-                DotNetRestore(s => s
-                    .SetProjectFile(NuGetSmokeConsumerProject)
-                    .SetConfigFile(restoreConfig));
+            RunNuGetConsumerSmoke(NuGetSmokeConsumerProject, packageVersion, restoreConfig, runAfterBuild: true);
+            RunNuGetConsumerSmoke(NuGetSmokeConsumerNet48Project, packageVersion, restoreConfig, runAfterBuild: true);
+        });
 
-                DotNetBuild(s => s
-                    .SetProjectFile(NuGetSmokeConsumerProject)
-                    .SetConfiguration(Configuration)
-                    .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion)
-                    .EnableNoRestore());
-            }
-            else
-            {
-                DotNetBuild(s => s
-                    .SetProjectFile(NuGetSmokeConsumerProject)
-                    .SetConfiguration(Configuration)
-                    .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion));
-            }
+    void RunNuGetConsumerSmoke(
+        AbsolutePath consumerProject,
+        string packageVersion,
+        AbsolutePath? restoreConfig,
+        bool runAfterBuild)
+    {
+        Assert.FileExists(consumerProject, $"Consumer project not found: {consumerProject}");
 
+        if (restoreConfig is not null)
+        {
+            DotNetRestore(s => s
+                .SetProjectFile(consumerProject)
+                .SetConfigFile(restoreConfig));
+
+            DotNetBuild(s => s
+                .SetProjectFile(consumerProject)
+                .SetConfiguration(Configuration)
+                .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion)
+                .EnableNoRestore());
+        }
+        else
+        {
+            DotNetBuild(s => s
+                .SetProjectFile(consumerProject)
+                .SetConfiguration(Configuration)
+                .SetProperty("DesignPatternsConsumerPackageVersion", packageVersion));
+        }
+
+        if (runAfterBuild)
+        {
             DotNetRun(s => s
-                .SetProjectFile(NuGetSmokeConsumerProject)
+                .SetProjectFile(consumerProject)
                 .SetConfiguration(Configuration)
                 .EnableNoBuild());
-        });
+        }
+    }
 
     Target PackConsumerVerify => _ => _
         .DependsOn(NuGetConsumerSmoke);
