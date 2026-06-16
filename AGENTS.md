@@ -10,7 +10,7 @@
 | **远端** | https://github.com/Skymly/DesignPatterns（**公开**）；文件夹名 `DesignPatterns` = 仓库名 |
 | **许可证** | [MIT](LICENSE) |
 | **阶段** | **早期预览**：公共 API、生成器产出与 `DP###` 诊断**尚未稳定**（见 [README.md](README.md)） |
-| **NuGet** | 元包 **`Skymly.DesignPatterns`**；当前 **`0.1.0-preview5`**；`release.yml` + Nuke `Publish` → nuget.org + GitHub Packages |
+| **NuGet** | 元包 **`Skymly.DesignPatterns`**；当前 **`0.1.0-preview6`**；`release.yml` + Nuke `Publish` → nuget.org + GitHub Packages |
 | **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns/DesignPatterns.Samples/`、`Skymly/DesignPatterns/DesignPatterns.Docs/` |
 
 ## 项目是什么

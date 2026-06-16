@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <DesignPatternsConsumerPackageVersion Condition="'$(DesignPatternsConsumerPackageVersion)' == ''">0.1.0-preview5</DesignPatternsConsumerPackageVersion>
+    <DesignPatternsConsumerPackageVersion Condition="'$(DesignPatternsConsumerPackageVersion)' == ''">0.1.0-preview6</DesignPatternsConsumerPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>

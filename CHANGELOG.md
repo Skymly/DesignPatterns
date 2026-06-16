@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.1.0-preview6] - 2026-06-16
+
+### Added
+
+- **DP033** analyzer: reports duplicate strategy keys for the same contract across multiple referenced plugin provider assemblies.
+
+[0.1.0-preview6]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.1.0-preview6
+
 ## [0.1.0-preview5] - 2026-06-16
 
 ### Added
