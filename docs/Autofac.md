@@ -11,7 +11,7 @@
 ## 启用方式
 
 ```xml
-<PackageReference Include="Skymly.DesignPatterns.Extensions.Autofac" Version="0.1.0-preview4" />
+<PackageReference Include="Skymly.DesignPatterns.Extensions.Autofac" Version="0.1.0-preview5" />
 ```
 
 或项目引用 + Import targets：

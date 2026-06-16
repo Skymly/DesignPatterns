@@ -80,7 +80,7 @@ State 转换表 v1 已于 0.1.0-preview4 发布；v2 候选（guard、DI、Event
 
 - **API 冻结**：公共类型 / 特性 / 生成产出 / `DP###` 命名稳定声明（先行条件）。
 - **打包修复**：元包多目标（`lib/net8.0`）已完成；「DI 扩展打包归属」仍待确定。
-- **NuGet 首发 / SemVer**：`Skymly.DesignPatterns` `0.1.0-preview4`（`Directory.Build.props` + `release.yml`）；稳定版待 API 冻结。
+- **NuGet 首发 / SemVer**：`Skymly.DesignPatterns` `0.1.0-preview5`（`Directory.Build.props` + `release.yml`）；稳定版待 API 冻结。
 - ~~**release.yml**~~：tag 触发 Publish — 已完成。
 
 开关条件：F1/F2 主要项落地且无未决破坏性设计时，再评估进入本支线。
