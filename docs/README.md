@@ -35,6 +35,7 @@
 | 文档 | 说明 |
 |------|------|
 | [Autofac.md](Autofac.md) | Autofac `RegisterAutofac` 源生成器集成 |
+| [Configuration.md](Configuration.md) | AppSettings → `IStrategyRegistry` 桥接 |
 | [PluginAssemblies.md](PluginAssemblies.md) | 卫星程序集 + 多项目 Registry 约定 |
 
 ## RFC（已落地）
