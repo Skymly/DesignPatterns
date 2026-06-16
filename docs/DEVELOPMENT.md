@@ -172,7 +172,7 @@ dotnet test DesignPatterns.slnx
 
 CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test；checkout [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 并 build + run；pack 校验）。
 
-NuGet 消费者 smoke test：[`eng/nuget-smoke/MetaPackage.Consumer/`](../eng/nuget-smoke/MetaPackage.Consumer/)（`CiPack` 使用本地 pack；对 nuget.org 已发包运行 `NuGetConsumerSmokePublished --consumer-feed Published`）。
+NuGet 消费者 smoke test：[`eng/nuget-smoke/`](../eng/nuget-smoke/)（`MetaPackage.Consumer` net8.0、`MetaPackage.Consumer.Net48` net48；`CiPack` 使用本地 pack；对 nuget.org 已发包运行 `NuGetConsumerSmokePublished --consumer-feed Published`）。
 
 ## 相关文档
 
