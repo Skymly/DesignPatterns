@@ -1,6 +1,6 @@
-# Configuration bridge — AppSettings to strategy registries
+# Configuration bridge — AppSettings / IConfiguration to strategy registries
 
-`DesignPatterns.Extensions.Configuration` maps **`ConfigurationManager.AppSettings`** entries to **`IStrategyRegistry<string, TContract>`** lookups, replacing hand-written `switch` blocks when selecting a provider by configuration string.
+`DesignPatterns.Extensions.Configuration` maps configuration strings (either **`ConfigurationManager.AppSettings`** or **`IConfiguration`**) to **`IStrategyRegistry<string, TContract>`** lookups, replacing hand-written `switch` blocks when selecting a provider by configuration string.
 
 Works with generated `{Contract}Registry.Instance` / `{Contract}Keys` from `[RegisterStrategy]` (see [Strategy.md](Strategy.md)).
 
@@ -16,7 +16,7 @@ Independent extension assembly (not included in the `Skymly.DesignPatterns` meta
 <ProjectReference Include="path/to/DesignPatterns.Extensions.Configuration/DesignPatterns.Extensions.Configuration.csproj" />
 ```
 
-Targets: `netstandard2.0` and `net8.0`. Depends on `System.Configuration.ConfigurationManager`.
+Targets: `netstandard2.0` and `net8.0`. Depends on `System.Configuration.ConfigurationManager` and `Microsoft.Extensions.Configuration.Abstractions`.
 
 ---
 
@@ -24,6 +24,7 @@ Targets: `netstandard2.0` and `net8.0`. Depends on `System.Configuration.Configu
 
 ```csharp
 using DesignPatterns.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 
 // Throws RegistryConfigurationException when the configured key cannot be resolved.
 var card = RegistryConfiguration.ResolveConfigured(
@@ -40,11 +41,22 @@ if (RegistryConfiguration.TryResolveConfigured(
 {
     // use motion
 }
+
+// e.g. provided by your host (IConfigurationRoot / IConfiguration).
+IConfiguration configuration = ...;
+
+// IConfiguration overload.
+// Similar semantics, but reads `configuration[configurationKey]`.
+var card2 = RegistryConfiguration.ResolveConfigured(
+    CardMotionRegistry.Instance,
+    configuration: configuration,
+    configurationKey: "Card",
+    defaultKey: CardMotionKeys.Alpha);
 ```
 
 ### Resolution order
 
-1. Read `ConfigurationManager.AppSettings[appSettingsKey]`.
+1. Read either `ConfigurationManager.AppSettings[appSettingsKey]` (AppSettings overload) or `IConfiguration[configurationKey]` (IConfiguration overload).
 2. When the value is missing or whitespace, use `defaultKey` when provided.
 3. Call `registry.TryGet(strategyKey, out implementation)`.
 
@@ -53,6 +65,7 @@ if (RegistryConfiguration.TryResolveConfigured(
 `RegistryConfigurationException` includes:
 
 - the **AppSettings key name**
+- the **Configuration key name** (for the `IConfiguration` overload)
 - the **configured value** (or default key when config is empty)
 - the registry **`Keys`** list
 
