@@ -39,6 +39,62 @@ internal static class SourceGeneratorTestContext
         return driver.GetRunResult();
     }
 
+    internal static GeneratorDriverRunResult RunWithReferencedAssembly<TGenerator>(
+        (string Path, string Source) referencedAssemblySource,
+        (string Path, string Source) implementationAssemblySource,
+        string referencedAssemblyName = "ReferencedAssembly",
+        string implementationAssemblyName = "ImplementationAssembly")
+        where TGenerator : IIncrementalGenerator, new()
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+
+        var referencedTree = CSharpSyntaxTree.ParseText(
+            referencedAssemblySource.Source,
+            parseOptions,
+            path: referencedAssemblySource.Path);
+        var referencedCompilation = CSharpCompilation.Create(
+            referencedAssemblyName,
+            new[] { referencedTree },
+            References,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        using var referencedStream = new MemoryStream();
+        var emitResult = referencedCompilation.Emit(referencedStream);
+        if (!emitResult.Success)
+        {
+            throw new InvalidOperationException(
+                "Referenced assembly compilation failed: "
+                + string.Join(Environment.NewLine, emitResult.Diagnostics.Select(diagnostic => diagnostic.ToString())));
+        }
+
+        referencedStream.Position = 0;
+        var referencedMetadata = MetadataReference.CreateFromStream(referencedStream);
+
+        var implementationTree = CSharpSyntaxTree.ParseText(
+            implementationAssemblySource.Source,
+            parseOptions,
+            path: implementationAssemblySource.Path);
+        var implementationCompilation = CSharpCompilation.Create(
+            implementationAssemblyName,
+            new[] { implementationTree },
+            References.Add(referencedMetadata),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        var errors = implementationCompilation.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .ToList();
+        if (errors.Count > 0)
+        {
+            throw new InvalidOperationException(
+                "Implementation assembly compilation failed: "
+                + string.Join(Environment.NewLine, errors.Select(e => e.ToString())));
+        }
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator());
+        driver = driver.RunGeneratorsAndUpdateCompilation(implementationCompilation, out _, out _);
+        return driver.GetRunResult();
+    }
+
     internal static IReadOnlyDictionary<string, string> GetGeneratedSources(GeneratorDriverRunResult runResult) =>
         runResult
             .Results

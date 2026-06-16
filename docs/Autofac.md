@@ -111,7 +111,7 @@ public sealed class AlphaProviderModule : Module
 - 多接口 `As<TContract>().As<TAdditional>()` 链的自动生成（可在 Module 内手动补充）
 - 装饰器栈自动注册
 
-多程序集插件模式见 [PluginAssemblies.md](PluginAssemblies.md)（待补充）。
+多程序集插件模式见 [PluginAssemblies.md](PluginAssemblies.md)。
 
 ---
 
