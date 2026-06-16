@@ -276,7 +276,8 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 
 - 生命周期由 DI 控制；注册表通过 `ServiceProviderStrategyRegistry` 在 `TryGet` 时解析实现类型。
 - Core 不引用 DI；启用 DI 生成路径需引用扩展包（targets 打开 `DesignPatterns_EnableDiIntegration`）。
-- **后续可选**：Autofac 扩展包 `DesignPatterns.Extensions.Autofac` 提供 `RegisterAutofac` / `Create(ILifetimeScope)`（见 [Autofac.md](Autofac.md)）；DryIoc 仍不在范围。
+- **Autofac**：`DesignPatterns.Extensions.Autofac` — `RegisterAutofac`（见 [Autofac.md](Autofac.md)）
+- **插件程序集**：多项目 `[RegisterStrategy]` 布局见 [PluginAssemblies.md](PluginAssemblies.md)
 
 ---
 
