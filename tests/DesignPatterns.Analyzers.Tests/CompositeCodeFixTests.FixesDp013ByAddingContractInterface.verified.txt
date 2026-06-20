@@ -1,0 +1,14 @@
+﻿using System.Collections.Generic;
+using DesignPatterns.Structural;
+
+namespace TestAssembly;
+
+public interface IMenuNode : ICompositeNode<IMenuNode> { string Title { get; } }
+
+[CompositePart<IMenuNode>("root")]
+public class RootMenu
+: TestAssembly.IMenuNode{
+    public string Title => "root";
+
+    public IReadOnlyList<IMenuNode> Children => System.Array.Empty<IMenuNode>();
+}

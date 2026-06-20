@@ -1,0 +1,2 @@
+﻿DP033 [Error] Strategy key 'alpha' for contract 'global::Plugin.Contracts.ICardMotion' is registered in multiple assemblies (ProviderAlpha, ProviderBeta). Use unique keys per provider assembly or reference only one provider per contract dimension. @ None
+DP033 [Error] Strategy key 'alpha' for contract 'global::Plugin.Contracts.ICardMotion' is registered in multiple assemblies (ProviderAlpha, ProviderBeta). Use unique keys per provider assembly or reference only one provider per contract dimension. @ None

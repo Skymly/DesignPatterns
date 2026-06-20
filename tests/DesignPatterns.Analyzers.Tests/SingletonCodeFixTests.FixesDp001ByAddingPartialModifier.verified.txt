@@ -1,0 +1,9 @@
+﻿using DesignPatterns.Creational;
+
+namespace TestAssembly;
+
+[GenerateSingleton]
+public partial class AppSettings
+{
+    public string AppName { get; set; } = "DesignPatterns";
+}

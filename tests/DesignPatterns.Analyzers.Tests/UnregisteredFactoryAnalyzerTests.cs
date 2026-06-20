@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Operations;
+using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
 
@@ -41,11 +42,7 @@ public sealed class UnregisteredFactoryAnalyzerTests
             source,
             new UnregisteredFactoryAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP023" &&
-                diagnostic.GetMessage().Contains("PremiumFactory", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP023"));
     }
 
     [Fact]
@@ -85,11 +82,7 @@ public sealed class UnregisteredFactoryAnalyzerTests
             implementationSource,
             new UnregisteredFactoryAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP023" &&
-                diagnostic.GetMessage().Contains("PremiumFactory", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP023"));
     }
 }
 
@@ -142,7 +135,7 @@ public sealed class AddRegisterFactoryCodeFixTests
         var fixedDocument = applyChanges.ChangedSolution.GetDocument(document.Id)!;
         var fixedSource = (await fixedDocument.GetTextAsync()).ToString();
 
-        Assert.Contains("[RegisterFactory(\"premium-factory\", typeof(IProductFactory))]", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -173,7 +166,7 @@ public sealed class RegisterFactoryCodeFixTests
             "DP021",
             new AddContractImplementationCodeFixProvider());
 
-        Assert.Contains("IProductFactory", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 
     [Fact]
@@ -203,6 +196,6 @@ public sealed class RegisterFactoryCodeFixTests
             "DP022",
             new AddParameterlessConstructorCodeFixProvider());
 
-        Assert.Contains("public StandardFactory()", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
