@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [0.1.0-preview7] - 2026-06-20
+
+### Fixed
+
+- **Incremental cache correctness**: source generator models no longer store `ISymbol` / `SyntaxNode`; switched to record types with fully-qualified names and `Location`, restoring proper incremental cache invalidation across all 7 generators.
+
+### Changed
+
+- Extracted `KeyedRegistrationGeneratorBase` to eliminate pipeline duplication between `RegisterFactoryGenerator` and `RegisterStrategyGenerator`.
+- Added `WithTrackingName` to generator pipelines and added cache-hit regression tests.
+- Migrated analyzer tests to Verify snapshots for consistency with generator tests.
+
+[0.1.0-preview7]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.1.0-preview7
+
 ## [0.1.0-preview6] - 2026-06-16
 
 ### Added

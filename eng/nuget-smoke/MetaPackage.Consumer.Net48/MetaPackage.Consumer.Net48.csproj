@@ -6,7 +6,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-    <DesignPatternsConsumerPackageVersion Condition="'$(DesignPatternsConsumerPackageVersion)' == ''">0.1.0-preview6</DesignPatternsConsumerPackageVersion>
+    <DesignPatternsConsumerPackageVersion Condition="'$(DesignPatternsConsumerPackageVersion)' == ''">0.1.0-preview7</DesignPatternsConsumerPackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
