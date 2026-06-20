@@ -41,12 +41,14 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         var nonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             DecoratorMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: false));
+            static (ctx, _) => Transform(ctx, isGenericAttribute: false))
+            .WithTrackingName(TrackingNames.DecoratorNonGenericTransform);
 
         var generic = context.SyntaxProvider.ForAttributeWithMetadataName(
             DecoratorGenericMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: true));
+            static (ctx, _) => Transform(ctx, isGenericAttribute: true))
+            .WithTrackingName(TrackingNames.DecoratorGenericTransform);
 
         context.RegisterSourceOutput(
             nonGeneric.Collect().Combine(generic.Collect()),

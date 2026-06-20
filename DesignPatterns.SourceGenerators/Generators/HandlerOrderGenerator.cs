@@ -38,12 +38,14 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         var nonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             HandlerOrderMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: false));
+            static (ctx, _) => Transform(ctx, isGenericAttribute: false))
+            .WithTrackingName(TrackingNames.HandlerNonGenericTransform);
 
         var generic = context.SyntaxProvider.ForAttributeWithMetadataName(
             HandlerOrderGenericMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: true));
+            static (ctx, _) => Transform(ctx, isGenericAttribute: true))
+            .WithTrackingName(TrackingNames.HandlerGenericTransform);
 
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
