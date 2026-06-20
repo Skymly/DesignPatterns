@@ -309,8 +309,12 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             .Select(static transition => (transition.FromExpression, transition.TriggerExpression, transition.ToExpression))
             .ToList();
 
+        // Generated sources go into the holder's namespace (not the state enum's namespace)
+        // so the holder partial merges with the user-written partial declaration.
+        var namespaceName = model.Holder.Namespace;
+
         var tableUnit = StateTransitionSyntaxFactory.CreateTransitionTableCompilationUnit(
-            stateType.Namespace,
+            namespaceName,
             tableClassName,
             stateType.FullyQualifiedDisplayString,
             triggerType.FullyQualifiedDisplayString,
@@ -318,7 +322,7 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             transitionExpressions);
 
         var holderUnit = StateTransitionSyntaxFactory.CreateHolderPartialCompilationUnit(
-            stateType.Namespace,
+            namespaceName,
             model.Holder.Name,
             tableClassName,
             stateType.FullyQualifiedDisplayString,

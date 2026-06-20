@@ -41,6 +41,42 @@ public sealed class StateTransitionGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesSourcesInHolderNamespaceWhenStateEnumDiffers()
+    {
+        const string enumSource = """
+            namespace TestAssembly.Domain;
+
+            public enum OrderStatus
+            {
+                Draft,
+                Submitted,
+            }
+
+            public enum OrderTrigger
+            {
+                Submit,
+            }
+            """;
+
+        const string holderSource = """
+            using DesignPatterns.Behavioral;
+            using TestAssembly.Domain;
+
+            namespace TestAssembly.Machines;
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("States.cs", enumSource),
+            ("OrderMachine.cs", holderSource));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp026DuplicateEdge()
     {
         const string source = """
