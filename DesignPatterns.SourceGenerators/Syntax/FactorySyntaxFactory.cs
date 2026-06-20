@@ -116,10 +116,16 @@ internal static class FactorySyntaxFactory
                         })));
 
     public static string GetKeysClassName(INamedTypeSymbol contract) =>
-        GetBaseName(contract) + "Keys";
+        GetKeysClassName(contract.Name);
 
     public static string GetRegistryClassName(INamedTypeSymbol contract) =>
-        GetBaseName(contract) + "Registry";
+        GetRegistryClassName(contract.Name);
+
+    public static string GetKeysClassName(string contractName) =>
+        GetBaseName(contractName) + "Keys";
+
+    public static string GetRegistryClassName(string contractName) =>
+        GetBaseName(contractName) + "Registry";
 
     public static string ToConstantName(string key)
     {
@@ -132,9 +138,8 @@ internal static class FactorySyntaxFactory
         return string.Concat(parts.Select(ToPascalCaseSegment));
     }
 
-    private static string GetBaseName(INamedTypeSymbol contract)
+    private static string GetBaseName(string name)
     {
-        var name = contract.Name;
         if (name.StartsWith("I", StringComparison.Ordinal) && name.Length > 1 && char.IsUpper(name[1]))
         {
             name = name.Substring(1);

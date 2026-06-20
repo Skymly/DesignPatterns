@@ -65,7 +65,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
         }
 
         return new SingletonTargetInfo(
-            classDeclaration,
+            classDeclaration.GetLocation(),
             symbol.Name,
             symbol.ContainingNamespace.IsGlobalNamespace
                 ? null
@@ -80,19 +80,19 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
     {
         if (info.TypeKind == TypeKind.Struct)
         {
-            context.ReportDiagnostic(Diagnostic.Create(InvalidTargetDescriptor, info.Syntax.GetLocation(), info.ClassName));
+            context.ReportDiagnostic(Diagnostic.Create(InvalidTargetDescriptor, info.Location, info.ClassName));
             return;
         }
 
         if (info.IsStatic)
         {
-            context.ReportDiagnostic(Diagnostic.Create(InvalidTargetDescriptor, info.Syntax.GetLocation(), info.ClassName));
+            context.ReportDiagnostic(Diagnostic.Create(InvalidTargetDescriptor, info.Location, info.ClassName));
             return;
         }
 
         if (!info.IsPartial)
         {
-            context.ReportDiagnostic(Diagnostic.Create(NotPartialDescriptor, info.Syntax.GetLocation(), info.ClassName));
+            context.ReportDiagnostic(Diagnostic.Create(NotPartialDescriptor, info.Location, info.ClassName));
             return;
         }
 
@@ -105,38 +105,12 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
         context.AddSource($"{info.ClassName}.Singleton.g.cs", sourceText);
     }
 
-    private sealed class SingletonTargetInfo
-    {
-        public SingletonTargetInfo(
-            ClassDeclarationSyntax syntax,
-            string className,
-            string? namespaceName,
-            bool threadSafe,
-            bool isStatic,
-            TypeKind typeKind,
-            bool isPartial)
-        {
-            Syntax = syntax;
-            ClassName = className;
-            NamespaceName = namespaceName;
-            ThreadSafe = threadSafe;
-            IsStatic = isStatic;
-            TypeKind = typeKind;
-            IsPartial = isPartial;
-        }
-
-        public ClassDeclarationSyntax Syntax { get; }
-
-        public string ClassName { get; }
-
-        public string? NamespaceName { get; }
-
-        public bool ThreadSafe { get; }
-
-        public bool IsStatic { get; }
-
-        public TypeKind TypeKind { get; }
-
-        public bool IsPartial { get; }
-    }
+    private sealed record SingletonTargetInfo(
+        Location Location,
+        string ClassName,
+        string? NamespaceName,
+        bool ThreadSafe,
+        bool IsStatic,
+        TypeKind TypeKind,
+        bool IsPartial);
 }

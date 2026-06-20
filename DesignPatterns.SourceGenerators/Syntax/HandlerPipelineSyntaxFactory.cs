@@ -10,7 +10,10 @@ namespace DesignPatterns.SourceGenerators.Syntax;
 internal static class HandlerPipelineSyntaxFactory
 {
     public static string GetPipelineClassName(INamedTypeSymbol contextType) =>
-        contextType.Name + "HandlerPipeline";
+        GetPipelineClassName(contextType.Name);
+
+    public static string GetPipelineClassName(string contextTypeName) =>
+        contextTypeName + "HandlerPipeline";
 
     public static CompilationUnitSyntax CreatePipelineCompilationUnit(
         string? namespaceName,

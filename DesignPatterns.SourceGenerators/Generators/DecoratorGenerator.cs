@@ -95,10 +95,22 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 continue;
             }
 
+            var serviceInfo = new ContractInfo(
+                serviceType.ToDisplayString(),
+                serviceType.Name,
+                serviceType.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : serviceType.ContainingNamespace.ToDisplayString(),
+                serviceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
             return new DecoratorRegistration(
                 order,
-                serviceType,
-                decoratorType,
+                serviceInfo,
+                decoratorType.Name,
+                decoratorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                ImplementsContract(decoratorType, serviceType),
+                ImplementsDecoratorInterface(decoratorType, serviceType),
+                HasPublicParameterlessConstructor(decoratorType),
                 context.TargetNode.GetLocation());
         }
 
@@ -123,22 +135,19 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
 
         ReportValidationDiagnostics(context, registrations);
 
-        foreach (var group in registrations.GroupBy(static r => r.ServiceType, SymbolEqualityComparer.Default))
+        foreach (var group in registrations.GroupBy(static r => r.Service.FullyQualifiedName, StringComparer.Ordinal))
         {
-            if (group.Key is not INamedTypeSymbol serviceType)
-            {
-                continue;
-            }
+            var serviceInfo = group.First().Service;
 
             var valid = group
-                .Where(r => ImplementsContract(r.DecoratorType, serviceType))
-                .Where(r => ImplementsDecoratorInterface(r.DecoratorType, serviceType))
-                .Where(r => HasPublicParameterlessConstructor(r.DecoratorType))
-                .GroupBy(r => r.Order)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
-                .OrderBy(r => r.Order)
-                .ThenBy(r => r.DecoratorType.Name, StringComparer.Ordinal)
+                .Where(static r => r.ImplementsContract)
+                .Where(static r => r.ImplementsDecoratorInterface)
+                .Where(static r => r.HasPublicParameterlessConstructor)
+                .GroupBy(static r => r.Order)
+                .Where(static g => g.Count() == 1)
+                .Select(static g => g.First())
+                .OrderBy(static r => r.Order)
+                .ThenBy(static r => r.DecoratorName, StringComparer.Ordinal)
                 .ToList();
 
             if (valid.Count == 0)
@@ -146,7 +155,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitStack(context, serviceType, valid);
+            EmitStack(context, serviceInfo, valid);
         }
     }
 
@@ -155,10 +164,10 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         List<DecoratorRegistration> registrations)
     {
         foreach (var duplicateGroup in registrations
-                     .GroupBy(static r => (r.ServiceType, r.Order))
+                     .GroupBy(static r => (r.Service.FullyQualifiedName, r.Order))
                      .Where(g => g.Count() > 1))
         {
-            var serviceName = duplicateGroup.First().ServiceType.ToDisplayString();
+            var serviceName = duplicateGroup.First().Service.FullyQualifiedName;
             foreach (var registration in duplicateGroup)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
@@ -169,70 +178,65 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             }
         }
 
-        foreach (var registration in registrations.Where(r => !ImplementsContract(r.DecoratorType, r.ServiceType)))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsContract))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ContractMismatchDescriptor,
                 registration.Location,
-                registration.DecoratorType.Name,
-                registration.ServiceType.ToDisplayString()));
+                registration.DecoratorName,
+                registration.Service.FullyQualifiedName));
         }
 
-        foreach (var registration in registrations.Where(r => !ImplementsDecoratorInterface(r.DecoratorType, r.ServiceType)))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsDecoratorInterface))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingDecoratorInterfaceDescriptor,
                 registration.Location,
-                registration.DecoratorType.Name,
-                registration.ServiceType.ToDisplayString()));
+                registration.DecoratorName,
+                registration.Service.FullyQualifiedName));
         }
 
-        foreach (var registration in registrations.Where(r => !HasPublicParameterlessConstructor(r.DecoratorType)))
+        foreach (var registration in registrations.Where(static r => !r.HasPublicParameterlessConstructor))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingParameterlessConstructorDescriptor,
                 registration.Location,
-                registration.DecoratorType.Name));
+                registration.DecoratorName));
         }
     }
 
     private static void EmitStack(
         SourceProductionContext context,
-        INamedTypeSymbol serviceType,
+        ContractInfo serviceInfo,
         List<DecoratorRegistration> decorators)
     {
-        var namespaceName = serviceType.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : serviceType.ContainingNamespace.ToDisplayString();
-
-        var serviceTypeName = serviceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var stackClassName = DecoratorStackSyntaxFactory.GetStackClassName(serviceType);
+        var stackClassName = DecoratorStackSyntaxFactory.GetStackClassName(serviceInfo.Name);
         var decoratorTypeNames = decorators
-            .Select(d => d.DecoratorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+            .Select(static d => d.DecoratorFullyQualifiedDisplayString)
             .ToList();
 
         var compilationUnit = DecoratorStackSyntaxFactory.CreateStackCompilationUnit(
-            namespaceName,
+            serviceInfo.Namespace,
             stackClassName,
-            serviceTypeName,
+            serviceInfo.FullyQualifiedDisplayString,
             decoratorTypeNames);
 
         context.AddSource(
-            $"{serviceType.Name}.{stackClassName}.g.cs",
+            $"{serviceInfo.Name}.{stackClassName}.g.cs",
             SourceText.From(compilationUnit.ToFullString(), Encoding.UTF8));
 
-        var orderClassName = DecoratorStackSyntaxFactory.GetOrderClassName(serviceType);
+        var orderClassName = DecoratorStackSyntaxFactory.GetOrderClassName(serviceInfo.Name);
         var orderEntries = decorators
-            .Select(d => (ConstantName: d.DecoratorType.Name, OrderValue: d.Order))
+            .Select(static d => (ConstantName: d.DecoratorName, OrderValue: d.Order))
             .ToList();
 
         var orderCompilationUnit = DecoratorStackSyntaxFactory.CreateOrderCompilationUnit(
-            namespaceName,
+            serviceInfo.Namespace,
             orderClassName,
             orderEntries);
 
         context.AddSource(
-            $"{serviceType.Name}.{orderClassName}.g.cs",
+            $"{serviceInfo.Name}.{orderClassName}.g.cs",
             SourceText.From(orderCompilationUnit.ToFullString(), Encoding.UTF8));
     }
 
@@ -276,26 +280,13 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         decoratorType.InstanceConstructors.Any(static c =>
             c.Parameters.IsEmpty && c.DeclaredAccessibility == Accessibility.Public);
 
-    private sealed class DecoratorRegistration
-    {
-        public DecoratorRegistration(
-            int order,
-            INamedTypeSymbol serviceType,
-            INamedTypeSymbol decoratorType,
-            Location location)
-        {
-            Order = order;
-            ServiceType = serviceType;
-            DecoratorType = decoratorType;
-            Location = location;
-        }
-
-        public int Order { get; }
-
-        public INamedTypeSymbol ServiceType { get; }
-
-        public INamedTypeSymbol DecoratorType { get; }
-
-        public Location Location { get; }
-    }
+    private sealed record DecoratorRegistration(
+        int Order,
+        ContractInfo Service,
+        string DecoratorName,
+        string DecoratorFullyQualifiedDisplayString,
+        bool ImplementsContract,
+        bool ImplementsDecoratorInterface,
+        bool HasPublicParameterlessConstructor,
+        Location Location);
 }

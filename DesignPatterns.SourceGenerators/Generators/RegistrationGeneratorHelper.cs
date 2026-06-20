@@ -7,28 +7,28 @@ using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Generators;
 
-internal sealed class KeyedRegistration
-{
-    public KeyedRegistration(
-        string key,
-        INamedTypeSymbol contract,
-        INamedTypeSymbol implementation,
-        Location location)
-    {
-        Key = key;
-        Contract = contract;
-        Implementation = implementation;
-        Location = location;
-    }
+/// <summary>
+/// Immutable contract-level metadata extracted from a registration attribute.
+/// Used as the grouping key in <see cref="RegistrationGeneratorHelper.Execute"/>.
+/// </summary>
+internal sealed record ContractInfo(
+    string FullyQualifiedName,
+    string Name,
+    string? Namespace,
+    string FullyQualifiedDisplayString);
 
-    public string Key { get; }
-
-    public INamedTypeSymbol Contract { get; }
-
-    public INamedTypeSymbol Implementation { get; }
-
-    public Location Location { get; }
-}
+/// <summary>
+/// Immutable registration model collected by the incremental pipeline.
+/// All fields are value-equatable to ensure correct incremental caching.
+/// </summary>
+internal sealed record KeyedRegistration(
+    string Key,
+    ContractInfo Contract,
+    string ImplementationName,
+    string ImplementationFullyQualifiedDisplayString,
+    bool ImplementsContract,
+    bool HasPublicParameterlessConstructor,
+    Location Location);
 
 internal static class RegistrationGeneratorHelper
 {
@@ -72,8 +72,23 @@ internal static class RegistrationGeneratorHelper
                 continue;
             }
 
+            var contractInfo = new ContractInfo(
+                contract.ToDisplayString(),
+                contract.Name,
+                contract.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : contract.ContainingNamespace.ToDisplayString(),
+                contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
             var location = context.TargetNode.GetLocation();
-            result.Add(new KeyedRegistration(key!, contract, implementation, location));
+            result.Add(new KeyedRegistration(
+                key!,
+                contractInfo,
+                implementation.Name,
+                implementation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                ImplementsContract(implementation, contract),
+                HasPublicParameterlessConstructor(implementation),
+                location));
         }
 
         return result;
@@ -85,7 +100,7 @@ internal static class RegistrationGeneratorHelper
         ImmutableArray<KeyedRegistration> generic,
         GeneratorIntegrationOptions integrationOptions,
         KeyedRegistrationDiagnostics diagnostics,
-        Action<SourceProductionContext, INamedTypeSymbol, List<KeyedRegistration>, GeneratorIntegrationOptions, bool> emitGeneratedSources)
+        Action<SourceProductionContext, ContractInfo, List<KeyedRegistration>, GeneratorIntegrationOptions, bool> emitGeneratedSources)
     {
         var registrations = nonGeneric
             .Concat(generic)
@@ -99,32 +114,28 @@ internal static class RegistrationGeneratorHelper
         var contractNamesWithCollisions = new HashSet<string>(
             registrations
                 .Select(static r => r.Contract)
-                .OfType<INamedTypeSymbol>()
-                .Distinct(SymbolEqualityComparer.Default)
-                .GroupBy(static c => c!.Name, StringComparer.Ordinal)
+                .Distinct()
+                .GroupBy(static c => c.Name, StringComparer.Ordinal)
                 .Where(static g => g.Count() > 1)
                 .Select(static g => g.Key),
             StringComparer.Ordinal);
 
-        foreach (var group in registrations.GroupBy(static r => r.Contract, SymbolEqualityComparer.Default))
+        foreach (var group in registrations.GroupBy(static r => r.Contract.FullyQualifiedName, StringComparer.Ordinal))
         {
-            if (group.Key is not INamedTypeSymbol contract)
-            {
-                continue;
-            }
-
+            var contract = group.First().Contract;
             var contractRegistrations = group.ToList();
+
             ReportDuplicateKeys(context, contractRegistrations, diagnostics.DuplicateKey);
             ReportContractMismatches(context, contractRegistrations, diagnostics.ContractMismatch);
             ReportMissingConstructors(context, contractRegistrations, diagnostics.MissingParameterlessConstructor);
 
             var valid = contractRegistrations
-                .Where(r => ImplementsContract(r.Implementation, contract))
-                .Where(r => HasPublicParameterlessConstructor(r.Implementation))
-                .GroupBy(r => r.Key, StringComparer.Ordinal)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
-                .OrderBy(r => r.Key, StringComparer.Ordinal)
+                .Where(static r => r.ImplementsContract)
+                .Where(static r => r.HasPublicParameterlessConstructor)
+                .GroupBy(static r => r.Key, StringComparer.Ordinal)
+                .Where(static g => g.Count() == 1)
+                .Select(static g => g.First())
+                .OrderBy(static r => r.Key, StringComparer.Ordinal)
                 .ToList();
 
             if (valid.Count == 0)
@@ -148,7 +159,7 @@ internal static class RegistrationGeneratorHelper
     {
         foreach (var duplicateGroup in registrations.GroupBy(static r => r.Key, StringComparer.Ordinal).Where(g => g.Count() > 1))
         {
-            var contractName = duplicateGroup.First().Contract.ToDisplayString();
+            var contractName = duplicateGroup.First().Contract.FullyQualifiedName;
             foreach (var registration in duplicateGroup)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
@@ -165,13 +176,13 @@ internal static class RegistrationGeneratorHelper
         List<KeyedRegistration> registrations,
         DiagnosticDescriptor descriptor)
     {
-        foreach (var registration in registrations.Where(r => !ImplementsContract(r.Implementation, r.Contract)))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsContract))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 descriptor,
                 registration.Location,
-                registration.Implementation.Name,
-                registration.Contract.ToDisplayString()));
+                registration.ImplementationName,
+                registration.Contract.FullyQualifiedName));
         }
     }
 
@@ -180,12 +191,12 @@ internal static class RegistrationGeneratorHelper
         List<KeyedRegistration> registrations,
         DiagnosticDescriptor descriptor)
     {
-        foreach (var registration in registrations.Where(r => !HasPublicParameterlessConstructor(r.Implementation)))
+        foreach (var registration in registrations.Where(static r => !r.HasPublicParameterlessConstructor))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 descriptor,
                 registration.Location,
-                registration.Implementation.Name));
+                registration.ImplementationName));
         }
     }
 

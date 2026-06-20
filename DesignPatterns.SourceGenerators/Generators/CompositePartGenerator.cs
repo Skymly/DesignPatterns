@@ -114,12 +114,24 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 }
             }
 
+            var contractInfo = new ContractInfo(
+                contract.ToDisplayString(),
+                contract.Name,
+                contract.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : contract.ContainingNamespace.ToDisplayString(),
+                contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
             return new CompositeRegistration(
                 key!,
                 parentKey,
                 order,
-                contract,
-                implementation,
+                contractInfo,
+                implementation.Name,
+                implementation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                ImplementsContract(implementation, contract),
+                HasPublicParameterlessConstructor(implementation),
+                ImplementsBuildable(implementation, contract),
                 context.TargetNode.GetLocation());
         }
 
@@ -142,13 +154,9 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             return;
         }
 
-        foreach (var group in registrations.GroupBy(static r => r.Contract, SymbolEqualityComparer.Default))
+        foreach (var group in registrations.GroupBy(static r => r.Contract.FullyQualifiedName, StringComparer.Ordinal))
         {
-            if (group.Key is not INamedTypeSymbol contract)
-            {
-                continue;
-            }
-
+            var contract = group.First().Contract;
             var contractRegistrations = group.ToList();
             ReportDuplicateKeys(context, contractRegistrations);
             ReportUnknownParentKeys(context, contractRegistrations);
@@ -158,15 +166,15 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             ReportMissingBuildable(context, contractRegistrations, contract);
 
             var valid = contractRegistrations
-                .Where(r => ImplementsContract(r.Implementation, contract))
-                .Where(r => HasPublicParameterlessConstructor(r.Implementation))
-                .Where(r => ImplementsBuildable(r.Implementation, contract))
-                .GroupBy(r => r.Key, StringComparer.Ordinal)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
+                .Where(static r => r.ImplementsContract)
+                .Where(static r => r.HasPublicParameterlessConstructor)
+                .Where(static r => r.ImplementsBuildable)
+                .GroupBy(static r => r.Key, StringComparer.Ordinal)
+                .Where(static g => g.Count() == 1)
+                .Select(static g => g.First())
                 .Where(r => IsParentKeyValid(r, contractRegistrations))
                 .Where(r => !ParticipatesInCycle(r.Key, contractRegistrations))
-                .OrderBy(r => r.Key, StringComparer.Ordinal)
+                .OrderBy(static r => r.Key, StringComparer.Ordinal)
                 .ToList();
 
             if (valid.Count == 0)
@@ -182,7 +190,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
     {
         foreach (var duplicateGroup in registrations.GroupBy(static r => r.Key, StringComparer.Ordinal).Where(g => g.Count() > 1))
         {
-            var contractName = duplicateGroup.First().Contract.ToDisplayString();
+            var contractName = duplicateGroup.First().Contract.FullyQualifiedName;
             foreach (var registration in duplicateGroup)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
@@ -197,9 +205,9 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
     private static void ReportUnknownParentKeys(SourceProductionContext context, List<CompositeRegistration> registrations)
     {
         var keys = new HashSet<string>(
-            registrations.Select(static r => r.Key),
+            registrations.Select(r => r.Key),
             StringComparer.Ordinal);
-        var contractName = registrations.FirstOrDefault()?.Contract.ToDisplayString() ?? string.Empty;
+        var contractName = registrations.FirstOrDefault()?.Contract.FullyQualifiedName ?? string.Empty;
 
         foreach (var registration in registrations.Where(r => r.ParentKey is not null && !keys.Contains(r.ParentKey)))
         {
@@ -213,7 +221,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
 
     private static void ReportCycles(SourceProductionContext context, List<CompositeRegistration> registrations)
     {
-        var contractName = registrations.FirstOrDefault()?.Contract.ToDisplayString() ?? string.Empty;
+        var contractName = registrations.FirstOrDefault()?.Contract.FullyQualifiedName ?? string.Empty;
         var parentByKey = BuildParentMap(registrations);
 
         foreach (var registration in registrations.Where(r => ParticipatesInCycle(r.Key, parentByKey)))
@@ -228,54 +236,49 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
 
     private static void ReportContractMismatches(SourceProductionContext context, List<CompositeRegistration> registrations)
     {
-        foreach (var registration in registrations.Where(r => !ImplementsContract(r.Implementation, r.Contract)))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsContract))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ContractMismatchDescriptor,
                 registration.Location,
-                registration.Implementation.Name,
-                registration.Contract.ToDisplayString()));
+                registration.ImplementationName,
+                registration.Contract.FullyQualifiedName));
         }
     }
 
     private static void ReportMissingConstructors(SourceProductionContext context, List<CompositeRegistration> registrations)
     {
-        foreach (var registration in registrations.Where(r => !HasPublicParameterlessConstructor(r.Implementation)))
+        foreach (var registration in registrations.Where(static r => !r.HasPublicParameterlessConstructor))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingParameterlessConstructorDescriptor,
                 registration.Location,
-                registration.Implementation.Name));
+                registration.ImplementationName));
         }
     }
 
     private static void ReportMissingBuildable(
         SourceProductionContext context,
         List<CompositeRegistration> registrations,
-        INamedTypeSymbol contract)
+        ContractInfo contract)
     {
-        foreach (var registration in registrations.Where(r => !ImplementsBuildable(r.Implementation, contract)))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsBuildable))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingBuildableDescriptor,
                 registration.Location,
-                registration.Implementation.Name,
-                contract.ToDisplayString()));
+                registration.ImplementationName,
+                contract.FullyQualifiedName));
         }
     }
 
     private static void EmitGeneratedSources(
         SourceProductionContext context,
-        INamedTypeSymbol contract,
+        ContractInfo contract,
         List<CompositeRegistration> registrations)
     {
-        var namespaceName = contract.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : contract.ContainingNamespace.ToDisplayString();
-
-        var contractTypeName = contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var keysClassName = CompositeSyntaxFactory.GetKeysClassName(contract);
-        var catalogClassName = CompositeSyntaxFactory.GetCatalogClassName(contract);
+        var keysClassName = CompositeSyntaxFactory.GetKeysClassName(contract.Name);
+        var catalogClassName = CompositeSyntaxFactory.GetCatalogClassName(contract.Name);
 
         var constantNames = new HashSet<string>(StringComparer.Ordinal);
         var keys = new List<(string ConstantName, string KeyValue)>();
@@ -291,18 +294,18 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         }
 
         var catalogEntries = registrations
-            .Select(r => (
+            .Select(static r => (
                 r.Key,
                 r.ParentKey,
                 r.Order,
-                r.Implementation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)))
+                r.ImplementationFullyQualifiedDisplayString))
             .ToList();
 
-        var keysUnit = CompositeSyntaxFactory.CreateKeysCompilationUnit(namespaceName, keysClassName, keys);
+        var keysUnit = CompositeSyntaxFactory.CreateKeysCompilationUnit(contract.Namespace, keysClassName, keys);
         var catalogUnit = CompositeSyntaxFactory.CreateCatalogCompilationUnit(
-            namespaceName,
+            contract.Namespace,
             catalogClassName,
-            contractTypeName,
+            contract.FullyQualifiedDisplayString,
             catalogEntries);
 
         var hintPrefix = contract.Name;
@@ -408,34 +411,15 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         return false;
     }
 
-    private sealed class CompositeRegistration
-    {
-        public CompositeRegistration(
-            string key,
-            string? parentKey,
-            int order,
-            INamedTypeSymbol contract,
-            INamedTypeSymbol implementation,
-            Location location)
-        {
-            Key = key;
-            ParentKey = parentKey;
-            Order = order;
-            Contract = contract;
-            Implementation = implementation;
-            Location = location;
-        }
-
-        public string Key { get; }
-
-        public string? ParentKey { get; }
-
-        public int Order { get; }
-
-        public INamedTypeSymbol Contract { get; }
-
-        public INamedTypeSymbol Implementation { get; }
-
-        public Location Location { get; }
-    }
+    private sealed record CompositeRegistration(
+        string Key,
+        string? ParentKey,
+        int Order,
+        ContractInfo Contract,
+        string ImplementationName,
+        string ImplementationFullyQualifiedDisplayString,
+        bool ImplementsContract,
+        bool HasPublicParameterlessConstructor,
+        bool ImplementsBuildable,
+        Location Location);
 }
