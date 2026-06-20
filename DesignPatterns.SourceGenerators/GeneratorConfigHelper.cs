@@ -1,9 +1,11 @@
 using System;
 using Microsoft.CodeAnalysis;
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type
+
 namespace DesignPatterns.SourceGenerators;
 
-internal readonly struct GeneratorIntegrationOptions
+public readonly struct GeneratorIntegrationOptions
 {
     public GeneratorIntegrationOptions(bool enableDi, bool enableAutofac)
     {
