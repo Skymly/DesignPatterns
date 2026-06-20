@@ -6,9 +6,12 @@ namespace DesignPatterns.SourceGenerators;
 
 internal static class HintNameHelper
 {
-    internal static string FromSymbol(INamedTypeSymbol symbol)
+    internal static string FromSymbol(INamedTypeSymbol symbol) =>
+        FromString(symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
+    internal static string FromString(string fullyQualifiedDisplayString)
     {
-        var displayName = symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var displayName = fullyQualifiedDisplayString;
         const string globalPrefix = "global::";
         if (displayName.StartsWith(globalPrefix, StringComparison.Ordinal))
         {

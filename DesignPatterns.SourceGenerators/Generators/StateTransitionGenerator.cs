@@ -76,6 +76,29 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             }
         }
 
+        var holderInfo = new ContractInfo(
+            holderType.ToDisplayString(),
+            holderType.Name,
+            holderType.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : holderType.ContainingNamespace.ToDisplayString(),
+            holderType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
+        EnumTypeInfo? stateTypeInfo = null;
+        EnumTypeInfo? triggerTypeInfo = null;
+        var initialState = default(InitialStateInfo);
+
+        if (stateType is not null && stateType.TypeKind == TypeKind.Enum)
+        {
+            stateTypeInfo = EnumTypeInfo.FromSymbol(stateType);
+            initialState = ResolveInitial(initial, stateType, stateTypeInfo.Value);
+        }
+
+        if (triggerType is not null && triggerType.TypeKind == TypeKind.Enum)
+        {
+            triggerTypeInfo = EnumTypeInfo.FromSymbol(triggerType);
+        }
+
         var transitions = new List<TransitionModel>();
         foreach (var attribute in holderType.GetAttributes())
         {
@@ -93,21 +116,84 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             var transitionLocation = attribute.ApplicationSyntaxReference is { } syntaxReference
                 ? syntaxReference.SyntaxTree!.GetLocation(syntaxReference.Span)
                 : location;
-            transitions.Add(new TransitionModel(
-                attribute.ConstructorArguments[0],
-                attribute.ConstructorArguments[1],
-                attribute.ConstructorArguments[2],
-                transitionLocation));
+
+            var from = ResolveTransitionArg(attribute.ConstructorArguments[0], stateType, stateTypeInfo);
+            var trigger = ResolveTransitionArg(attribute.ConstructorArguments[1], triggerType, triggerTypeInfo);
+            var to = ResolveTransitionArg(attribute.ConstructorArguments[2], stateType, stateTypeInfo);
+
+            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation));
         }
 
         return new StateMachineModel(
-            holderType,
-            stateType,
-            triggerType,
-            initial,
-            transitions,
+            holderInfo,
+            stateTypeInfo,
+            triggerTypeInfo,
+            initialState,
+            new EquatableArray<TransitionModel>(transitions.ToArray()),
             location,
             isValidHolder);
+    }
+
+    private static InitialStateInfo ResolveInitial(
+        TypedConstant? initial,
+        INamedTypeSymbol stateType,
+        EnumTypeInfo stateTypeInfo)
+    {
+        if (!initial.HasValue)
+        {
+            return new InitialStateInfo(null, "<missing>", false);
+        }
+
+        var typedConstant = initial.Value;
+        if (typedConstant.Kind != TypedConstantKind.Enum
+            || typedConstant.Type is not INamedTypeSymbol constantEnumType
+            || !SymbolEqualityComparer.Default.Equals(constantEnumType, stateType))
+        {
+            return new InitialStateInfo(null, typedConstant.ToCSharpString(), false);
+        }
+
+        foreach (var member in stateTypeInfo.Members)
+        {
+            if (Equals(member.ConstantValue, typedConstant.Value))
+            {
+                return new InitialStateInfo(member.Name, member.Name, true);
+            }
+        }
+
+        return new InitialStateInfo(null, typedConstant.ToCSharpString(), false);
+    }
+
+    private static TransitionArg ResolveTransitionArg(
+        TypedConstant constant,
+        INamedTypeSymbol? expectedEnumType,
+        EnumTypeInfo? expectedEnumInfo)
+    {
+        if (expectedEnumType is null || expectedEnumInfo is null)
+        {
+            return new TransitionArg(null, constant.ToCSharpString(), false);
+        }
+
+        if (constant.Kind == TypedConstantKind.Error || constant.Value is null)
+        {
+            return new TransitionArg(null, "<missing>", false);
+        }
+
+        if (constant.Kind != TypedConstantKind.Enum
+            || constant.Type is not INamedTypeSymbol constantEnumType
+            || !SymbolEqualityComparer.Default.Equals(constantEnumType, expectedEnumType))
+        {
+            return new TransitionArg(null, constant.ToCSharpString(), false);
+        }
+
+        foreach (var member in expectedEnumInfo.Value.Members)
+        {
+            if (Equals(member.ConstantValue, constant.Value))
+            {
+                return new TransitionArg(member.Name, member.Name, true);
+            }
+        }
+
+        return new TransitionArg(null, constant.ToCSharpString(), false);
     }
 
     private static void Execute(SourceProductionContext context, ImmutableArray<StateMachineModel?> models)
@@ -125,74 +211,70 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateMachineHolderInvalid,
                 model.Location,
-                model.HolderType.Name));
+                model.Holder.Name));
             return;
         }
 
-        if (model.StateType is null
-            || model.TriggerType is null
-            || model.StateType.TypeKind != TypeKind.Enum
-            || model.TriggerType.TypeKind != TypeKind.Enum)
+        if (model.StateType is null || model.TriggerType is null)
         {
             return;
         }
 
-        var stateType = model.StateType;
-        var triggerType = model.TriggerType;
-        var stateTypeName = stateType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var triggerTypeName = triggerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var stateType = model.StateType.Value;
+        var triggerType = model.TriggerType.Value;
 
-        if (!TryResolveEnumMember(model.Initial, stateType, out var initialMember, out var initialDisplay))
+        if (!model.Initial.IsValid)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionInvalidInitialState,
                 model.Location,
-                initialDisplay,
-                stateType.ToDisplayString()));
+                model.Initial.DisplayValue,
+                stateType.FullyQualifiedName));
             return;
         }
 
+        var initialMember = model.Initial.MemberName!;
         var validTransitions = new List<ResolvedTransition>();
         foreach (var transition in model.Transitions)
         {
-            if (!TryResolveEnumMember(transition.From, stateType, out var fromMember, out var fromDisplay))
+            if (!transition.From.IsValid)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionInvalidStateMember,
                     transition.Location,
-                    fromDisplay,
-                    stateType.ToDisplayString()));
+                    transition.From.DisplayValue,
+                    stateType.FullyQualifiedName));
                 continue;
             }
 
-            if (!TryResolveEnumMember(transition.To, stateType, out var toMember, out var toDisplay))
+            if (!transition.To.IsValid)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionInvalidStateMember,
                     transition.Location,
-                    toDisplay,
-                    stateType.ToDisplayString()));
+                    transition.To.DisplayValue,
+                    stateType.FullyQualifiedName));
                 continue;
             }
 
-            if (!TryResolveEnumMember(transition.Trigger, triggerType, out var triggerMember, out var triggerDisplay))
+            if (!transition.Trigger.IsValid)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionInvalidTriggerMember,
                     transition.Location,
-                    triggerDisplay,
-                    triggerType.ToDisplayString()));
+                    transition.Trigger.DisplayValue,
+                    triggerType.FullyQualifiedName));
                 continue;
             }
 
             validTransitions.Add(new ResolvedTransition(
-                fromMember,
-                triggerMember,
-                toMember,
+                transition.From.MemberName!,
+                transition.Trigger.MemberName!,
+                transition.To.MemberName!,
                 transition.Location,
-                StateTransitionSyntaxFactory.FormatEnumMember(stateType, fromMember),
-                StateTransitionSyntaxFactory.FormatEnumMember(triggerType, triggerMember),
-                StateTransitionSyntaxFactory.FormatEnumMember(stateType, toMember)));
+                StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.From.MemberName!),
+                StateTransitionSyntaxFactory.FormatEnumMember(triggerType.FullyQualifiedDisplayString, transition.Trigger.MemberName!),
+                StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.To.MemberName!)));
         }
 
         foreach (var duplicateGroup in validTransitions
@@ -221,44 +303,40 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             return;
         }
 
-        var namespaceName = model.HolderType.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : model.HolderType.ContainingNamespace.ToDisplayString();
-
-        var tableClassName = StateTransitionSyntaxFactory.GetTransitionTableClassName(stateType);
-        var initialExpression = StateTransitionSyntaxFactory.FormatEnumMember(stateType, initialMember);
+        var tableClassName = StateTransitionSyntaxFactory.GetTransitionTableClassName(stateType.Name);
+        var initialExpression = StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, initialMember);
         var transitionExpressions = uniqueTransitions
             .Select(static transition => (transition.FromExpression, transition.TriggerExpression, transition.ToExpression))
             .ToList();
 
         var tableUnit = StateTransitionSyntaxFactory.CreateTransitionTableCompilationUnit(
-            namespaceName,
+            stateType.Namespace,
             tableClassName,
-            stateTypeName,
-            triggerTypeName,
+            stateType.FullyQualifiedDisplayString,
+            triggerType.FullyQualifiedDisplayString,
             initialExpression,
             transitionExpressions);
 
         var holderUnit = StateTransitionSyntaxFactory.CreateHolderPartialCompilationUnit(
-            namespaceName,
-            model.HolderType.Name,
+            stateType.Namespace,
+            model.Holder.Name,
             tableClassName,
-            stateTypeName,
-            triggerTypeName);
+            stateType.FullyQualifiedDisplayString,
+            triggerType.FullyQualifiedDisplayString);
 
-        var hintPrefix = HintNameHelper.FromSymbol(stateType);
+        var hintPrefix = HintNameHelper.FromString(stateType.FullyQualifiedDisplayString);
         context.AddSource(
             $"{hintPrefix}.{tableClassName}.g.cs",
             SourceText.From(tableUnit.ToFullString(), Encoding.UTF8));
 
         context.AddSource(
-            $"{hintPrefix}.{model.HolderType.Name}.g.cs",
+            $"{hintPrefix}.{model.Holder.Name}.g.cs",
             SourceText.From(holderUnit.ToFullString(), Encoding.UTF8));
     }
 
     private static void ReportIsolatedStates(
         SourceProductionContext context,
-        INamedTypeSymbol stateType,
+        EnumTypeInfo stateType,
         string initialMember,
         IReadOnlyCollection<ResolvedTransition> transitions,
         Location location)
@@ -267,126 +345,73 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             transitions.Select(static transition => transition.FromMember),
             StringComparer.Ordinal);
 
-        foreach (var field in stateType.GetMembers().OfType<IFieldSymbol>().Where(static field => field.IsConst))
+        foreach (var member in stateType.Members)
         {
-            if (string.Equals(field.Name, initialMember, StringComparison.Ordinal))
+            if (string.Equals(member.Name, initialMember, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            if (!fromStates.Contains(field.Name))
+            if (!fromStates.Contains(member.Name))
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionIsolatedState,
                     location,
-                    field.Name,
-                    stateType.ToDisplayString()));
+                    member.Name,
+                    stateType.FullyQualifiedName));
             }
         }
     }
 
-    private static bool TryResolveEnumMember(
-        TypedConstant? constant,
-        INamedTypeSymbol enumType,
-        out string memberName,
-        out string displayValue)
+    private readonly record struct EnumMember(string Name, object? ConstantValue);
+
+    private readonly record struct EnumTypeInfo(
+        string Name,
+        string? Namespace,
+        string FullyQualifiedName,
+        string FullyQualifiedDisplayString,
+        EquatableArray<EnumMember> Members)
     {
-        memberName = string.Empty;
-        displayValue = string.Empty;
-
-        if (constant is null)
+        public static EnumTypeInfo FromSymbol(INamedTypeSymbol symbol)
         {
-            displayValue = "<missing>";
-            return false;
-        }
+            var members = symbol.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Where(static field => field.IsConst)
+                .Select(static field => new EnumMember(field.Name, field.ConstantValue))
+                .ToArray();
 
-        var typedConstant = constant.Value;
-        if (typedConstant.Kind != TypedConstantKind.Error
-            && typedConstant.Value is null)
-        {
-            displayValue = "<missing>";
-            return false;
+            return new EnumTypeInfo(
+                symbol.Name,
+                symbol.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : symbol.ContainingNamespace.ToDisplayString(),
+                symbol.ToDisplayString(),
+                symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                new EquatableArray<EnumMember>(members));
         }
-
-        if (typedConstant.Kind != TypedConstantKind.Enum
-            || typedConstant.Type is not INamedTypeSymbol constantEnumType
-            || !SymbolEqualityComparer.Default.Equals(constantEnumType, enumType))
-        {
-            displayValue = typedConstant.ToCSharpString();
-            return false;
-        }
-
-        foreach (var field in enumType.GetMembers().OfType<IFieldSymbol>().Where(static field => field.IsConst))
-        {
-            if (Equals(field.ConstantValue, typedConstant.Value))
-            {
-                memberName = field.Name;
-                displayValue = field.Name;
-                return true;
-            }
-        }
-
-        displayValue = typedConstant.ToCSharpString();
-        return false;
     }
 
-    private sealed class StateMachineModel
-    {
-        public StateMachineModel(
-            INamedTypeSymbol holderType,
-            INamedTypeSymbol? stateType,
-            INamedTypeSymbol? triggerType,
-            TypedConstant? initial,
-            IReadOnlyList<TransitionModel> transitions,
-            Location location,
-            bool isValidHolder)
-        {
-            HolderType = holderType;
-            StateType = stateType;
-            TriggerType = triggerType;
-            Initial = initial;
-            Transitions = transitions;
-            Location = location;
-            IsValidHolder = isValidHolder;
-        }
+    private readonly record struct InitialStateInfo(string? MemberName, string DisplayValue, bool IsValid);
 
-        public INamedTypeSymbol HolderType { get; }
+    private readonly record struct TransitionArg(
+        string? MemberName,
+        string DisplayValue,
+        bool IsValid);
 
-        public INamedTypeSymbol? StateType { get; }
+    private sealed record TransitionModel(
+        TransitionArg From,
+        TransitionArg Trigger,
+        TransitionArg To,
+        Location Location);
 
-        public INamedTypeSymbol? TriggerType { get; }
-
-        public TypedConstant? Initial { get; }
-
-        public IReadOnlyList<TransitionModel> Transitions { get; }
-
-        public Location Location { get; }
-
-        public bool IsValidHolder { get; }
-    }
-
-    private sealed class TransitionModel
-    {
-        public TransitionModel(
-            TypedConstant from,
-            TypedConstant trigger,
-            TypedConstant to,
-            Location location)
-        {
-            From = from;
-            Trigger = trigger;
-            To = to;
-            Location = location;
-        }
-
-        public TypedConstant From { get; }
-
-        public TypedConstant Trigger { get; }
-
-        public TypedConstant To { get; }
-
-        public Location Location { get; }
-    }
+    private sealed record StateMachineModel(
+        ContractInfo Holder,
+        EnumTypeInfo? StateType,
+        EnumTypeInfo? TriggerType,
+        InitialStateInfo Initial,
+        EquatableArray<TransitionModel> Transitions,
+        Location Location,
+        bool IsValidHolder);
 
     private sealed class ResolvedTransition
     {

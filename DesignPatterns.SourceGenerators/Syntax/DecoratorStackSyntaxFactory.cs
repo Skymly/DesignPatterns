@@ -10,10 +10,16 @@ namespace DesignPatterns.SourceGenerators.Syntax;
 internal static class DecoratorStackSyntaxFactory
 {
     public static string GetStackClassName(INamedTypeSymbol serviceType) =>
-        GetBaseName(serviceType) + "DecoratorStack";
+        GetStackClassName(serviceType.Name);
 
     public static string GetOrderClassName(INamedTypeSymbol serviceType) =>
-        GetBaseName(serviceType) + "DecoratorOrder";
+        GetOrderClassName(serviceType.Name);
+
+    public static string GetStackClassName(string serviceTypeName) =>
+        GetBaseName(serviceTypeName) + "DecoratorStack";
+
+    public static string GetOrderClassName(string serviceTypeName) =>
+        GetBaseName(serviceTypeName) + "DecoratorOrder";
 
     public static CompilationUnitSyntax CreateOrderCompilationUnit(
         string? namespaceName,
@@ -117,9 +123,8 @@ internal static class DecoratorStackSyntaxFactory
         return WrapInCompilationUnit(namespaceName, stackClass, "DesignPatterns.Structural");
     }
 
-    public static string GetBaseName(INamedTypeSymbol contract)
+    public static string GetBaseName(string name)
     {
-        var name = contract.Name;
         if (name.StartsWith("I", StringComparison.Ordinal) && name.Length > 1 && char.IsUpper(name[1]))
         {
             name = name.Substring(1);

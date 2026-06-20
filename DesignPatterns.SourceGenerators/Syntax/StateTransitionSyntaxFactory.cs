@@ -10,7 +10,10 @@ namespace DesignPatterns.SourceGenerators.Syntax;
 internal static class StateTransitionSyntaxFactory
 {
     public static string GetTransitionTableClassName(INamedTypeSymbol stateType) =>
-        stateType.Name + "TransitionTable";
+        GetTransitionTableClassName(stateType.Name);
+
+    public static string GetTransitionTableClassName(string stateTypeName) =>
+        stateTypeName + "TransitionTable";
 
     public static CompilationUnitSyntax CreateTransitionTableCompilationUnit(
         string? namespaceName,
@@ -152,7 +155,10 @@ internal static class StateTransitionSyntaxFactory
     }
 
     public static string FormatEnumMember(INamedTypeSymbol enumType, string memberName) =>
-        $"{enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{memberName}";
+        FormatEnumMember(enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), memberName);
+
+    public static string FormatEnumMember(string enumTypeFullyQualifiedDisplayString, string memberName) =>
+        $"{enumTypeFullyQualifiedDisplayString}.{memberName}";
 
     private static ExpressionSyntax BuildTransitionTableExpression(
         string stateTypeName,

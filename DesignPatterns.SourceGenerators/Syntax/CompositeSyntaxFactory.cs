@@ -10,10 +10,16 @@ namespace DesignPatterns.SourceGenerators.Syntax;
 internal static class CompositeSyntaxFactory
 {
     public static string GetKeysClassName(INamedTypeSymbol contract) =>
-        GetBaseName(contract) + "CompositeKeys";
+        GetKeysClassName(contract.Name);
 
     public static string GetCatalogClassName(INamedTypeSymbol contract) =>
-        GetBaseName(contract) + "CompositeCatalog";
+        GetCatalogClassName(contract.Name);
+
+    public static string GetKeysClassName(string contractName) =>
+        GetBaseName(contractName) + "CompositeKeys";
+
+    public static string GetCatalogClassName(string contractName) =>
+        GetBaseName(contractName) + "CompositeCatalog";
 
     public static string ToConstantName(string key)
     {
@@ -185,9 +191,8 @@ internal static class CompositeSyntaxFactory
             "DesignPatterns.Structural");
     }
 
-    private static string GetBaseName(INamedTypeSymbol contract)
+    private static string GetBaseName(string name)
     {
-        var name = contract.Name;
         if (name.StartsWith("I", StringComparison.Ordinal) && name.Length > 1 && char.IsUpper(name[1]))
         {
             name = name.Substring(1);

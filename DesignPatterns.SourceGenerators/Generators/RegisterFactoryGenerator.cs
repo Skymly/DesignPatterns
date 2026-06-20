@@ -54,18 +54,13 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
 
     private static void EmitGeneratedSources(
         SourceProductionContext context,
-        INamedTypeSymbol contract,
+        ContractInfo contract,
         List<KeyedRegistration> registrations,
         GeneratorIntegrationOptions integrationOptions,
         bool qualifyHintName)
     {
-        var namespaceName = contract.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : contract.ContainingNamespace.ToDisplayString();
-
-        var contractTypeName = contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var keysClassName = FactorySyntaxFactory.GetKeysClassName(contract);
-        var registryClassName = FactorySyntaxFactory.GetRegistryClassName(contract);
+        var keysClassName = FactorySyntaxFactory.GetKeysClassName(contract.Name);
+        var registryClassName = FactorySyntaxFactory.GetRegistryClassName(contract.Name);
 
         var constantNames = new HashSet<string>(StringComparer.Ordinal);
         var keys = new List<(string ConstantName, string KeyValue)>();
@@ -81,18 +76,18 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
         }
 
         var registryEntries = registrations
-            .Select(r => (r.Key, r.Implementation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)))
+            .Select(static r => (r.Key, r.ImplementationFullyQualifiedDisplayString))
             .ToList();
 
-        var keysUnit = FactorySyntaxFactory.CreateKeysCompilationUnit(namespaceName, keysClassName, keys);
+        var keysUnit = FactorySyntaxFactory.CreateKeysCompilationUnit(contract.Namespace, keysClassName, keys);
         var registryUnit = FactorySyntaxFactory.CreateRegistryCompilationUnit(
-            namespaceName,
+            contract.Namespace,
             registryClassName,
-            contractTypeName,
+            contract.FullyQualifiedDisplayString,
             registryEntries,
             integrationOptions);
 
-        var hintPrefix = qualifyHintName ? HintNameHelper.FromSymbol(contract) : contract.Name;
+        var hintPrefix = qualifyHintName ? HintNameHelper.FromString(contract.FullyQualifiedDisplayString) : contract.Name;
         context.AddSource(
             $"{hintPrefix}.{keysClassName}.g.cs",
             SourceText.From(keysUnit.ToFullString(), Encoding.UTF8));

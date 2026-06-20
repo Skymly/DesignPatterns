@@ -70,6 +70,8 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         }
 
         var location = context.TargetNode.GetLocation();
+        var handlerName = handlerType.Name;
+        var handlerFullyQualifiedDisplayString = handlerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
         foreach (var attribute in context.Attributes)
         {
@@ -101,10 +103,21 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 continue;
             }
 
+            var contextInfo = new ContractInfo(
+                contextType.ToDisplayString(),
+                contextType.Name,
+                contextType.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : contextType.ContainingNamespace.ToDisplayString(),
+                contextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
             result.Add(new HandlerRegistration(
                 order,
-                contextType,
-                handlerType,
+                contextInfo,
+                handlerName,
+                handlerFullyQualifiedDisplayString,
+                ImplementsHandler(handlerType, contextType),
+                HasPublicParameterlessConstructor(handlerType),
                 location));
         }
 
@@ -128,31 +141,27 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
 
         var contextNamesWithCollisions = new HashSet<string>(
             registrations
-                .Select(static r => r.ContextType)
-                .OfType<INamedTypeSymbol>()
-                .Distinct(SymbolEqualityComparer.Default)
-                .GroupBy(static c => c!.Name, StringComparer.Ordinal)
+                .Select(static r => r.Context)
+                .Distinct()
+                .GroupBy(static c => c.Name, StringComparer.Ordinal)
                 .Where(static g => g.Count() > 1)
                 .Select(static g => g.Key),
             StringComparer.Ordinal);
 
         ReportValidationDiagnostics(context, registrations);
 
-        foreach (var group in registrations.GroupBy(static r => r.ContextType, SymbolEqualityComparer.Default))
+        foreach (var group in registrations.GroupBy(static r => r.Context.FullyQualifiedName, StringComparer.Ordinal))
         {
-            if (group.Key is not INamedTypeSymbol contextType)
-            {
-                continue;
-            }
+            var contextInfo = group.First().Context;
 
             var valid = group
-                .Where(r => ImplementsHandler(r.HandlerType, contextType))
-                .Where(r => HasPublicParameterlessConstructor(r.HandlerType))
-                .GroupBy(r => r.Order)
-                .Where(g => g.Count() == 1)
-                .Select(g => g.First())
-                .OrderBy(r => r.Order)
-                .ThenBy(r => r.HandlerType.Name, StringComparer.Ordinal)
+                .Where(static r => r.ImplementsHandler)
+                .Where(static r => r.HasPublicParameterlessConstructor)
+                .GroupBy(static r => r.Order)
+                .Where(static g => g.Count() == 1)
+                .Select(static g => g.First())
+                .OrderBy(static r => r.Order)
+                .ThenBy(static r => r.HandlerName, StringComparer.Ordinal)
                 .ToList();
 
             if (valid.Count == 0)
@@ -162,10 +171,10 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
 
             EmitPipeline(
                 context,
-                contextType,
+                contextInfo,
                 valid,
                 integrationOptions,
-                contextNamesWithCollisions.Contains(contextType.Name));
+                contextNamesWithCollisions.Contains(contextInfo.Name));
         }
     }
 
@@ -174,10 +183,10 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         List<HandlerRegistration> registrations)
     {
         foreach (var duplicateGroup in registrations
-                     .GroupBy(static r => (r.ContextType, r.Order))
+                     .GroupBy(static r => (r.Context.FullyQualifiedName, r.Order))
                      .Where(g => g.Count() > 1))
         {
-            var contextName = duplicateGroup.First().ContextType.ToDisplayString();
+            var contextName = duplicateGroup.First().Context.FullyQualifiedName;
             foreach (var registration in duplicateGroup)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
@@ -188,49 +197,44 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             }
         }
 
-        foreach (var registration in registrations.Where(r => !ImplementsHandler(r.HandlerType, r.ContextType)))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsHandler))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 HandlerContractMismatchDescriptor,
                 registration.Location,
-                registration.HandlerType.Name,
-                registration.ContextType.ToDisplayString()));
+                registration.HandlerName,
+                registration.Context.FullyQualifiedName));
         }
 
-        foreach (var registration in registrations.Where(r => !HasPublicParameterlessConstructor(r.HandlerType)))
+        foreach (var registration in registrations.Where(static r => !r.HasPublicParameterlessConstructor))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingParameterlessConstructorDescriptor,
                 registration.Location,
-                registration.HandlerType.Name));
+                registration.HandlerName));
         }
     }
 
     private static void EmitPipeline(
         SourceProductionContext context,
-        INamedTypeSymbol contextType,
+        ContractInfo contextInfo,
         List<HandlerRegistration> handlers,
         GeneratorIntegrationOptions integrationOptions,
         bool qualifyHintName)
     {
-        var namespaceName = contextType.ContainingNamespace.IsGlobalNamespace
-            ? null
-            : contextType.ContainingNamespace.ToDisplayString();
-
-        var contextTypeName = contextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var pipelineClassName = HandlerPipelineSyntaxFactory.GetPipelineClassName(contextType);
+        var pipelineClassName = HandlerPipelineSyntaxFactory.GetPipelineClassName(contextInfo.Name);
         var handlerTypeNames = handlers
-            .Select(h => h.HandlerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat))
+            .Select(static h => h.HandlerFullyQualifiedDisplayString)
             .ToList();
 
         var compilationUnit = HandlerPipelineSyntaxFactory.CreatePipelineCompilationUnit(
-            namespaceName,
+            contextInfo.Namespace,
             pipelineClassName,
-            contextTypeName,
+            contextInfo.FullyQualifiedDisplayString,
             handlerTypeNames,
             integrationOptions);
 
-        var hintPrefix = qualifyHintName ? HintNameHelper.FromSymbol(contextType) : contextType.Name;
+        var hintPrefix = qualifyHintName ? HintNameHelper.FromString(contextInfo.FullyQualifiedDisplayString) : contextInfo.Name;
         context.AddSource(
             $"{hintPrefix}.{pipelineClassName}.g.cs",
             SourceText.From(compilationUnit.ToFullString(), Encoding.UTF8));
@@ -258,26 +262,12 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         handlerType.InstanceConstructors.Any(static c =>
             c.Parameters.IsEmpty && c.DeclaredAccessibility == Accessibility.Public);
 
-    private sealed class HandlerRegistration
-    {
-        public HandlerRegistration(
-            int order,
-            INamedTypeSymbol contextType,
-            INamedTypeSymbol handlerType,
-            Location location)
-        {
-            Order = order;
-            ContextType = contextType;
-            HandlerType = handlerType;
-            Location = location;
-        }
-
-        public int Order { get; }
-
-        public INamedTypeSymbol ContextType { get; }
-
-        public INamedTypeSymbol HandlerType { get; }
-
-        public Location Location { get; }
-    }
+    private sealed record HandlerRegistration(
+        int Order,
+        ContractInfo Context,
+        string HandlerName,
+        string HandlerFullyQualifiedDisplayString,
+        bool ImplementsHandler,
+        bool HasPublicParameterlessConstructor,
+        Location Location);
 }
