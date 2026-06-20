@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
+using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
 
@@ -274,11 +275,7 @@ public sealed class UnregisteredStrategyAnalyzerTests
             source,
             new UnregisteredStrategyAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP006" &&
-                diagnostic.GetMessage().Contains("WechatPayment", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP006"));
     }
 
     [Fact]
@@ -318,11 +315,7 @@ public sealed class UnregisteredStrategyAnalyzerTests
             implementationSource,
             new UnregisteredStrategyAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP006" &&
-                diagnostic.GetMessage().Contains("WechatPayment", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP006"));
     }
 
     [Fact]
@@ -348,7 +341,7 @@ public sealed class UnregisteredStrategyAnalyzerTests
             source,
             new UnregisteredStrategyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP006");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP006"));
     }
 }
 
@@ -381,7 +374,7 @@ public sealed class AddParameterlessConstructorCodeFixTests
             "DP007",
             new AddParameterlessConstructorCodeFixProvider());
 
-        Assert.Contains("public AlipayPayment()", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -434,7 +427,7 @@ public sealed class AddRegisterStrategyCodeFixTests
         var fixedDocument = applyChanges.ChangedSolution.GetDocument(document.Id)!;
         var fixedSource = (await fixedDocument.GetTextAsync()).ToString();
 
-        Assert.Contains("[RegisterStrategy(\"wechat-payment\", typeof(IPaymentStrategy))]", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -465,7 +458,7 @@ public sealed class AddContractImplementationCodeFixTests
             "DP004",
             new AddContractImplementationCodeFixProvider());
 
-        Assert.Contains("IPaymentStrategy", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -500,7 +493,7 @@ public sealed class HandlerCodeFixTests
             "DP009",
             new AddParameterlessConstructorCodeFixProvider());
 
-        Assert.Contains("public AuthHandler()", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 
     [Fact]
@@ -532,8 +525,7 @@ public sealed class HandlerCodeFixTests
             "DP008",
             new AddContractImplementationCodeFixProvider());
 
-        Assert.Contains("IHandler<", fixedSource, StringComparison.Ordinal);
-        Assert.Contains("RequestContext>", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -564,7 +556,7 @@ public sealed class CompositeCodeFixTests
             "DP013",
             new AddContractImplementationCodeFixProvider());
 
-        Assert.Contains("IMenuNode", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 
     [Fact]
@@ -594,7 +586,7 @@ public sealed class CompositeCodeFixTests
             "DP014",
             new AddParameterlessConstructorCodeFixProvider());
 
-        Assert.Contains("public RootMenu()", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 
     [Fact]
@@ -622,8 +614,7 @@ public sealed class CompositeCodeFixTests
             "DP015",
             new AddCompositeBuildableCodeFixProvider());
 
-        Assert.Contains("ICompositeBuildable<", fixedSource, StringComparison.Ordinal);
-        Assert.Contains("IMenuNode>", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -649,7 +640,7 @@ public sealed class SingletonCodeFixTests
             "DP001",
             new AddPartialModifierCodeFixProvider());
 
-        Assert.Contains("public partial class AppSettings", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }
 
@@ -680,7 +671,7 @@ public sealed class DecoratorCodeFixTests
             "DP018",
             new AddContractImplementationCodeFixProvider());
 
-        Assert.Contains("IDecorator<TestAssembly.IPaymentService>", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 
     [Fact]
@@ -708,7 +699,7 @@ public sealed class DecoratorCodeFixTests
             "DP017",
             new AddContractImplementationCodeFixProvider());
 
-        Assert.Contains("IPaymentService", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 
     [Fact]
@@ -738,6 +729,6 @@ public sealed class DecoratorCodeFixTests
             "DP019",
             new AddParameterlessConstructorCodeFixProvider());
 
-        Assert.Contains("public LoggingPaymentDecorator()", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }

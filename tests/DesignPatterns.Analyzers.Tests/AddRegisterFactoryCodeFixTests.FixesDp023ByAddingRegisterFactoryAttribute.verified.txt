@@ -1,0 +1,20 @@
+﻿using DesignPatterns.Creational;
+
+namespace TestAssembly;
+
+public interface IProductFactory
+{
+    string Produce();
+}
+
+[RegisterFactory("standard", typeof(IProductFactory))]
+public class StandardFactory : IProductFactory
+{
+    public string Produce() => "standard";
+}
+
+[RegisterFactory("premium-factory", typeof(IProductFactory))]
+public class PremiumFactory : IProductFactory
+{
+    public string Produce() => "premium";
+}

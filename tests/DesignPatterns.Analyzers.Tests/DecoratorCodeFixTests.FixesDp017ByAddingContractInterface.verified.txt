@@ -1,0 +1,13 @@
+﻿using DesignPatterns.Structural;
+
+namespace TestAssembly;
+
+public interface IPaymentService
+{
+    int Pay(int amount);
+}
+
+[Decorator<IPaymentService>(10)]
+public class LoggingPaymentDecorator : IDecorator<IPaymentService>, TestAssembly.IPaymentService{
+    public IPaymentService Decorate(IPaymentService inner) => inner;
+}

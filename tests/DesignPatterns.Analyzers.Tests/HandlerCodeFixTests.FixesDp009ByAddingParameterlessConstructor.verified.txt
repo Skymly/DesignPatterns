@@ -1,0 +1,22 @@
+﻿using System.Threading;
+using System.Threading.Tasks;
+using DesignPatterns.Behavioral;
+
+namespace TestAssembly;
+
+public sealed class RequestContext { }
+
+[HandlerOrder<RequestContext>(1)]
+public class AuthHandler : IHandler<RequestContext>
+{
+    public AuthHandler(string ignored) { }
+
+    public ValueTask InvokeAsync(
+        RequestContext context,
+        HandlerDelegate<RequestContext> next,
+        CancellationToken cancellationToken = default) => default;
+
+    public AuthHandler()
+    {
+    }
+}

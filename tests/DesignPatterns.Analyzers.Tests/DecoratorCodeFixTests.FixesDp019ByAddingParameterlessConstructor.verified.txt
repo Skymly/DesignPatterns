@@ -1,0 +1,20 @@
+﻿using DesignPatterns.Structural;
+
+namespace TestAssembly;
+
+public interface IPaymentService
+{
+    int Pay(int amount);
+}
+
+[Decorator<IPaymentService>(10)]
+public class LoggingPaymentDecorator : IPaymentService, IDecorator<IPaymentService>
+{
+    public LoggingPaymentDecorator(string ignored) { }
+
+    public IPaymentService Decorate(IPaymentService inner) => inner;
+
+    public LoggingPaymentDecorator()
+    {
+    }
+}

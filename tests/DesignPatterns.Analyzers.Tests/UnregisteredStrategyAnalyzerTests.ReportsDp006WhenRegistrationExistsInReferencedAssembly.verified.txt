@@ -1,0 +1,1 @@
+﻿DP006 [Info] Type 'WechatPayment' implements strategy contract 'IPaymentStrategy' but has no [RegisterStrategy] attribute. Add [RegisterStrategy("key", typeof(...))] with a unique key and the contract type to register it. @ Implementations.cs:(6,14)

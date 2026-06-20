@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Operations;
+using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
 
@@ -48,12 +49,7 @@ public sealed class UnknownRegistryKeyAnalyzerTests
             source,
             new UnknownRegistryKeyAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP025" &&
-                diagnostic.GetMessage().Contains("alipy", StringComparison.Ordinal) &&
-                diagnostic.GetMessage().Contains("alipay", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP025"));
     }
 
     [Fact]
@@ -94,12 +90,7 @@ public sealed class UnknownRegistryKeyAnalyzerTests
             source,
             new UnknownRegistryKeyAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP025" &&
-                diagnostic.GetMessage().Contains("standrd", StringComparison.Ordinal) &&
-                diagnostic.GetMessage().Contains("standard", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP025"));
     }
 
     [Fact]
@@ -135,7 +126,7 @@ public sealed class UnknownRegistryKeyAnalyzerTests
             source,
             new UnknownRegistryKeyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP025");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP025"));
     }
 
     [Fact]
@@ -173,7 +164,7 @@ public sealed class UnknownRegistryKeyAnalyzerTests
             source,
             new UnknownRegistryKeyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP025");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP025"));
     }
 
     [Fact]
@@ -208,7 +199,7 @@ public sealed class UnknownRegistryKeyAnalyzerTests
             source,
             new UnknownRegistryKeyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP025");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP025"));
     }
 
     [Fact]
@@ -251,11 +242,7 @@ public sealed class UnknownRegistryKeyAnalyzerTests
             usageSource,
             new UnknownRegistryKeyAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP025" &&
-                diagnostic.GetMessage().Contains("alipy", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP025"));
     }
 }
 
@@ -319,7 +306,58 @@ public sealed class CorrectRegistryKeyCodeFixTests
         var fixedDocument = applyChanges.ChangedSolution.GetDocument(document.Id)!;
         var fixedSource = (await fixedDocument.GetTextAsync()).ToString();
 
-        Assert.Contains("\"alipay\"", fixedSource, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"alipy\"", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
+    }
+
+    [Fact]
+    public async Task FixesDp025ByReplacingMultipleOccurrences()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface IPaymentStrategy
+            {
+                string Pay(decimal amount);
+            }
+
+            [RegisterStrategy("alipay", typeof(IPaymentStrategy))]
+            public class AlipayPayment : IPaymentStrategy
+            {
+                public string Pay(decimal amount) => "alipay";
+            }
+
+            public static class Usage
+            {
+                public static void Run(IStrategyRegistry<string, IPaymentStrategy> registry)
+                {
+                    registry.Get("alipy");
+                    registry.TryGet("alipy", out _);
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new UnknownRegistryKeyAnalyzer());
+
+        Assert.Equal(2, diagnostics.Count(d => d.Id == "DP025"));
+
+        var document = AnalyzerTestContext.CreateDocument(source);
+        var fixes = ImmutableArray.CreateBuilder<CodeAction>();
+        var context = new CodeFixContext(
+            document,
+            diagnostics.First(d => d.Id == "DP025"),
+            (action, _) => fixes.Add(action),
+            CancellationToken.None);
+        await new CorrectRegistryKeyCodeFixProvider().RegisterCodeFixesAsync(context);
+
+        var operation = await fixes[0].GetOperationsAsync(CancellationToken.None);
+        var applyChanges = Assert.IsType<ApplyChangesOperation>(operation.Single());
+        var fixedDocument = applyChanges.ChangedSolution.GetDocument(document.Id)!;
+        var fixedSource = (await fixedDocument.GetTextAsync()).ToString();
+
+        await Verifier.Verify(fixedSource);
     }
 }

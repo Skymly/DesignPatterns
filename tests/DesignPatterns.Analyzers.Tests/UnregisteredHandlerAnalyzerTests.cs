@@ -1,5 +1,6 @@
 using DesignPatterns.Analyzers;
 using Microsoft.CodeAnalysis;
+using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
 
@@ -43,11 +44,7 @@ public sealed class UnregisteredHandlerAnalyzerTests
             source,
             new UnregisteredHandlerAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP024" &&
-                diagnostic.GetMessage().Contains("AuditHandler", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP024"));
     }
 
     [Fact]
@@ -79,7 +76,7 @@ public sealed class UnregisteredHandlerAnalyzerTests
             source,
             new UnregisteredHandlerAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP024");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP024"));
     }
 
     [Fact]
@@ -110,7 +107,7 @@ public sealed class UnregisteredHandlerAnalyzerTests
             source,
             new UnregisteredHandlerAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP024");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP024"));
     }
 
     [Fact]
@@ -161,10 +158,6 @@ public sealed class UnregisteredHandlerAnalyzerTests
             implementationSource,
             new UnregisteredHandlerAnalyzer());
 
-        Assert.Contains(
-            diagnostics,
-            diagnostic =>
-                diagnostic.Id == "DP024" &&
-                diagnostic.GetMessage().Contains("AuditHandler", StringComparison.Ordinal));
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP024"));
     }
 }

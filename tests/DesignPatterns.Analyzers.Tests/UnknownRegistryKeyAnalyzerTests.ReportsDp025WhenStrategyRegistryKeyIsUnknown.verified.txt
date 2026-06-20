@@ -1,0 +1,1 @@
+﻿DP025 [Info] Key 'alipy' is not registered for contract 'IPaymentStrategy'. Registered keys: 'alipay', 'wechat'. @ Test.cs:(26,22)

@@ -1,0 +1,1 @@
+﻿DP024 [Info] Type 'AuditHandler' implements IHandler<RequestContext> but has no [HandlerOrder] attribute. Add [HandlerOrder(order, typeof(...))] with a unique order and the context type to include it in the pipeline. @ Test.cs:(21,21)

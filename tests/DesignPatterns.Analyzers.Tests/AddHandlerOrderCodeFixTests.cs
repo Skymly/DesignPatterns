@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Operations;
+using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
 
@@ -66,6 +67,6 @@ public sealed class AddHandlerOrderCodeFixTests
         var fixedDocument = applyChanges.ChangedSolution.GetDocument(document.Id)!;
         var fixedSource = (await fixedDocument.GetTextAsync()).ToString();
 
-        Assert.Contains("[HandlerOrder(10, typeof(RequestContext))]", fixedSource, StringComparison.Ordinal);
+        await Verifier.Verify(fixedSource);
     }
 }

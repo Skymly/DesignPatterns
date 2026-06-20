@@ -1,0 +1,23 @@
+﻿using DesignPatterns.Behavioral;
+
+namespace TestAssembly;
+
+public interface IPaymentStrategy
+{
+    string Pay(decimal amount);
+}
+
+[RegisterStrategy("alipay", typeof(IPaymentStrategy))]
+public class AlipayPayment : IPaymentStrategy
+{
+    public string Pay(decimal amount) => "alipay";
+}
+
+public static class Usage
+{
+    public static void Run(IStrategyRegistry<string, IPaymentStrategy> registry)
+    {
+        registry.Get(alipay);
+        registry.TryGet("alipy", out _);
+    }
+}

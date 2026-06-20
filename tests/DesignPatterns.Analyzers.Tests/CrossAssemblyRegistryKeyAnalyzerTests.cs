@@ -1,4 +1,5 @@
 using DesignPatterns.Analyzers;
+using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
 
@@ -70,16 +71,7 @@ public sealed class CrossAssemblyRegistryKeyAnalyzerTests
             HostSource,
             new CrossAssemblyRegistryKeyAnalyzer());
 
-        Assert.Equal(2, diagnostics.Count(diagnostic => diagnostic.Id == "DP033"));
-        Assert.All(
-            diagnostics.Where(diagnostic => diagnostic.Id == "DP033"),
-            diagnostic =>
-            {
-                Assert.Contains("alpha", diagnostic.GetMessage(), StringComparison.Ordinal);
-                Assert.Contains("ICardMotion", diagnostic.GetMessage(), StringComparison.Ordinal);
-                Assert.Contains("ProviderAlpha", diagnostic.GetMessage(), StringComparison.Ordinal);
-                Assert.Contains("ProviderBeta", diagnostic.GetMessage(), StringComparison.Ordinal);
-            });
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP033"));
     }
 
     [Fact]
@@ -137,7 +129,7 @@ public sealed class CrossAssemblyRegistryKeyAnalyzerTests
             HostSource,
             new CrossAssemblyRegistryKeyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP033");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP033"));
     }
 
     [Fact]
@@ -170,7 +162,7 @@ public sealed class CrossAssemblyRegistryKeyAnalyzerTests
             source,
             new CrossAssemblyRegistryKeyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP033");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP033"));
     }
 
     [Fact]
@@ -208,6 +200,6 @@ public sealed class CrossAssemblyRegistryKeyAnalyzerTests
             source,
             new CrossAssemblyRegistryKeyAnalyzer());
 
-        Assert.DoesNotContain(diagnostics, diagnostic => diagnostic.Id == "DP033");
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP033"));
     }
 }
