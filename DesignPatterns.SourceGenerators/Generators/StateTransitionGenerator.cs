@@ -30,7 +30,8 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
         var machines = context.SyntaxProvider.ForAttributeWithMetadataName(
             StateMachineMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx));
+            static (ctx, _) => Transform(ctx))
+            .WithTrackingName(TrackingNames.StateMachineTransform);
 
         context.RegisterSourceOutput(machines.Collect(), Execute);
     }

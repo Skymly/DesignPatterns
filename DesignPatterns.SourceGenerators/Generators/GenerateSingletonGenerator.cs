@@ -34,6 +34,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
                     AttributeMetadataName,
                     static (node, _) => node is ClassDeclarationSyntax,
                     static (ctx, _) => GetTargetInfo(ctx))
+                .WithTrackingName(TrackingNames.SingletonTransform)
                 .Where(static info => info is not null)
                 .Select(static (info, _) => info!),
             static (spc, info) => Execute(spc, info));

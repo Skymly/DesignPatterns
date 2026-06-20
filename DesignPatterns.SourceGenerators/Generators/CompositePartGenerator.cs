@@ -47,12 +47,14 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         var nonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             CompositePartMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: false));
+            static (ctx, _) => Transform(ctx, isGenericAttribute: false))
+            .WithTrackingName(TrackingNames.CompositeNonGenericTransform);
 
         var generic = context.SyntaxProvider.ForAttributeWithMetadataName(
             CompositePartGenericMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: true));
+            static (ctx, _) => Transform(ctx, isGenericAttribute: true))
+            .WithTrackingName(TrackingNames.CompositeGenericTransform);
 
         context.RegisterSourceOutput(
             nonGeneric.Collect().Combine(generic.Collect()),

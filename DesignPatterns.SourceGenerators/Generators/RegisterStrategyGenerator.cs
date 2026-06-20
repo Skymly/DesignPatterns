@@ -32,12 +32,14 @@ public sealed class RegisterStrategyGenerator : IIncrementalGenerator
         var nonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             RegisterStrategyMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: false));
+            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: false))
+            .WithTrackingName(TrackingNames.StrategyNonGenericTransform);
 
         var generic = context.SyntaxProvider.ForAttributeWithMetadataName(
             RegisterStrategyGenericMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: true));
+            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: true))
+            .WithTrackingName(TrackingNames.StrategyGenericTransform);
 
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 

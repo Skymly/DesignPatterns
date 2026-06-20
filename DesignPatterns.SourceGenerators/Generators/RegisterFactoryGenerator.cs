@@ -32,12 +32,14 @@ public sealed class RegisterFactoryGenerator : IIncrementalGenerator
         var nonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             RegisterFactoryMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: false));
+            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: false))
+            .WithTrackingName(TrackingNames.FactoryNonGenericTransform);
 
         var generic = context.SyntaxProvider.ForAttributeWithMetadataName(
             RegisterFactoryGenericMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: true));
+            static (ctx, _) => RegistrationGeneratorHelper.Transform(ctx, isGenericAttribute: true))
+            .WithTrackingName(TrackingNames.FactoryGenericTransform);
 
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
