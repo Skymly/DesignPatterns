@@ -37,4 +37,7 @@ public static class DiagnosticIds
     public const string StateTransitionInvalidInitialState = "DP029";
     public const string StateMachineHolderInvalid = "DP030";
     public const string StateTransitionIsolatedState = "DP031";
+    public const string StateTransitionGuardMethodNotFound = "DP032";
+    public const string StateTransitionGuardMethodNotStatic = "DP034";
+    public const string StateTransitionGuardMethodWrongSignature = "DP035";
 }

@@ -129,6 +129,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP025 | 未知注册表键字面量（Analyzer + CodeFix；Strategy/Factory `Get`/`TryGet`/`Create`/`TryCreate`） |
 | DP033 | 跨程序集重复 strategy key（Analyzer；多供应商宿主引用冲突） |
 | DP026–DP031 | State 转换表（生成器；重复边、非法 enum、holder、孤立态 Info） |
+| DP032、DP034–DP035 | State 转换 guard（生成器；guard 方法未找到、非 static、签名错误） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -137,7 +138,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP032**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP036**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。

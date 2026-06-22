@@ -281,6 +281,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         GeneratorCategory);
 
+    // State transition guard (DP032, DP034–DP035)
+
+    public static DiagnosticDescriptor StateTransitionGuardMethodNotFound { get; } = Create(
+        DiagnosticIds.StateTransitionGuardMethodNotFound,
+        "Guard method not found on holder class",
+        "Guard method '{0}' was not found on holder class '{1}'. Add a static method with signature 'bool {0}({2}, {3})' or remove the Guard property from [Transition].",
+        "Transition guard names must reference a declared method on the state machine holder class.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionGuardMethodNotStatic { get; } = Create(
+        DiagnosticIds.StateTransitionGuardMethodNotStatic,
+        "Guard method is not static",
+        "Guard method '{0}' on holder class '{1}' must be static. Add the static keyword to the method declaration.",
+        "Transition guards must be static so the source generator can emit a delegate reference.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionGuardMethodWrongSignature { get; } = Create(
+        DiagnosticIds.StateTransitionGuardMethodWrongSignature,
+        "Guard method has wrong signature",
+        "Guard method '{0}' on holder class '{1}' must have signature 'bool {0}({2}, {3})'. Fix the parameter types or return type.",
+        "Transition guards must accept (TState, TTrigger) and return bool.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

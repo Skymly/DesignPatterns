@@ -54,6 +54,31 @@ internal readonly record struct TransitionArg(
     bool IsValid);
 
 /// <summary>
+/// Resolved guard method info extracted from the holder class symbol.
+/// <c>MethodReference</c> is the fully-qualified delegate reference for
+/// code emission (e.g. <c>global::Ns.Holder.CanSubmit</c>); it is
+/// <c>null</c> when the guard is invalid or absent.
+/// </summary>
+internal readonly record struct GuardResolution(
+    string Name,
+    bool IsFound,
+    bool IsStatic,
+    bool HasValidSignature,
+    string? MethodReference)
+{
+    /// <summary>
+    /// <c>true</c> when the guard is absent (no Guard property on the
+    /// attribute). An absent guard is always valid.
+    /// </summary>
+    public bool IsAbsent => Name is null;
+
+    /// <summary>
+    /// <c>true</c> when the guard is valid and should be emitted.
+    /// </summary>
+    public bool IsValid => IsAbsent || (IsFound && IsStatic && HasValidSignature);
+}
+
+/// <summary>
 /// A raw transition extracted from a <c>[Transition]</c> attribute, before
 /// validation / deduplication.
 /// </summary>
@@ -61,7 +86,8 @@ internal sealed record TransitionModel(
     TransitionArg From,
     TransitionArg Trigger,
     TransitionArg To,
-    Location Location);
+    Location Location,
+    GuardResolution Guard);
 
 /// <summary>
 /// The full state machine model extracted from a class marked with
@@ -90,7 +116,8 @@ internal sealed class ResolvedTransition
         Location location,
         string fromExpression,
         string triggerExpression,
-        string toExpression)
+        string toExpression,
+        string? guardMethodReference)
     {
         FromMember = fromMember;
         TriggerMember = triggerMember;
@@ -99,6 +126,7 @@ internal sealed class ResolvedTransition
         FromExpression = fromExpression;
         TriggerExpression = triggerExpression;
         ToExpression = toExpression;
+        GuardMethodReference = guardMethodReference;
     }
 
     public string FromMember { get; }
@@ -114,4 +142,6 @@ internal sealed class ResolvedTransition
     public string TriggerExpression { get; }
 
     public string ToExpression { get; }
+
+    public string? GuardMethodReference { get; }
 }

@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP031,
+    Message: State 'Submitted' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP035,
+    Message: Guard method 'CanSubmit' on holder class 'OrderStatusMachine' must have signature 'bool CanSubmit(TestAssembly.OrderStatus, TestAssembly.OrderTrigger)'. Fix the parameter types or return type.
+  }
+]

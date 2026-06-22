@@ -21,7 +21,7 @@ internal static class StateTransitionSyntaxFactory
         string stateTypeName,
         string triggerTypeName,
         string initialStateExpression,
-        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression)> transitions)
+        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression, string? GuardExpression)> transitions)
     {
         var tableExpression = BuildTransitionTableExpression(
             stateTypeName,
@@ -164,7 +164,7 @@ internal static class StateTransitionSyntaxFactory
         string stateTypeName,
         string triggerTypeName,
         string initialStateExpression,
-        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression)> transitions)
+        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression, string? GuardExpression)> transitions)
     {
         var builder = new StringBuilder();
         builder.Append("new TransitionTableBuilder<")
@@ -182,8 +182,15 @@ internal static class StateTransitionSyntaxFactory
                 .Append(", ")
                 .Append(transition.TriggerExpression)
                 .Append(", ")
-                .Append(transition.ToExpression)
-                .Append(')');
+                .Append(transition.ToExpression);
+
+            if (transition.GuardExpression is not null)
+            {
+                builder.Append(", guard: ")
+                    .Append(transition.GuardExpression);
+            }
+
+            builder.Append(')');
         }
 
         builder.Append(".Build()");

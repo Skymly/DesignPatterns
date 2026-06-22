@@ -105,7 +105,21 @@ internal static class StateTransitionTransform
             var trigger = ResolveTransitionArg(attribute.ConstructorArguments[1], triggerType, triggerTypeInfo);
             var to = ResolveTransitionArg(attribute.ConstructorArguments[2], stateType, stateTypeInfo);
 
-            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation));
+            string? guardName = null;
+            foreach (var namedArgument in attribute.NamedArguments)
+            {
+                if (string.Equals(namedArgument.Key, "Guard", StringComparison.Ordinal)
+                    && namedArgument.Value.Value is string guardValue)
+                {
+                    guardName = guardValue;
+                }
+            }
+
+            var guard = guardName is null || stateType is null || triggerType is null
+                ? default(GuardResolution)
+                : ResolveGuard(holderType, guardName, stateType, triggerType);
+
+            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation, guard));
         }
 
         return Result<StateMachineModel>.Success(new StateMachineModel(
@@ -178,5 +192,42 @@ internal static class StateTransitionTransform
         }
 
         return new TransitionArg(null, constant.ToCSharpString(), false);
+    }
+
+    private static GuardResolution ResolveGuard(
+        INamedTypeSymbol holderType,
+        string guardName,
+        INamedTypeSymbol stateType,
+        INamedTypeSymbol triggerType)
+    {
+        var methods = holderType.GetMembers(guardName)
+            .OfType<IMethodSymbol>()
+            .ToList();
+
+        if (methods.Count == 0)
+        {
+            return new GuardResolution(guardName, IsFound: false, IsStatic: false, HasValidSignature: false, MethodReference: null);
+        }
+
+        var method = methods[0];
+        var holderFqn = holderType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var methodReference = $"{holderFqn}.{method.Name}";
+
+        if (!method.IsStatic)
+        {
+            return new GuardResolution(guardName, IsFound: true, IsStatic: false, HasValidSignature: false, MethodReference: null);
+        }
+
+        var hasValidSignature = method.ReturnType.SpecialType == SpecialType.System_Boolean
+            && method.Parameters.Length == 2
+            && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, stateType)
+            && SymbolEqualityComparer.Default.Equals(method.Parameters[1].Type, triggerType);
+
+        return new GuardResolution(
+            guardName,
+            IsFound: true,
+            IsStatic: true,
+            HasValidSignature: hasValidSignature,
+            MethodReference: hasValidSignature ? methodReference : null);
     }
 }

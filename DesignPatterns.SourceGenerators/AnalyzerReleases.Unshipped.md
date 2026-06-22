@@ -34,3 +34,6 @@ DP028    | DesignPatterns.Generators | Error    | Transition trigger is not a de
 DP029    | DesignPatterns.Generators | Error    | Initial state is not a declared enum member
 DP030    | DesignPatterns.Generators | Error    | StateMachine holder must be a static partial class
 DP031    | DesignPatterns.Generators | Info     | State is never used as a transition source
+DP032    | DesignPatterns.Generators | Error    | Guard method not found on holder class
+DP034    | DesignPatterns.Generators | Error    | Guard method is not static
+DP035    | DesignPatterns.Generators | Error    | Guard method has wrong signature

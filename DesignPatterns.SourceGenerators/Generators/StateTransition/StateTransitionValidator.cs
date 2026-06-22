@@ -112,6 +112,11 @@ internal static class StateTransitionValidator
                 continue;
             }
 
+            if (!transition.Guard.IsValid)
+            {
+                ReportGuardDiagnostics(context, transition, model.Holder.Name, stateType, triggerType);
+            }
+
             validTransitions.Add(new ResolvedTransition(
                 transition.From.MemberName!,
                 transition.Trigger.MemberName!,
@@ -119,7 +124,8 @@ internal static class StateTransitionValidator
                 transition.Location,
                 StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.From.MemberName!),
                 StateTransitionSyntaxFactory.FormatEnumMember(triggerType.FullyQualifiedDisplayString, transition.Trigger.MemberName!),
-                StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.To.MemberName!)));
+                StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.To.MemberName!),
+                transition.Guard.MethodReference));
         }
 
         return validTransitions;
@@ -170,6 +176,49 @@ internal static class StateTransitionValidator
                     member.Name,
                     stateType.FullyQualifiedName));
             }
+        }
+    }
+
+    private static void ReportGuardDiagnostics(
+        SourceProductionContext context,
+        TransitionModel transition,
+        string holderName,
+        EnumTypeInfo stateType,
+        EnumTypeInfo triggerType)
+    {
+        var guard = transition.Guard;
+
+        if (!guard.IsFound)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodNotFound,
+                transition.Location,
+                guard.Name,
+                holderName,
+                stateType.FullyQualifiedName,
+                triggerType.FullyQualifiedName));
+            return;
+        }
+
+        if (!guard.IsStatic)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodNotStatic,
+                transition.Location,
+                guard.Name,
+                holderName));
+            return;
+        }
+
+        if (!guard.HasValidSignature)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodWrongSignature,
+                transition.Location,
+                guard.Name,
+                holderName,
+                stateType.FullyQualifiedName,
+                triggerType.FullyQualifiedName));
         }
     }
 }

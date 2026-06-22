@@ -30,7 +30,7 @@ internal static class StateTransitionEmitter
         var tableClassName = StateTransitionSyntaxFactory.GetTransitionTableClassName(stateType.Name);
         var initialExpression = StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, initialMember);
         var transitionExpressions = transitions
-            .ConvertAll(static transition => (transition.FromExpression, transition.TriggerExpression, transition.ToExpression));
+            .ConvertAll(static transition => (transition.FromExpression, transition.TriggerExpression, transition.ToExpression, transition.GuardMethodReference));
 
         // Generated sources go into the holder's namespace (not the state enum's namespace)
         // so the holder partial merges with the user-written partial declaration.
