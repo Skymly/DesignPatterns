@@ -3,6 +3,7 @@ using DesignPatterns.Creational;
 using DesignPatterns.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DesignPatterns.SourceGenerators.Tests;
 
@@ -11,6 +12,14 @@ internal static class SourceGeneratorTestContext
     private static readonly ImmutableArray<MetadataReference> References = CreateReferences();
 
     internal static GeneratorDriverRunResult Run<TGenerator>(params (string Path, string Source)[] sources)
+        where TGenerator : IIncrementalGenerator, new()
+    {
+        return Run<TGenerator>(enableDiIntegration: false, sources);
+    }
+
+    internal static GeneratorDriverRunResult Run<TGenerator>(
+        bool enableDiIntegration,
+        params (string Path, string Source)[] sources)
         where TGenerator : IIncrementalGenerator, new()
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
@@ -35,7 +44,11 @@ internal static class SourceGeneratorTestContext
                 "Compilation failed: " + string.Join(Environment.NewLine, errors.Select(e => e.ToString())));
         }
 
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator());
+        var analyzerConfigOptions = new TestAnalyzerConfigOptionsProvider(
+            new TestGlobalOptions(enableDiIntegration));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator())
+            .WithUpdatedAnalyzerConfigOptions(analyzerConfigOptions);
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
         return driver.GetRunResult();
     }
@@ -198,5 +211,54 @@ internal static class SourceGeneratorTestContext
 
         references.Add(MetadataReference.CreateFromFile(typeof(GenerateSingletonAttribute).Assembly.Location));
         return references.ToImmutableArray();
+    }
+}
+
+file sealed class TestGlobalOptions : AnalyzerConfigOptions
+{
+    private readonly bool _enableDiIntegration;
+
+    public TestGlobalOptions(bool enableDiIntegration)
+    {
+        _enableDiIntegration = enableDiIntegration;
+    }
+
+    public override bool TryGetValue(string key, out string value)
+    {
+        if (string.Equals(key, "build_property.DesignPatterns_EnableDiIntegration", StringComparison.Ordinal))
+        {
+            value = _enableDiIntegration.ToString().ToLowerInvariant();
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
+    }
+}
+
+file sealed class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+{
+    private readonly AnalyzerConfigOptions _globalOptions;
+
+    public TestAnalyzerConfigOptionsProvider(AnalyzerConfigOptions globalOptions)
+    {
+        _globalOptions = globalOptions;
+    }
+
+    public override AnalyzerConfigOptions GlobalOptions => _globalOptions;
+
+    public override AnalyzerConfigOptions GetOptions(SyntaxTree tree)
+        => new TestEmptyOptions();
+
+    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile)
+        => new TestEmptyOptions();
+}
+
+file sealed class TestEmptyOptions : AnalyzerConfigOptions
+{
+    public override bool TryGetValue(string key, out string value)
+    {
+        value = string.Empty;
+        return false;
     }
 }

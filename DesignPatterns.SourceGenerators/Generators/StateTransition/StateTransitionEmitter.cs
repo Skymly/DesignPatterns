@@ -21,7 +21,8 @@ internal static class StateTransitionEmitter
     public static void Emit(
         SourceProductionContext context,
         StateMachineModel model,
-        List<ResolvedTransition> transitions)
+        List<ResolvedTransition> transitions,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var stateType = model.StateType!.Value;
         var triggerType = model.TriggerType!.Value;
@@ -42,7 +43,8 @@ internal static class StateTransitionEmitter
             stateType.FullyQualifiedDisplayString,
             triggerType.FullyQualifiedDisplayString,
             initialExpression,
-            transitionExpressions);
+            transitionExpressions,
+            integrationOptions);
 
         var holderUnit = StateTransitionSyntaxFactory.CreateHolderPartialCompilationUnit(
             namespaceName,

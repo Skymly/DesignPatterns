@@ -38,17 +38,24 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             static (ctx, _) => StateTransitionTransform.Transform(ctx))
             .WithTrackingName(TrackingNames.StateMachineTransform);
 
-        context.RegisterSourceOutput(machines.Collect(), Execute);
+        var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
+
+        context.RegisterSourceOutput(
+            machines.Collect().Combine(integrationOptions),
+            static (spc, source) => Execute(spc, source.Left, source.Right));
     }
 
-    private static void Execute(SourceProductionContext context, ImmutableArray<Result<StateMachineModel>> models)
+    private static void Execute(
+        SourceProductionContext context,
+        ImmutableArray<Result<StateMachineModel>> models,
+        GeneratorIntegrationOptions integrationOptions)
     {
         foreach (var model in ResultExtensions.ReportAndCollect(context, models))
         {
             var transitions = StateTransitionValidator.Validate(context, model);
             if (transitions is not null)
             {
-                StateTransitionEmitter.Emit(context, model, transitions);
+                StateTransitionEmitter.Emit(context, model, transitions, integrationOptions);
             }
         }
     }
