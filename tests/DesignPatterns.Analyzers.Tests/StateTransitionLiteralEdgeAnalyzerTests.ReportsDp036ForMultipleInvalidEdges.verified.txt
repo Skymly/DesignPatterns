@@ -1,0 +1,2 @@
+﻿DP036 [Info] Transition (Cancelled, Submit) is not declared on the transition table for state 'OrderStatus' and trigger 'OrderTrigger'. Use a declared (state, trigger) pair or add the missing [Transition] attribute. @ Test.cs:(16,29)
+DP036 [Info] Transition (Submitted, Cancel) is not declared on the transition table for state 'OrderStatus' and trigger 'OrderTrigger'. Use a declared (state, trigger) pair or add the missing [Transition] attribute. @ Test.cs:(17,29)

@@ -37,3 +37,4 @@ DP031    | DesignPatterns.Generators | Info     | State is never used as a trans
 DP032    | DesignPatterns.Generators | Error    | Guard method not found on holder class
 DP034    | DesignPatterns.Generators | Error    | Guard method is not static
 DP035    | DesignPatterns.Generators | Error    | Guard method has wrong signature
+DP036    | DesignPatterns.Analyzers | Info     | State transition edge is not declared

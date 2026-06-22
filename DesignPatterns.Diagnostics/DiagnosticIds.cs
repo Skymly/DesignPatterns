@@ -40,4 +40,5 @@ public static class DiagnosticIds
     public const string StateTransitionGuardMethodNotFound = "DP032";
     public const string StateTransitionGuardMethodNotStatic = "DP034";
     public const string StateTransitionGuardMethodWrongSignature = "DP035";
+    public const string StateTransitionInvalidLiteralEdge = "DP036";
 }

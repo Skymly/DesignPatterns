@@ -307,6 +307,16 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // State transition literal edge validation (DP036)
+
+    public static DiagnosticDescriptor StateTransitionInvalidLiteralEdge { get; } = Create(
+        DiagnosticIds.StateTransitionInvalidLiteralEdge,
+        "State transition edge is not declared",
+        "Transition ({0}, {1}) is not declared on the transition table for state '{2}' and trigger '{3}'. Use a declared (state, trigger) pair or add the missing [Transition] attribute.",
+        "Literal (state, trigger) arguments to TryTransition must match a declared transition edge.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,
