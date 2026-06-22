@@ -209,25 +209,41 @@ internal static class StateTransitionTransform
             return new GuardResolution(guardName, IsFound: false, IsStatic: false, HasValidSignature: false, MethodReference: null);
         }
 
-        var method = methods[0];
         var holderFqn = holderType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        var methodReference = $"{holderFqn}.{method.Name}";
 
-        if (!method.IsStatic)
+        // When overloads exist, prefer the method with the correct signature so
+        // that an unrelated overload does not cause a false DP035 diagnostic.
+        IMethodSymbol? matching = null;
+        foreach (var m in methods)
         {
-            return new GuardResolution(guardName, IsFound: true, IsStatic: false, HasValidSignature: false, MethodReference: null);
+            if (m.IsStatic
+                && m.ReturnType.SpecialType == SpecialType.System_Boolean
+                && m.Parameters.Length == 2
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, stateType)
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, triggerType))
+            {
+                matching = m;
+                break;
+            }
         }
 
-        var hasValidSignature = method.ReturnType.SpecialType == SpecialType.System_Boolean
-            && method.Parameters.Length == 2
-            && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, stateType)
-            && SymbolEqualityComparer.Default.Equals(method.Parameters[1].Type, triggerType);
+        if (matching is not null)
+        {
+            return new GuardResolution(
+                guardName,
+                IsFound: true,
+                IsStatic: true,
+                HasValidSignature: true,
+                MethodReference: $"{holderFqn}.{matching.Name}");
+        }
 
+        // No matching signature found — report based on the first candidate.
+        var first = methods[0];
         return new GuardResolution(
             guardName,
             IsFound: true,
-            IsStatic: true,
-            HasValidSignature: hasValidSignature,
-            MethodReference: hasValidSignature ? methodReference : null);
+            IsStatic: first.IsStatic,
+            HasValidSignature: false,
+            MethodReference: null);
     }
 }

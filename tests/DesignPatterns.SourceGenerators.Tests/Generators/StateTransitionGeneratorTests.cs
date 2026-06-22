@@ -236,6 +236,33 @@ public sealed class StateTransitionGeneratorTests
     }
 
     [Fact]
+    public Task EmitsMixedGuardedAndUnguardedTransitions()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted, Cancelled }
+            public enum OrderTrigger { Submit, Cancel }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, Guard = nameof(CanSubmit))]
+            [Transition(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            public static partial class OrderStatusMachine
+            {
+                public static bool CanSubmit(OrderStatus from, OrderTrigger trigger) => true;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp032GuardMethodNotFound()
     {
         const string source = """

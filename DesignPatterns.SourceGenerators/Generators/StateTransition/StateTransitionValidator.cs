@@ -117,6 +117,11 @@ internal static class StateTransitionValidator
                 ReportGuardDiagnostics(context, transition, model.Holder.Name, stateType, triggerType);
             }
 
+            // Invalid guards are reported as diagnostics but the transition is still
+            // emitted without a guard (GuardMethodReference is null). This is intentional:
+            // the transition's state semantics are valid even when the guard method
+            // reference is broken. The Error-level diagnostic forces the user to fix the
+            // guard before the build succeeds, at which point the guard is re-emitted.
             validTransitions.Add(new ResolvedTransition(
                 transition.From.MemberName!,
                 transition.Trigger.MemberName!,
