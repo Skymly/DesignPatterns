@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Generators;
@@ -8,8 +9,7 @@ namespace DesignPatterns.SourceGenerators.Generators;
 /// A value-equatable diagnostic descriptor carrier. Stores everything needed
 /// to reconstruct a <see cref="Diagnostic"/> in the source output stage,
 /// while participating in incremental pipeline caching via value equality on
-/// <see cref="Descriptor"/> id, <see cref="Location"/> identity, and
-/// <see cref="MessageArgs"/> values.
+/// <see cref="Descriptor"/> id, <see cref="Location"/> identity, and message arguments.
 /// </summary>
 internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
 {
@@ -40,7 +40,7 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     public bool Equals(DiagnosticInfo other) =>
         string.Equals(Descriptor.Id, other.Descriptor.Id, StringComparison.Ordinal)
         && ReferenceEquals(Location, other.Location)
-        && MessageArgsEqual(MessageArgs, other.MessageArgs);
+        && MessageArgsEqual(other.MessageArgs);
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => obj is DiagnosticInfo other && Equals(other);
@@ -49,18 +49,23 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     public override int GetHashCode()
     {
         var hash = Descriptor.Id?.GetHashCode() ?? 0;
-        foreach (var arg in MessageArgs ?? Array.Empty<object?>())
+        hash = (hash * 31) + (Location is null ? 0 : RuntimeHelpers.GetHashCode(Location));
+        foreach (var messageArg in MessageArgs ?? Array.Empty<object?>())
         {
-            hash = (hash * 31) + (arg?.GetHashCode() ?? 0);
+            hash = (hash * 31) + EqualityComparer<object?>.Default.GetHashCode(messageArg);
         }
 
         return hash;
     }
 
-    private static bool MessageArgsEqual(object?[]? left, object?[]? right)
+    public static bool operator ==(DiagnosticInfo left, DiagnosticInfo right) => left.Equals(right);
+
+    public static bool operator !=(DiagnosticInfo left, DiagnosticInfo right) => !left.Equals(right);
+
+    private bool MessageArgsEqual(object?[]? other)
     {
-        left ??= Array.Empty<object?>();
-        right ??= Array.Empty<object?>();
+        var left = MessageArgs ?? Array.Empty<object?>();
+        var right = other ?? Array.Empty<object?>();
 
         if (left.Length != right.Length)
         {
@@ -77,10 +82,6 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
 
         return true;
     }
-
-    public static bool operator ==(DiagnosticInfo left, DiagnosticInfo right) => left.Equals(right);
-
-    public static bool operator !=(DiagnosticInfo left, DiagnosticInfo right) => !left.Equals(right);
 }
 
 /// <summary>
