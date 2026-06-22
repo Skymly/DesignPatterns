@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Generators;
@@ -8,7 +9,7 @@ namespace DesignPatterns.SourceGenerators.Generators;
 /// A value-equatable diagnostic descriptor carrier. Stores everything needed
 /// to reconstruct a <see cref="Diagnostic"/> in the source output stage,
 /// while participating in incremental pipeline caching via value equality on
-/// <see cref="Descriptor"/> id and <see cref="Location"/> identity.
+/// <see cref="Descriptor"/> id, <see cref="Location"/> identity, and message arguments.
 /// </summary>
 internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
 {
@@ -38,17 +39,49 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     /// <inheritdoc />
     public bool Equals(DiagnosticInfo other) =>
         string.Equals(Descriptor.Id, other.Descriptor.Id, StringComparison.Ordinal)
-        && ReferenceEquals(Location, other.Location);
+        && ReferenceEquals(Location, other.Location)
+        && MessageArgsEqual(other.MessageArgs);
 
     /// <inheritdoc />
     public override bool Equals(object? obj) => obj is DiagnosticInfo other && Equals(other);
 
     /// <inheritdoc />
-    public override int GetHashCode() => Descriptor.Id?.GetHashCode() ?? 0;
+    public override int GetHashCode()
+    {
+        var hash = Descriptor.Id?.GetHashCode() ?? 0;
+        hash = (hash * 31) + (Location is null ? 0 : RuntimeHelpers.GetHashCode(Location));
+        foreach (var messageArg in MessageArgs ?? Array.Empty<object?>())
+        {
+            hash = (hash * 31) + EqualityComparer<object?>.Default.GetHashCode(messageArg);
+        }
+
+        return hash;
+    }
 
     public static bool operator ==(DiagnosticInfo left, DiagnosticInfo right) => left.Equals(right);
 
     public static bool operator !=(DiagnosticInfo left, DiagnosticInfo right) => !left.Equals(right);
+
+    private bool MessageArgsEqual(object?[]? other)
+    {
+        var left = MessageArgs ?? Array.Empty<object?>();
+        var right = other ?? Array.Empty<object?>();
+
+        if (left.Length != right.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < left.Length; i++)
+        {
+            if (!EqualityComparer<object?>.Default.Equals(left[i], right[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 /// <summary>
