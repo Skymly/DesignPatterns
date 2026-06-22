@@ -19,7 +19,7 @@
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP034**（DP032 预留给 App.config 静态分析，**未实现**；DP033 为跨程序集重复 strategy key）。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP037**（DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
 
 ---
 
@@ -55,7 +55,7 @@
 
 候选池（仅登记，未排期）：Observer / 轻量 pub-sub 扩展、Builder 生成器。**未通过准入前不实现。**
 
-State 转换表 v1 已于 0.1.0-preview4 发布；v2 候选（guard、DI、EventAggregator 联动）见 [StateTransitionTable.md](StateTransitionTable.md) 与 [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md)。
+State 转换表 v1 已于 0.1.0-preview4 发布；v2（guard 委托、DI 集成、DP036 字面量边校验）已实现，见 [StateTransitionTable.md](StateTransitionTable.md) 与 [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md)。EventAggregator 联动示例仍为候选。
 
 ---
 
@@ -115,3 +115,4 @@ State 转换表 v1 已于 0.1.0-preview4 发布；v2 候选（guard、DI、Event
 - F2 Strategy 异步路径：`StrategyRegistryExtensions.ExecuteAsync` / `TryExecuteAsync`、`IAsyncStrategy` 契约的生成器与 DI 测试覆盖（见 [Strategy.md](Strategy.md)）。
 - F2 Handler 增强：`HandlerPipeline.InvokeTracedAsync`、`HandlerPipelineTrace` 短路逐步可观测（见 [ChainOfResponsibility.md](ChainOfResponsibility.md)）。
 - State 转换表 v1：`ITransitionTable` / `TransitionTableBuilder`（M1）、`[StateMachine]` / `[Transition]` 生成器（M2，DP026–DP031）；见 [StateTransitionTable.md](StateTransitionTable.md)。
+- State 转换表 v2：guard 委托运行时 + 生成器（PR #124/#125，DP032/DP034/DP035）、DI 集成（PR #126，`RegisterDi` 生成 + `AddTransitionTable` 扩展）、DP036 字面量边校验 Analyzer（PR #127）；见 [StateTransitionTable.md](StateTransitionTable.md)。
