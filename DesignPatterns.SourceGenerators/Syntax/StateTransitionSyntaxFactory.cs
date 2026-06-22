@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DesignPatterns.SourceGenerators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -21,7 +22,8 @@ internal static class StateTransitionSyntaxFactory
         string stateTypeName,
         string triggerTypeName,
         string initialStateExpression,
-        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression, string? GuardExpression)> transitions)
+        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression, string? GuardExpression)> transitions,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var tableExpression = BuildTransitionTableExpression(
             stateTypeName,
@@ -29,7 +31,7 @@ internal static class StateTransitionSyntaxFactory
             initialStateExpression,
             transitions);
 
-        var members = new MemberDeclarationSyntax[]
+        var members = new List<MemberDeclarationSyntax>
         {
             SyntaxFactory.FieldDeclaration(
                     SyntaxFactory.VariableDeclaration(
@@ -95,6 +97,11 @@ internal static class StateTransitionSyntaxFactory
                 "Table.CanTransitionFrom(current)"),
         };
 
+        if (integrationOptions.EnableDi)
+        {
+            members.Add(CreateRegisterDiMethod(stateTypeName, triggerTypeName));
+        }
+
         var tableClass = SyntaxFactory.ClassDeclaration(tableClassName)
             .WithModifiers(
                 SyntaxFactory.TokenList(
@@ -111,9 +118,16 @@ internal static class StateTransitionSyntaxFactory
                                         SyntaxFactory.ParseTypeName(stateTypeName),
                                         SyntaxFactory.ParseTypeName(triggerTypeName),
                                     })))))
-            .AddMembers(members);
+            .AddMembers(members.ToArray());
 
-        return WrapInCompilationUnit(namespaceName, tableClass, "System", "System.Collections.Generic", "DesignPatterns.Behavioral");
+        var usings = new List<string> { "System", "System.Collections.Generic", "DesignPatterns.Behavioral" };
+        if (integrationOptions.EnableDi)
+        {
+            usings.Add("Microsoft.Extensions.DependencyInjection");
+            usings.Add("Microsoft.Extensions.DependencyInjection.Extensions");
+        }
+
+        return WrapInCompilationUnit(namespaceName, tableClass, usings.ToArray());
     }
 
     public static CompilationUnitSyntax CreateHolderPartialCompilationUnit(
@@ -249,6 +263,40 @@ internal static class StateTransitionSyntaxFactory
                         }))))
             .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.ParseExpression(expression)))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private static MethodDeclarationSyntax CreateRegisterDiMethod(
+        string stateTypeName,
+        string triggerTypeName)
+    {
+        var servicesParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("services"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"));
+
+        var lifetimeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("lifetime"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"))
+            .WithDefault(
+                SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
+                        SyntaxFactory.IdentifierName("Singleton"))));
+
+        var interfaceType = $"ITransitionTable<{stateTypeName}, {triggerTypeName}>";
+
+        var body = SyntaxFactory.Block(
+            SyntaxFactory.ParseStatement(
+                $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({interfaceType}), _ => Instance, lifetime));"),
+            SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                SyntaxFactory.Identifier("RegisterDi"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(servicesParam, lifetimeParam)
+            .WithBody(body);
     }
 
     private readonly struct ParameterModel

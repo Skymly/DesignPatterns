@@ -258,6 +258,8 @@ git push origin v0.1.0-preview3
 | — | CodeFix + DP006/DP023/DP024 | 已完成 |
 | — | DP025 字面量键校验 Analyzer + CodeFix | 已完成 |
 | — | F1 IDE 体验（诊断增强 / CodeFix / 跨程序集 / 字面量键校验） | 已完成 |
+| — | State v2：guard 源生成 + DP032/DP034/DP035 | 已完成 |
+| — | State v2：DI 集成（`RegisterDi` 生成 + `AddTransitionTable` 扩展） | 已完成 |
 
 功能 backlog：[docs/ROADMAP.md](docs/ROADMAP.md)。
 

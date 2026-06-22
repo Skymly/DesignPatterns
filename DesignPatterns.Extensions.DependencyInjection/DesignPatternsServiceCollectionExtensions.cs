@@ -149,4 +149,43 @@ public static class DesignPatternsServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Registers a pre-built <see cref="ITransitionTable{TState,TTrigger}"/> instance as a singleton.
+    /// </summary>
+    /// <remarks>
+    /// Transition tables are stateless and immutable; the default lifetime is
+    /// <see cref="ServiceLifetime.Singleton"/>. Use this overload when you have
+    /// a manually built table or a generated <c>Instance</c> property.
+    /// </remarks>
+    /// <typeparam name="TState">The state enum type.</typeparam>
+    /// <typeparam name="TTrigger">The trigger enum type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="table">The transition table instance to register.</param>
+    /// <param name="lifetime">The service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddTransitionTable<TState, TTrigger>(
+        this IServiceCollection services,
+        ITransitionTable<TState, TTrigger> table,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TState : struct, Enum
+        where TTrigger : struct, Enum
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (table is null)
+        {
+            throw new ArgumentNullException(nameof(table));
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(ITransitionTable<TState, TTrigger>),
+            _ => table,
+            lifetime));
+
+        return services;
+    }
 }
