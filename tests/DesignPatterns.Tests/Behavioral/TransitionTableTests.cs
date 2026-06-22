@@ -131,4 +131,125 @@ public sealed class TransitionTableTests
 
         Assert.Throws<ArgumentNullException>(() => table!.Transition(OrderStatus.Draft, OrderTrigger.Submit));
     }
+
+    [Fact]
+    public void TryTransition_WithGuardReturningTrue_FiresTransition()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: static (_, _) => true)
+            .Build();
+
+        Assert.True(table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out var next));
+        Assert.Equal(OrderStatus.Submitted, next);
+    }
+
+    [Fact]
+    public void TryTransition_WithGuardReturningFalse_BlocksTransition()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: static (_, _) => false)
+            .Build();
+
+        Assert.False(table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out _));
+    }
+
+    [Fact]
+    public void TryTransition_WithGuardReceivesStateAndTrigger()
+    {
+        OrderStatus? capturedFrom = null;
+        OrderTrigger? capturedTrigger = null;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: (from, trigger) =>
+                {
+                    capturedFrom = from;
+                    capturedTrigger = trigger;
+                    return true;
+                })
+            .Build();
+
+        table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out _);
+
+        Assert.Equal(OrderStatus.Draft, capturedFrom);
+        Assert.Equal(OrderTrigger.Submit, capturedTrigger);
+    }
+
+    [Fact]
+    public void TryTransition_WithoutGuard_BehavesSameAsBefore()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, guard: null)
+            .Build();
+
+        Assert.True(table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out var next));
+        Assert.Equal(OrderStatus.Submitted, next);
+    }
+
+    [Fact]
+    public void GetAllowedTriggers_IncludesGuardedTransitions()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: static (_, _) => false)
+            .Build();
+
+        // Guarded transitions still appear in allowed triggers — the guard
+        // only affects TryTransition, not the trigger listing.
+        Assert.Single(table.GetAllowedTriggers(OrderStatus.Draft));
+    }
+
+    [Fact]
+    public void CanTransitionFrom_ReturnsTrueForGuardedEdge()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: static (_, _) => false)
+            .Build();
+
+        Assert.True(table.CanTransitionFrom(OrderStatus.Draft));
+    }
+
+    [Fact]
+    public void TryTransition_WhenGuardThrows_PropagatesException()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: static (_, _) => throw new InvalidOperationException("guard failed"))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out _));
+    }
+
+    [Fact]
+    public void TryTransition_MixedGuardedAndUnguardedEdges_CoexistCorrectly()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)
+            .Add(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled,
+                guard: static (_, _) => false)
+            .Build();
+
+        // Unguarded edge fires normally
+        Assert.True(table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out var submitted));
+        Assert.Equal(OrderStatus.Submitted, submitted);
+
+        // Guarded edge is blocked
+        Assert.False(table.TryTransition(OrderStatus.Draft, OrderTrigger.Cancel, out _));
+
+        // Both edges appear in allowed triggers
+        Assert.Equal(new[] { OrderTrigger.Submit, OrderTrigger.Cancel },
+            table.GetAllowedTriggers(OrderStatus.Draft));
+    }
 }

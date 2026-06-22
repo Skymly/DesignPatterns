@@ -12,7 +12,7 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
     where TState : struct, Enum
     where TTrigger : struct, Enum
 {
-    private readonly Dictionary<(TState From, TTrigger Trigger), TState> _edges = new();
+    private readonly Dictionary<(TState From, TTrigger Trigger), TransitionEdge<TState, TTrigger>> _edges = new();
     private readonly Dictionary<TState, List<TTrigger>> _triggersByState = new();
     private bool _hasInitial;
     private TState _initial;
@@ -28,9 +28,29 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
     }
 
     /// <summary>
-    /// Registers a directed transition edge.
+    /// Registers a directed transition edge without a guard.
     /// </summary>
     public TransitionTableBuilder<TState, TTrigger> Add(TState from, TTrigger trigger, TState to)
+        => Add(from, trigger, to, guard: null);
+
+    /// <summary>
+    /// Registers a directed transition edge with an optional guard delegate.
+    /// When <paramref name="guard"/> is non-null, <see cref="ITransitionTable{TState,TTrigger}.TryTransition"/>
+    /// evaluates it before returning the target state; if the guard returns
+    /// <see langword="false"/>, the transition is treated as if it does not exist.
+    /// </summary>
+    /// <param name="from">Source state.</param>
+    /// <param name="trigger">Trigger that fires the transition.</param>
+    /// <param name="to">Target state.</param>
+    /// <param name="guard">
+    /// Optional guard delegate receiving the current state and trigger.
+    /// When <see langword="null"/>, the transition always fires.
+    /// </param>
+    public TransitionTableBuilder<TState, TTrigger> Add(
+        TState from,
+        TTrigger trigger,
+        TState to,
+        Func<TState, TTrigger, bool>? guard)
     {
         var key = (from, trigger);
         if (_edges.ContainsKey(key))
@@ -40,7 +60,7 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
                 nameof(trigger));
         }
 
-        _edges.Add(key, to);
+        _edges.Add(key, new TransitionEdge<TState, TTrigger>(to, guard));
 
         if (!_triggersByState.TryGetValue(from, out var triggers))
         {
