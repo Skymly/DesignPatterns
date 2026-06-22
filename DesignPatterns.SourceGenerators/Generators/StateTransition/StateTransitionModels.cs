@@ -1,0 +1,117 @@
+using System.Linq;
+using Microsoft.CodeAnalysis;
+using DesignPatterns.SourceGenerators.Generators;
+
+namespace DesignPatterns.SourceGenerators.Generators.StateTransition;
+
+/// <summary>
+/// A single enum member (name + constant value).
+/// </summary>
+internal readonly record struct EnumMember(string Name, object? ConstantValue);
+
+/// <summary>
+/// Immutable, value-equatable enum type metadata extracted from a symbol.
+/// </summary>
+internal readonly record struct EnumTypeInfo(
+    string Name,
+    string? Namespace,
+    string FullyQualifiedName,
+    string FullyQualifiedDisplayString,
+    EquatableArray<EnumMember> Members)
+{
+    public static EnumTypeInfo FromSymbol(INamedTypeSymbol symbol)
+    {
+        var members = symbol.GetMembers()
+            .OfType<IFieldSymbol>()
+            .Where(static field => field.IsConst)
+            .Select(static field => new EnumMember(field.Name, field.ConstantValue))
+            .ToArray();
+
+        return new EnumTypeInfo(
+            symbol.Name,
+            symbol.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : symbol.ContainingNamespace.ToDisplayString(),
+            symbol.ToDisplayString(),
+            symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            new EquatableArray<EnumMember>(members));
+    }
+}
+
+/// <summary>
+/// Resolved initial state — <c>MemberName</c> is null when the value does
+/// not match a member of the state enum.
+/// </summary>
+internal readonly record struct InitialStateInfo(string? MemberName, string DisplayValue, bool IsValid);
+
+/// <summary>
+/// Resolved transition argument (from / trigger / to). <c>MemberName</c>
+/// is null when the value does not match a member of the expected enum.
+/// </summary>
+internal readonly record struct TransitionArg(
+    string? MemberName,
+    string DisplayValue,
+    bool IsValid);
+
+/// <summary>
+/// A raw transition extracted from a <c>[Transition]</c> attribute, before
+/// validation / deduplication.
+/// </summary>
+internal sealed record TransitionModel(
+    TransitionArg From,
+    TransitionArg Trigger,
+    TransitionArg To,
+    Location Location);
+
+/// <summary>
+/// The full state machine model extracted from a class marked with
+/// <c>[StateMachine]</c>.
+/// </summary>
+internal sealed record StateMachineModel(
+    ContractInfo Holder,
+    EnumTypeInfo? StateType,
+    EnumTypeInfo? TriggerType,
+    InitialStateInfo Initial,
+    EquatableArray<TransitionModel> Transitions,
+    Location Location,
+    bool IsValidHolder);
+
+/// <summary>
+/// A transition that passed all per-edge validation and is ready for
+/// code generation. Carries both the member names (for diagnostics) and
+/// the formatted enum expressions (for code emission).
+/// </summary>
+internal sealed class ResolvedTransition
+{
+    public ResolvedTransition(
+        string fromMember,
+        string triggerMember,
+        string toMember,
+        Location location,
+        string fromExpression,
+        string triggerExpression,
+        string toExpression)
+    {
+        FromMember = fromMember;
+        TriggerMember = triggerMember;
+        ToMember = toMember;
+        Location = location;
+        FromExpression = fromExpression;
+        TriggerExpression = triggerExpression;
+        ToExpression = toExpression;
+    }
+
+    public string FromMember { get; }
+
+    public string TriggerMember { get; }
+
+    public string ToMember { get; }
+
+    public Location Location { get; }
+
+    public string FromExpression { get; }
+
+    public string TriggerExpression { get; }
+
+    public string ToExpression { get; }
+}

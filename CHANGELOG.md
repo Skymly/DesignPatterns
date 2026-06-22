@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Result&lt;T&gt; pipeline model**: introduced `Result<T>` and `DiagnosticInfo` in `DesignPatterns.SourceGenerators` so per-target diagnostics flow through the incremental pipeline alongside extracted models instead of being silently dropped when `Transform` returns `null`. Refactored `GenerateSingletonGenerator`, `DecoratorGenerator`, `CompositePartGenerator`, and `StateTransitionGenerator` to use the new pattern. `HandlerOrderGenerator` and `RegistrationGeneratorHelper` (which return `List<T>`, not `T?`) are unchanged.
 - Made `EquatableArray<T>` null-safe for `default` instances to support `Result<T>.Empty` / `Result<T>.Success` without allocation.
+- **Modular `StateTransitionGenerator`**: split the 455-line monolith into `Generators/StateTransition/` subfolder with `StateTransitionModels.cs` (model records), `StateTransitionTransform.cs` (extraction), `StateTransitionValidator.cs` (DP026–DP031 diagnostics), and `StateTransitionEmitter.cs` (code emission). `StateTransitionGenerator.cs` is now a 55-line pipeline entry point (`Initialize` + `Execute`). Mirrors the Vogen `GenerateCodeFor*.cs` pattern and prepares for State v2.
 
 ## [0.1.0-preview7] - 2026-06-20
 
