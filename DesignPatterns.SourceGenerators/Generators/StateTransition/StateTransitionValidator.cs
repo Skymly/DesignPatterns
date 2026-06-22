@@ -112,6 +112,16 @@ internal static class StateTransitionValidator
                 continue;
             }
 
+            if (!transition.Guard.IsValid)
+            {
+                ReportGuardDiagnostics(context, transition, model.Holder.Name, stateType, triggerType);
+            }
+
+            // Invalid guards are reported as diagnostics but the transition is still
+            // emitted without a guard (GuardMethodReference is null). This is intentional:
+            // the transition's state semantics are valid even when the guard method
+            // reference is broken. The Error-level diagnostic forces the user to fix the
+            // guard before the build succeeds, at which point the guard is re-emitted.
             validTransitions.Add(new ResolvedTransition(
                 transition.From.MemberName!,
                 transition.Trigger.MemberName!,
@@ -119,7 +129,8 @@ internal static class StateTransitionValidator
                 transition.Location,
                 StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.From.MemberName!),
                 StateTransitionSyntaxFactory.FormatEnumMember(triggerType.FullyQualifiedDisplayString, transition.Trigger.MemberName!),
-                StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.To.MemberName!)));
+                StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.To.MemberName!),
+                transition.Guard.MethodReference));
         }
 
         return validTransitions;
@@ -170,6 +181,49 @@ internal static class StateTransitionValidator
                     member.Name,
                     stateType.FullyQualifiedName));
             }
+        }
+    }
+
+    private static void ReportGuardDiagnostics(
+        SourceProductionContext context,
+        TransitionModel transition,
+        string holderName,
+        EnumTypeInfo stateType,
+        EnumTypeInfo triggerType)
+    {
+        var guard = transition.Guard;
+
+        if (!guard.IsFound)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodNotFound,
+                transition.Location,
+                guard.Name,
+                holderName,
+                stateType.FullyQualifiedName,
+                triggerType.FullyQualifiedName));
+            return;
+        }
+
+        if (!guard.IsStatic)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodNotStatic,
+                transition.Location,
+                guard.Name,
+                holderName));
+            return;
+        }
+
+        if (!guard.HasValidSignature)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodWrongSignature,
+                transition.Location,
+                guard.Name,
+                holderName,
+                stateType.FullyQualifiedName,
+                triggerType.FullyQualifiedName));
         }
     }
 }

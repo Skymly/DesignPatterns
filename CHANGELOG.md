@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **State v2 guard delegates (runtime)**: `TransitionTableBuilder.Add(from, trigger, to, guard: Func<TState, TTrigger, bool>?)` — optional guard delegate evaluated by `TryTransition` before firing. When the guard returns `false`, the transition is treated as if it does not exist. `ITransitionTable<TState, TTrigger>` interface unchanged; guards are transparent to callers. `TransitionAttribute.Guard` property added for future source generator support.
+- **State v2 guard source generation**: `[Transition(from, trigger, to, Guard = nameof(Method))]` now emits `guard: HolderClass.Method` in the generated transition table. The generator resolves and validates the guard method on the holder class. New diagnostics: DP032 (guard method not found), DP034 (guard method not static), DP035 (guard method wrong signature). DP034 is defensive — the C# compiler prevents instance methods on static classes, so it is unreachable in practice but retained for completeness.
 
 ## [0.1.0-preview7] - 2026-06-20
 

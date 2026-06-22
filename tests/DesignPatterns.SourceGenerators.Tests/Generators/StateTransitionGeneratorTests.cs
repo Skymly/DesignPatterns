@@ -209,4 +209,103 @@ public sealed class StateTransitionGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task EmitsGuardWhenTransitionHasGuardProperty()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, Guard = nameof(CanSubmit))]
+            public static partial class OrderStatusMachine
+            {
+                public static bool CanSubmit(OrderStatus from, OrderTrigger trigger) => true;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsMixedGuardedAndUnguardedTransitions()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted, Cancelled }
+            public enum OrderTrigger { Submit, Cancel }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, Guard = nameof(CanSubmit))]
+            [Transition(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            public static partial class OrderStatusMachine
+            {
+                public static bool CanSubmit(OrderStatus from, OrderTrigger trigger) => true;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp032GuardMethodNotFound()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, Guard = "Nonexistent")]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp035GuardMethodWrongSignature()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, Guard = nameof(CanSubmit))]
+            public static partial class OrderStatusMachine
+            {
+                public static bool CanSubmit(OrderStatus from) => true;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
 }

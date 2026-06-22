@@ -105,7 +105,21 @@ internal static class StateTransitionTransform
             var trigger = ResolveTransitionArg(attribute.ConstructorArguments[1], triggerType, triggerTypeInfo);
             var to = ResolveTransitionArg(attribute.ConstructorArguments[2], stateType, stateTypeInfo);
 
-            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation));
+            string? guardName = null;
+            foreach (var namedArgument in attribute.NamedArguments)
+            {
+                if (string.Equals(namedArgument.Key, "Guard", StringComparison.Ordinal)
+                    && namedArgument.Value.Value is string guardValue)
+                {
+                    guardName = guardValue;
+                }
+            }
+
+            var guard = guardName is null || stateType is null || triggerType is null
+                ? default(GuardResolution)
+                : ResolveGuard(holderType, guardName, stateType, triggerType);
+
+            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation, guard));
         }
 
         return Result<StateMachineModel>.Success(new StateMachineModel(
@@ -178,5 +192,58 @@ internal static class StateTransitionTransform
         }
 
         return new TransitionArg(null, constant.ToCSharpString(), false);
+    }
+
+    private static GuardResolution ResolveGuard(
+        INamedTypeSymbol holderType,
+        string guardName,
+        INamedTypeSymbol stateType,
+        INamedTypeSymbol triggerType)
+    {
+        var methods = holderType.GetMembers(guardName)
+            .OfType<IMethodSymbol>()
+            .ToList();
+
+        if (methods.Count == 0)
+        {
+            return new GuardResolution(guardName, IsFound: false, IsStatic: false, HasValidSignature: false, MethodReference: null);
+        }
+
+        var holderFqn = holderType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        // When overloads exist, prefer the method with the correct signature so
+        // that an unrelated overload does not cause a false DP035 diagnostic.
+        IMethodSymbol? matching = null;
+        foreach (var m in methods)
+        {
+            if (m.IsStatic
+                && m.ReturnType.SpecialType == SpecialType.System_Boolean
+                && m.Parameters.Length == 2
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, stateType)
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, triggerType))
+            {
+                matching = m;
+                break;
+            }
+        }
+
+        if (matching is not null)
+        {
+            return new GuardResolution(
+                guardName,
+                IsFound: true,
+                IsStatic: true,
+                HasValidSignature: true,
+                MethodReference: $"{holderFqn}.{matching.Name}");
+        }
+
+        // No matching signature found — report based on the first candidate.
+        var first = methods[0];
+        return new GuardResolution(
+            guardName,
+            IsFound: true,
+            IsStatic: first.IsStatic,
+            HasValidSignature: false,
+            MethodReference: null);
     }
 }
