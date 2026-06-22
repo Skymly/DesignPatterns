@@ -34,23 +34,21 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
                     AttributeMetadataName,
                     static (node, _) => node is ClassDeclarationSyntax,
                     static (ctx, _) => GetTargetInfo(ctx))
-                .WithTrackingName(TrackingNames.SingletonTransform)
-                .Where(static info => info is not null)
-                .Select(static (info, _) => info!),
-            static (spc, info) => Execute(spc, info));
+                .WithTrackingName(TrackingNames.SingletonTransform),
+            static (spc, result) => Execute(spc, result));
     }
 
-    private static SingletonTargetInfo? GetTargetInfo(GeneratorAttributeSyntaxContext context)
+    private static Result<SingletonTargetInfo> GetTargetInfo(GeneratorAttributeSyntaxContext context)
     {
         if (context.TargetNode is not ClassDeclarationSyntax classDeclaration)
         {
-            return null;
+            return Result<SingletonTargetInfo>.Empty;
         }
 
         var symbol = context.TargetSymbol as INamedTypeSymbol;
         if (symbol is null || symbol.TypeKind == TypeKind.Error)
         {
-            return null;
+            return Result<SingletonTargetInfo>.Empty;
         }
 
         var threadSafe = true;
@@ -65,35 +63,40 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
             }
         }
 
-        return new SingletonTargetInfo(
-            classDeclaration.GetLocation(),
-            symbol.Name,
+        var location = classDeclaration.GetLocation();
+        var className = symbol.Name;
+        var isStatic = symbol.IsStatic;
+        var typeKind = symbol.TypeKind;
+        var isPartial = classDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword);
+
+        if (typeKind == TypeKind.Struct || isStatic)
+        {
+            return Result<SingletonTargetInfo>.Failure(
+                new DiagnosticInfo(InvalidTargetDescriptor, location, className));
+        }
+
+        if (!isPartial)
+        {
+            return Result<SingletonTargetInfo>.Failure(
+                new DiagnosticInfo(NotPartialDescriptor, location, className));
+        }
+
+        return Result<SingletonTargetInfo>.Success(new SingletonTargetInfo(
+            location,
+            className,
             symbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : symbol.ContainingNamespace.ToDisplayString(),
             threadSafe,
-            symbol.IsStatic,
-            symbol.TypeKind,
-            classDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword));
+            isStatic,
+            typeKind,
+            isPartial));
     }
 
-    private static void Execute(SourceProductionContext context, SingletonTargetInfo info)
+    private static void Execute(SourceProductionContext context, Result<SingletonTargetInfo> result)
     {
-        if (info.TypeKind == TypeKind.Struct)
+        if (!ResultExtensions.TryReportAndUnwrap(context, result, out var info))
         {
-            context.ReportDiagnostic(Diagnostic.Create(InvalidTargetDescriptor, info.Location, info.ClassName));
-            return;
-        }
-
-        if (info.IsStatic)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(InvalidTargetDescriptor, info.Location, info.ClassName));
-            return;
-        }
-
-        if (!info.IsPartial)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(NotPartialDescriptor, info.Location, info.ClassName));
             return;
         }
 
