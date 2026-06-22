@@ -12,7 +12,7 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
     where TState : struct, Enum
     where TTrigger : struct, Enum
 {
-    private readonly Dictionary<(TState From, TTrigger Trigger), TransitionEdge> _edges = new();
+    private readonly Dictionary<(TState From, TTrigger Trigger), TransitionEdge<TState, TTrigger>> _edges = new();
     private readonly Dictionary<TState, List<TTrigger>> _triggersByState = new();
     private bool _hasInitial;
     private TState _initial;
@@ -60,7 +60,7 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
                 nameof(trigger));
         }
 
-        _edges.Add(key, new TransitionEdge(to, guard));
+        _edges.Add(key, new TransitionEdge<TState, TTrigger>(to, guard));
 
         if (!_triggersByState.TryGetValue(from, out var triggers))
         {
@@ -90,21 +90,5 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
         }
 
         return new TransitionTable<TState, TTrigger>(_initial, _edges, triggersByState);
-    }
-
-    /// <summary>
-    /// Internal edge record storing the target state and optional guard.
-    /// </summary>
-    internal readonly struct TransitionEdge
-    {
-        public TransitionEdge(TState to, Func<TState, TTrigger, bool>? guard)
-        {
-            To = to;
-            Guard = guard;
-        }
-
-        public TState To { get; }
-
-        public Func<TState, TTrigger, bool>? Guard { get; }
     }
 }

@@ -217,4 +217,39 @@ public sealed class TransitionTableTests
 
         Assert.True(table.CanTransitionFrom(OrderStatus.Draft));
     }
+
+    [Fact]
+    public void TryTransition_WhenGuardThrows_PropagatesException()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: static (_, _) => throw new InvalidOperationException("guard failed"))
+            .Build();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out _));
+    }
+
+    [Fact]
+    public void TryTransition_MixedGuardedAndUnguardedEdges_CoexistCorrectly()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)
+            .Add(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled,
+                guard: static (_, _) => false)
+            .Build();
+
+        // Unguarded edge fires normally
+        Assert.True(table.TryTransition(OrderStatus.Draft, OrderTrigger.Submit, out var submitted));
+        Assert.Equal(OrderStatus.Submitted, submitted);
+
+        // Guarded edge is blocked
+        Assert.False(table.TryTransition(OrderStatus.Draft, OrderTrigger.Cancel, out _));
+
+        // Both edges appear in allowed triggers
+        Assert.Equal(new[] { OrderTrigger.Submit, OrderTrigger.Cancel },
+            table.GetAllowedTriggers(OrderStatus.Draft));
+    }
 }
