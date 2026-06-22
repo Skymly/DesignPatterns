@@ -29,9 +29,9 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                              # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP025）
+├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP036）
 ├── DesignPatterns.SourceGenerators/             # 增量源生成器
-├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025 Analyzer
+├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025、DP033、DP036 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
 ├── DesignPatterns.Extensions.DependencyInjection/  # MSDI 扩展 + DI 生成器 targets
 ├── DesignPatterns.Extensions.Autofac/              # Autofac 扩展 + Autofac 生成器 targets
@@ -130,6 +130,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP033 | 跨程序集重复 strategy key（Analyzer；多供应商宿主引用冲突） |
 | DP026–DP031 | State 转换表（生成器；重复边、非法 enum、holder、孤立态 Info） |
 | DP032、DP034–DP035 | State 转换 guard（生成器；guard 方法未找到、非 static、签名错误） |
+| DP036 | State 转换字面量边校验（Analyzer；`TryTransition` 字面量 (state, trigger) 对未声明） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -138,9 +139,9 @@ dotnet test DesignPatterns.slnx -c Release
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP036**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP037**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
-- 归属：DP006 / DP023 / DP024 / DP025 属 **Analyzer**；其余属**生成器**。
+- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
 
 ---
@@ -260,6 +261,7 @@ git push origin v0.1.0-preview3
 | — | F1 IDE 体验（诊断增强 / CodeFix / 跨程序集 / 字面量键校验） | 已完成 |
 | — | State v2：guard 源生成 + DP032/DP034/DP035 | 已完成 |
 | — | State v2：DI 集成（`RegisterDi` 生成 + `AddTransitionTable` 扩展） | 已完成 |
+| — | State v2：DP036 字面量边校验 Analyzer | 已完成 |
 
 功能 backlog：[docs/ROADMAP.md](docs/ROADMAP.md)。
 
