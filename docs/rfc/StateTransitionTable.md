@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| **状态** | Accepted / Implemented（v1 已于 0.1.0-preview4 发布） |
+| **状态** | Accepted / Implemented（v1 已于 0.1.0-preview4 发布；v2 guard/DI/DP036 已实现） |
 | **作者** | 维护者 / 贡献者 |
 | **创建** | 2026-06-14 |
 | **关联** | [ROADMAP.md](../ROADMAP.md) F3、`DP026` 起新诊断区段 |
@@ -245,7 +245,10 @@ v1 **不**生成 `{State}Triggers` 或 `{State}Keys` 常量类——触发器与
 | **DP029** | Error | 生成器 | `Initial` 不是状态 enum 成员 |
 | **DP030** | Error | 生成器 | `[StateMachine]` holder 不是 `static partial class` |
 | **DP031** | Info | 生成器 | 状态 enum 成员从未作为 `from` 出现（**孤立态**，排除 `Initial` 仅作终态场景） |
-| **DP032** | Info | Analyzer（v2） | 调用了 `Transition(...)` 抛异常路径且字面量 `(state, trigger)` 不在表内（与 DP025 对称，**v2**） |
+| **DP032** | Error | 生成器（v2） | guard 方法在 holder 类上未找到 |
+| **DP034** | Error | 生成器（v2） | guard 方法非 static |
+| **DP035** | Error | 生成器（v2） | guard 方法签名错误（须 `bool Method(TState, TTrigger)`） |
+| **DP036** | Info | Analyzer（v2） | `TryTransition` 字面量 `(state, trigger)` 对未声明（与 DP025 对称） |
 
 **CodeFix（v1）**
 
@@ -281,14 +284,17 @@ v1 **不**生成 `{State}Triggers` 或 `{State}Keys` 常量类——触发器与
 
 ---
 
-## 10. DI 集成（v2，本 RFC 仅登记）
+## 10. DI 集成（v2，已实现）
 
 ```csharp
-// 草案，实现于 Extensions.DependencyInjection + 生成器 targets
-OrderStatusTransitionTable.RegisterDi(services); // Singleton ITransitionTable<,> 或具体表类型
+// 生成器在转换表类上输出 RegisterDi（引用 DesignPatterns.Extensions.DependencyInjection 时自动启用）
+OrderStatusTransitionTable.RegisterDi(services); // Singleton ITransitionTable<,>
+
+// 或手动注册预构建的表
+services.AddTransitionTable(OrderStatusTransitionTable.Instance);
 ```
 
-v1 **不** 阻塞：表为无状态单例，`new` 或 `Instance` 即可。
+启用开关：MSBuild 属性 `DesignPatterns_EnableDiIntegration`（引用 DI 扩展包时自动为 `true`）。详见 [StateTransitionTable.md](../StateTransitionTable.md#v2di-集成)。
 
 ---
 
@@ -300,7 +306,10 @@ v1 **不** 阻塞：表为无状态单例，`new` 或 `Instance` 即可。
 | **M1 Runtime** | `ITransitionTable`、`TransitionTableBuilder`、异常、单元测试 | PR → Runtime 模块 | [x] |
 | **M2 Generator** | `[StateMachine]`、`[Transition]`、`{State}TransitionTable`、DP026–DP031 | PR → SourceGenerators + Diagnostics | [x] |
 | **M3 Sample + Docs** | Samples 项目、DesignPatterns.Docs 用户页、`docs/StateTransitionTable.md` | 分 PR |
-| **M4（可选）v2** | Guard 委托、DP032、RegisterDi | 单独 RFC 修订 |
+| **M4 v2 Guard 运行时** | `TransitionEdge.Guard` 委托、`TransitionTableBuilder.Add` guard 重载 | PR #124 | [x] |
+| **M4 v2 Guard 生成器** | `[Transition] Guard` 属性、DP032/DP034/DP035 诊断 | PR #125 | [x] |
+| **M4 v2 DI 集成** | 生成 `RegisterDi` 方法、`AddTransitionTable` 扩展 | PR #126 | [x] |
+| **M4 v2 字面量边校验** | DP036 `StateTransitionLiteralEdgeAnalyzer` | PR #127 | [x] |
 
 **模块边界**（强制）：M1 / M2 / M3 各为独立 PR，符合 [AGENTS.md](../../AGENTS.md) 跨模块规则。
 
@@ -360,3 +369,4 @@ v1 **不** 阻塞：表为无状态单例，`new` 或 `Instance` 即可。
 |------|------|
 | 2026-06-14 | 初稿（Draft） |
 | 2026-06-15 | v1 设计决策确认（§13 Q1–Q6） |
+| 2026-06-22 | v2 已实现：guard 委托（PR #124/#125）、DI 集成（PR #126）、DP036 字面量边校验（PR #127） |
