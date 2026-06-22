@@ -17,7 +17,7 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
     where TState : struct, Enum
     where TTrigger : struct, Enum
 {
-    private readonly IReadOnlyDictionary<(TState From, TTrigger Trigger), TState> _edges;
+    private readonly IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionTableBuilder<TState, TTrigger>.TransitionEdge> _edges;
     private readonly IReadOnlyDictionary<TState, IReadOnlyList<TTrigger>> _triggersByState;
 
     /// <summary>
@@ -25,7 +25,7 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
     /// </summary>
     internal TransitionTable(
         TState initialState,
-        IReadOnlyDictionary<(TState From, TTrigger Trigger), TState> edges,
+        IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionTableBuilder<TState, TTrigger>.TransitionEdge> edges,
         IReadOnlyDictionary<TState, IReadOnlyList<TTrigger>> triggersByState)
     {
         _edges = FreezeEdges(edges ?? throw new ArgumentNullException(nameof(edges)));
@@ -39,10 +39,13 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
     /// <inheritdoc />
     public bool TryTransition(TState current, TTrigger trigger, out TState next)
     {
-        if (_edges.TryGetValue((current, trigger), out var value))
+        if (_edges.TryGetValue((current, trigger), out var edge))
         {
-            next = value;
-            return true;
+            if (edge.Guard is null || edge.Guard(current, trigger))
+            {
+                next = edge.To;
+                return true;
+            }
         }
 
         next = default;
@@ -59,11 +62,11 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
     public bool CanTransitionFrom(TState current) =>
         _triggersByState.TryGetValue(current, out var triggers) && triggers.Count > 0;
 
-    private static IReadOnlyDictionary<(TState From, TTrigger Trigger), TState> FreezeEdges(
-        IReadOnlyDictionary<(TState From, TTrigger Trigger), TState> edges)
+    private static IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionTableBuilder<TState, TTrigger>.TransitionEdge> FreezeEdges(
+        IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionTableBuilder<TState, TTrigger>.TransitionEdge> edges)
     {
 #if NET8_0_OR_GREATER
-        return edges is FrozenDictionary<(TState From, TTrigger Trigger), TState> frozen
+        return edges is FrozenDictionary<(TState From, TTrigger Trigger), TransitionTableBuilder<TState, TTrigger>.TransitionEdge> frozen
             ? frozen
             : edges.ToFrozenDictionary();
 #else

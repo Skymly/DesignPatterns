@@ -35,4 +35,12 @@ public sealed class TransitionAttribute : Attribute
     /// Target state enum member.
     /// </summary>
     public object To { get; }
+
+    /// <summary>
+    /// Optional name of a static guard method on the holder class.
+    /// When set, the method must have the signature
+    /// <c>static bool Method(TState from, TTrigger trigger)</c>.
+    /// The transition only fires when the guard returns <see langword="true"/>.
+    /// </summary>
+    public string? Guard { get; set; }
 }
