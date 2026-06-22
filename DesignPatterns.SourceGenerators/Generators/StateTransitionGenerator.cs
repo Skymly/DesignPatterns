@@ -36,11 +36,11 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(machines.Collect(), Execute);
     }
 
-    private static StateMachineModel? Transform(GeneratorAttributeSyntaxContext context)
+    private static Result<StateMachineModel> Transform(GeneratorAttributeSyntaxContext context)
     {
         if (context.TargetSymbol is not INamedTypeSymbol holderType)
         {
-            return null;
+            return Result<StateMachineModel>.Empty;
         }
 
         var stateMachineAttribute = context.Attributes.FirstOrDefault(attribute =>
@@ -52,7 +52,7 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
 
         if (stateMachineAttribute is null)
         {
-            return null;
+            return Result<StateMachineModel>.Empty;
         }
 
         var location = context.TargetNode.GetLocation();
@@ -125,14 +125,14 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
             transitions.Add(new TransitionModel(from, trigger, to, transitionLocation));
         }
 
-        return new StateMachineModel(
+        return Result<StateMachineModel>.Success(new StateMachineModel(
             holderInfo,
             stateTypeInfo,
             triggerTypeInfo,
             initialState,
             new EquatableArray<TransitionModel>(transitions.ToArray()),
             location,
-            isValidHolder);
+            isValidHolder));
     }
 
     private static InitialStateInfo ResolveInitial(
@@ -197,11 +197,11 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
         return new TransitionArg(null, constant.ToCSharpString(), false);
     }
 
-    private static void Execute(SourceProductionContext context, ImmutableArray<StateMachineModel?> models)
+    private static void Execute(SourceProductionContext context, ImmutableArray<Result<StateMachineModel>> models)
     {
-        foreach (var model in models.Where(static model => model is not null))
+        foreach (var model in ResultExtensions.ReportAndCollect(context, models))
         {
-            ProcessModel(context, model!);
+            ProcessModel(context, model);
         }
     }
 

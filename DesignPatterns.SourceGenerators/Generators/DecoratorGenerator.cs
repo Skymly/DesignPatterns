@@ -55,16 +55,16 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             static (spc, source) => Execute(spc, source.Left, source.Right));
     }
 
-    private static DecoratorRegistration? Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
+    private static Result<DecoratorRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
     {
         if (context.TargetSymbol is not INamedTypeSymbol decoratorType)
         {
-            return null;
+            return Result<DecoratorRegistration>.Empty;
         }
 
         if (context.Attributes.IsDefaultOrEmpty)
         {
-            return null;
+            return Result<DecoratorRegistration>.Empty;
         }
 
         foreach (var attribute in context.Attributes)
@@ -105,7 +105,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                     : serviceType.ContainingNamespace.ToDisplayString(),
                 serviceType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
-            return new DecoratorRegistration(
+            return Result<DecoratorRegistration>.Success(new DecoratorRegistration(
                 order,
                 serviceInfo,
                 decoratorType.Name,
@@ -113,22 +113,18 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 ImplementsContract(decoratorType, serviceType),
                 ImplementsDecoratorInterface(decoratorType, serviceType),
                 HasPublicParameterlessConstructor(decoratorType),
-                context.TargetNode.GetLocation());
+                context.TargetNode.GetLocation()));
         }
 
-        return null;
+        return Result<DecoratorRegistration>.Empty;
     }
 
     private static void Execute(
         SourceProductionContext context,
-        ImmutableArray<DecoratorRegistration?> nonGeneric,
-        ImmutableArray<DecoratorRegistration?> generic)
+        ImmutableArray<Result<DecoratorRegistration>> nonGeneric,
+        ImmutableArray<Result<DecoratorRegistration>> generic)
     {
-        var registrations = nonGeneric
-            .Concat(generic)
-            .Where(static r => r is not null)
-            .Cast<DecoratorRegistration>()
-            .ToList();
+        var registrations = ResultExtensions.ReportAndCollect(context, nonGeneric.Concat(generic));
 
         if (registrations.Count == 0)
         {

@@ -61,16 +61,16 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             static (spc, source) => Execute(spc, source.Left, source.Right));
     }
 
-    private static CompositeRegistration? Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
+    private static Result<CompositeRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
     {
         if (context.TargetSymbol is not INamedTypeSymbol implementation)
         {
-            return null;
+            return Result<CompositeRegistration>.Empty;
         }
 
         if (context.Attributes.IsDefaultOrEmpty)
         {
-            return null;
+            return Result<CompositeRegistration>.Empty;
         }
 
         foreach (var attribute in context.Attributes)
@@ -124,7 +124,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                     : contract.ContainingNamespace.ToDisplayString(),
                 contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
-            return new CompositeRegistration(
+            return Result<CompositeRegistration>.Success(new CompositeRegistration(
                 key!,
                 parentKey,
                 order,
@@ -134,22 +134,18 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 ImplementsContract(implementation, contract),
                 HasPublicParameterlessConstructor(implementation),
                 ImplementsBuildable(implementation, contract),
-                context.TargetNode.GetLocation());
+                context.TargetNode.GetLocation()));
         }
 
-        return null;
+        return Result<CompositeRegistration>.Empty;
     }
 
     private static void Execute(
         SourceProductionContext context,
-        ImmutableArray<CompositeRegistration?> nonGeneric,
-        ImmutableArray<CompositeRegistration?> generic)
+        ImmutableArray<Result<CompositeRegistration>> nonGeneric,
+        ImmutableArray<Result<CompositeRegistration>> generic)
     {
-        var registrations = nonGeneric
-            .Concat(generic)
-            .Where(static r => r is not null)
-            .Cast<CompositeRegistration>()
-            .ToList();
+        var registrations = ResultExtensions.ReportAndCollect(context, nonGeneric.Concat(generic));
 
         if (registrations.Count == 0)
         {
