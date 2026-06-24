@@ -10,7 +10,8 @@ namespace DesignPatterns.Structural;
 public static class CompositeCatalogAssembler
 {
     /// <summary>
-    /// Builds a single-root tree from catalog entries.
+    /// Builds a single-root tree from catalog entries, creating nodes via
+    /// <see cref="Activator.CreateInstance(Type)"/> (requires public parameterless constructor).
     /// </summary>
     /// <typeparam name="TNode">The composite contract type.</typeparam>
     /// <param name="entries">Catalog entries describing the tree.</param>
@@ -42,7 +43,53 @@ public static class CompositeCatalogAssembler
         }
 
         var instances = new Dictionary<string, TNode>(StringComparer.Ordinal);
-        AssembleSubtree(roots[0].Key, entryByKey, childrenByParent, instances);
+        AssembleSubtree(roots[0].Key, entryByKey, childrenByParent, instances, static type => (TNode)Activator.CreateInstance(type)!);
+        return instances[roots[0].Key];
+    }
+
+    /// <summary>
+    /// Builds a single-root tree from catalog entries, resolving nodes from an
+    /// <see cref="IServiceProvider"/> instead of <see cref="Activator"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The composite contract type.</typeparam>
+    /// <param name="entries">Catalog entries describing the tree.</param>
+    /// <param name="serviceProvider">The service provider to resolve node instances from.</param>
+    /// <returns>The root node.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="entries"/> or <paramref name="serviceProvider"/> is null.</exception>
+    /// <exception cref="CompositeAssemblyException">The catalog does not describe exactly one root, or a node could not be resolved.</exception>
+    public static TNode Assemble<TNode>(
+        IReadOnlyList<CompositeCatalogEntry<TNode>> entries,
+        IServiceProvider serviceProvider)
+        where TNode : class, ICompositeNode<TNode>
+    {
+        if (entries is null)
+        {
+            throw new ArgumentNullException(nameof(entries));
+        }
+
+        if (serviceProvider is null)
+        {
+            throw new ArgumentNullException(nameof(serviceProvider));
+        }
+
+        if (entries.Count == 0)
+        {
+            throw new CompositeAssemblyException("Composite catalog is empty.");
+        }
+
+        var (entryByKey, childrenByParent) = BuildMaps(entries);
+        var roots = GetRootEntries(entries);
+
+        if (roots.Count != 1)
+        {
+            throw new CompositeAssemblyException(
+                roots.Count == 0
+                    ? "Composite catalog has no root entry (ParentKey must be null for exactly one part)."
+                    : $"Composite catalog has {roots.Count} root entries; exactly one is required.");
+        }
+
+        var instances = new Dictionary<string, TNode>(StringComparer.Ordinal);
+        AssembleSubtree(roots[0].Key, entryByKey, childrenByParent, instances, type => ResolveFromProvider<TNode>(type, serviceProvider));
         return instances[roots[0].Key];
     }
 
@@ -73,11 +120,73 @@ public static class CompositeCatalogAssembler
 
         foreach (var root in roots)
         {
-            AssembleSubtree(root.Key, entryByKey, childrenByParent, instances);
+            AssembleSubtree(root.Key, entryByKey, childrenByParent, instances, static type => (TNode)Activator.CreateInstance(type)!);
             forest.Add(instances[root.Key]);
         }
 
         return forest;
+    }
+
+    /// <summary>
+    /// Builds a forest (one or more root trees) from catalog entries, resolving nodes from an
+    /// <see cref="IServiceProvider"/>.
+    /// </summary>
+    /// <typeparam name="TNode">The composite contract type.</typeparam>
+    /// <param name="entries">Catalog entries describing the forest.</param>
+    /// <param name="serviceProvider">The service provider to resolve node instances from.</param>
+    /// <returns>Root nodes ordered by <see cref="CompositeCatalogEntry{TNode}.Order"/> then key.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="entries"/> or <paramref name="serviceProvider"/> is null.</exception>
+    public static IReadOnlyList<TNode> AssembleForest<TNode>(
+        IReadOnlyList<CompositeCatalogEntry<TNode>> entries,
+        IServiceProvider serviceProvider)
+        where TNode : class, ICompositeNode<TNode>
+    {
+        if (entries is null)
+        {
+            throw new ArgumentNullException(nameof(entries));
+        }
+
+        if (serviceProvider is null)
+        {
+            throw new ArgumentNullException(nameof(serviceProvider));
+        }
+
+        if (entries.Count == 0)
+        {
+            return Array.Empty<TNode>();
+        }
+
+        var (entryByKey, childrenByParent) = BuildMaps(entries);
+        var roots = GetRootEntries(entries);
+        var instances = new Dictionary<string, TNode>(StringComparer.Ordinal);
+        var forest = new List<TNode>(roots.Count);
+
+        foreach (var root in roots)
+        {
+            AssembleSubtree(root.Key, entryByKey, childrenByParent, instances, type => ResolveFromProvider<TNode>(type, serviceProvider));
+            forest.Add(instances[root.Key]);
+        }
+
+        return forest;
+    }
+
+    private static TNode ResolveFromProvider<TNode>(Type implementationType, IServiceProvider serviceProvider)
+        where TNode : class, ICompositeNode<TNode>
+    {
+        var service = serviceProvider.GetService(implementationType);
+        if (service is null)
+        {
+            throw new CompositeAssemblyException(
+                $"Failed to resolve '{implementationType.FullName}' from service provider. Ensure the type is registered.");
+        }
+
+        if (service is not TNode node)
+        {
+            throw new CompositeAssemblyException(
+                $"Resolved service of type '{service.GetType().FullName}' is not assignable to '{typeof(TNode).FullName}'.");
+        }
+
+        return node;
     }
 
     private static (
@@ -114,7 +223,8 @@ public static class CompositeCatalogAssembler
         string key,
         IReadOnlyDictionary<string, CompositeCatalogEntry<TNode>> entryByKey,
         IReadOnlyDictionary<string, IReadOnlyList<CompositeCatalogEntry<TNode>>> childrenByParent,
-        Dictionary<string, TNode> instances)
+        Dictionary<string, TNode> instances,
+        Func<Type, TNode> createInstance)
         where TNode : class, ICompositeNode<TNode>
     {
         if (instances.ContainsKey(key))
@@ -133,7 +243,7 @@ public static class CompositeCatalogAssembler
 
         foreach (var childEntry in childEntries)
         {
-            AssembleSubtree(childEntry.Key, entryByKey, childrenByParent, instances);
+            AssembleSubtree(childEntry.Key, entryByKey, childrenByParent, instances, createInstance);
         }
 
         var childNodes = new List<TNode>(childEntries.Count);
@@ -142,12 +252,12 @@ public static class CompositeCatalogAssembler
             childNodes.Add(instances[childEntry.Key]);
         }
 
-        var instance = CreateInstance<TNode>(entry.ImplementationType);
+        var instance = CreateInstance<TNode>(entry.ImplementationType, createInstance);
         SetChildren(instance, childNodes);
         instances[key] = instance;
     }
 
-    private static TNode CreateInstance<TNode>(Type implementationType)
+    private static TNode CreateInstance<TNode>(Type implementationType, Func<Type, TNode> factory)
         where TNode : class, ICompositeNode<TNode>
     {
         if (!typeof(TNode).IsAssignableFrom(implementationType))
@@ -164,12 +274,16 @@ public static class CompositeCatalogAssembler
 
         try
         {
-            return (TNode)Activator.CreateInstance(implementationType)!;
+            return factory(implementationType);
         }
-        catch (Exception ex) when (ex is not CompositeAssemblyException)
+        catch (CompositeAssemblyException)
+        {
+            throw;
+        }
+        catch (Exception ex)
         {
             throw new CompositeAssemblyException(
-                $"Failed to create instance of '{implementationType.FullName}'. Ensure a public parameterless constructor exists.",
+                $"Failed to create instance of '{implementationType.FullName}'. Ensure the type is registered and resolvable.",
                 ex);
         }
     }

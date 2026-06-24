@@ -57,6 +57,17 @@ public sealed class CompositeCatalogAssemblerTests
             _children = children.ToList();
     }
 
+    private sealed class SimpleServiceProvider : IServiceProvider
+    {
+        private readonly Dictionary<Type, object> _services;
+
+        public SimpleServiceProvider(Dictionary<Type, object> services) =>
+            _services = services;
+
+        public object? GetService(Type serviceType) =>
+            _services.TryGetValue(serviceType, out var service) ? service : null;
+    }
+
     [Fact]
     public void AssembleForest_MultipleRoots_BuildsOrderedForest()
     {
@@ -121,5 +132,99 @@ public sealed class CompositeCatalogAssemblerTests
 
         var ex = Assert.Throws<CompositeAssemblyException>(() => CompositeCatalogAssembler.Assemble(entries));
         Assert.Contains("2 root entries", ex.Message);
+    }
+
+    // --- Assemble with IServiceProvider ---
+
+    [Fact]
+    public void Assemble_WithServiceProvider_ResolvesFromContainer()
+    {
+        var entries = new[]
+        {
+            new CompositeCatalogEntry<ITestNode>("root", null, 0, typeof(RootCatalogNode)),
+            new CompositeCatalogEntry<ITestNode>("a", "root", 0, typeof(NodeA)),
+        };
+
+        var provider = new SimpleServiceProvider(new Dictionary<Type, object>
+        {
+            { typeof(RootCatalogNode), new RootCatalogNode() },
+            { typeof(NodeA), new NodeA() },
+        });
+
+        var root = CompositeCatalogAssembler.Assemble(entries, provider);
+
+        Assert.Equal("root", root.Name);
+        Assert.Single(root.Children);
+        Assert.Equal("a", root.Children[0].Name);
+    }
+
+    [Fact]
+    public void Assemble_WithServiceProvider_NullProvider_ThrowsArgumentNullException()
+    {
+        var entries = new[]
+        {
+            new CompositeCatalogEntry<ITestNode>("root", null, 0, typeof(RootCatalogNode)),
+        };
+
+        Assert.Throws<ArgumentNullException>(() => CompositeCatalogAssembler.Assemble(entries, null!));
+    }
+
+    [Fact]
+    public void Assemble_WithServiceProvider_UnregisteredType_ThrowsCompositeAssemblyException()
+    {
+        var entries = new[]
+        {
+            new CompositeCatalogEntry<ITestNode>("root", null, 0, typeof(RootCatalogNode)),
+        };
+
+        var provider = new SimpleServiceProvider(new Dictionary<Type, object>());
+
+        var ex = Assert.Throws<CompositeAssemblyException>(() => CompositeCatalogAssembler.Assemble(entries, provider));
+        Assert.Contains("Failed to resolve", ex.Message);
+    }
+
+    [Fact]
+    public void AssembleForest_WithServiceProvider_ResolvesFromContainer()
+    {
+        var entries = new[]
+        {
+            new CompositeCatalogEntry<ITestNode>("root-a", null, 0, typeof(RootCatalogNode)),
+            new CompositeCatalogEntry<ITestNode>("root-b", null, 10, typeof(SecondaryRootNode)),
+        };
+
+        var provider = new SimpleServiceProvider(new Dictionary<Type, object>
+        {
+            { typeof(RootCatalogNode), new RootCatalogNode() },
+            { typeof(SecondaryRootNode), new SecondaryRootNode() },
+        });
+
+        var forest = CompositeCatalogAssembler.AssembleForest(entries, provider);
+
+        Assert.Equal(2, forest.Count);
+        Assert.Equal("root", forest[0].Name);
+        Assert.Equal("root-b", forest[1].Name);
+    }
+
+    [Fact]
+    public void Assemble_WithServiceProvider_SharesSingletonInstances()
+    {
+        var entries = new[]
+        {
+            new CompositeCatalogEntry<ITestNode>("root", null, 0, typeof(RootCatalogNode)),
+            new CompositeCatalogEntry<ITestNode>("a", "root", 0, typeof(NodeA)),
+        };
+
+        var sharedRoot = new RootCatalogNode();
+        var sharedA = new NodeA();
+        var provider = new SimpleServiceProvider(new Dictionary<Type, object>
+        {
+            { typeof(RootCatalogNode), sharedRoot },
+            { typeof(NodeA), sharedA },
+        });
+
+        var root = CompositeCatalogAssembler.Assemble(entries, provider);
+
+        Assert.Same(sharedRoot, root);
+        Assert.Same(sharedA, root.Children[0]);
     }
 }

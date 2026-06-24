@@ -273,4 +273,35 @@ public sealed class CompositePartGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task EmitsRegisterDiWhenDiIntegrationEnabled()
+    {
+        var source = MenuUsings + MenuInterface + """
+
+            [CompositePart<IMenuNode>("root")]
+            public sealed class HomeMenu : IMenuNode, ICompositeBuildable<IMenuNode>
+            {
+                private IReadOnlyList<IMenuNode> _children = System.Array.Empty<IMenuNode>();
+                public string Title => "Home";
+                public IReadOnlyList<IMenuNode> Children => _children;
+                public void SetChildren(IReadOnlyList<IMenuNode> children) => _children = children;
+            }
+
+            [CompositePart<IMenuNode>("settings", ParentKey = "root", Order = 10)]
+            public sealed class SettingsMenu : IMenuNode, ICompositeBuildable<IMenuNode>
+            {
+                private IReadOnlyList<IMenuNode> _children = System.Array.Empty<IMenuNode>();
+                public string Title => "Settings";
+                public IReadOnlyList<IMenuNode> Children => _children;
+                public void SetChildren(IReadOnlyList<IMenuNode> children) => _children = children;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<CompositePartGenerator>(
+            enableDiIntegration: true,
+            ("Menus.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
 }

@@ -148,6 +148,14 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    public static DiagnosticDescriptor CompositePartDiNodeNotRegistered { get; } = Create(
+        DiagnosticIds.CompositePartDiNodeNotRegistered,
+        "Composite node not registered with DI container",
+        "Composite node type '{0}' was not registered in the service collection. Call {1}.RegisterDi(services) before BuildRoot(serviceProvider), or register the type manually.",
+        "When using BuildRoot(IServiceProvider), all composite node types must be resolvable from the container.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     // Decorator (DP016–DP019)
 
     public static DiagnosticDescriptor DecoratorDuplicateOrder { get; } = Create(
