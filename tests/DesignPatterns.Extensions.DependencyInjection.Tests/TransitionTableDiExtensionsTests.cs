@@ -84,4 +84,52 @@ public sealed class TransitionTableDiExtensionsTests
         Assert.Same(table1, resolved);
         Assert.NotSame(table2, resolved);
     }
+
+    [Fact]
+    public void AddStateMachine_RegistersStateMachineResolvingTableFromContainer()
+    {
+        var table = new TransitionTableBuilder<TestState, TestTrigger>()
+            .WithInitial(TestState.Idle)
+            .Add(TestState.Idle, TestTrigger.Start, TestState.Active)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddTransitionTable(table);
+        services.AddStateMachine<TestState, TestTrigger>();
+
+        var provider = services.BuildServiceProvider();
+        var machine = provider.GetRequiredService<IStateMachine<TestState, TestTrigger>>();
+
+        Assert.Equal(TestState.Idle, machine.CurrentState);
+        Assert.Same(table, machine.Table);
+
+        Assert.True(machine.TryTransition(TestTrigger.Start, out _));
+        Assert.Equal(TestState.Active, machine.CurrentState);
+    }
+
+    [Fact]
+    public void AddStateMachine_AsTransient_CreatesNewInstanceEachTime()
+    {
+        var table = new TransitionTableBuilder<TestState, TestTrigger>()
+            .WithInitial(TestState.Idle)
+            .Add(TestState.Idle, TestTrigger.Start, TestState.Active)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddTransitionTable(table);
+        services.AddStateMachine<TestState, TestTrigger>(ServiceLifetime.Transient);
+
+        var provider = services.BuildServiceProvider();
+        var machine1 = provider.GetRequiredService<IStateMachine<TestState, TestTrigger>>();
+        var machine2 = provider.GetRequiredService<IStateMachine<TestState, TestTrigger>>();
+
+        Assert.NotSame(machine1, machine2);
+    }
+
+    [Fact]
+    public void AddStateMachine_NullServices_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            ((IServiceCollection)null!).AddStateMachine<TestState, TestTrigger>());
+    }
 }

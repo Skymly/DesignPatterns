@@ -16,6 +16,9 @@ internal static class StateTransitionSyntaxFactory
     public static string GetTransitionTableClassName(string stateTypeName) =>
         stateTypeName + "TransitionTable";
 
+    public static string GetStateMachineClassName(string stateTypeName) =>
+        stateTypeName + "StateMachine";
+
     public static CompilationUnitSyntax CreateTransitionTableCompilationUnit(
         string? namespaceName,
         string tableClassName,
@@ -213,6 +216,81 @@ internal static class StateTransitionSyntaxFactory
         return WrapInCompilationUnit(namespaceName, holderClass, "System.Threading", "System.Threading.Tasks", "DesignPatterns.Behavioral");
     }
 
+    public static CompilationUnitSyntax CreateStateMachineCompilationUnit(
+        string? namespaceName,
+        string stateMachineClassName,
+        string tableClassName,
+        string stateTypeName,
+        string triggerTypeName,
+        GeneratorIntegrationOptions integrationOptions)
+    {
+        // Parameterless constructor: calls base(tableClassName.Instance)
+        var parameterlessConstructor = SyntaxFactory.ConstructorDeclaration(SyntaxFactory.Identifier(stateMachineClassName))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+            .WithInitializer(
+                SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
+                    .WithArgumentList(
+                        SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        SyntaxFactory.IdentifierName(tableClassName),
+                                        SyntaxFactory.IdentifierName("Instance")))))))
+            .WithBody(SyntaxFactory.Block());
+
+        // DI constructor: accepts ITransitionTable<TState, TTrigger>
+        var tableInterfaceType = $"ITransitionTable<{stateTypeName}, {triggerTypeName}>";
+        var diConstructor = SyntaxFactory.ConstructorDeclaration(SyntaxFactory.Identifier(stateMachineClassName))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("table"))
+                            .WithType(SyntaxFactory.ParseTypeName(tableInterfaceType)))))
+            .WithInitializer(
+                SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
+                    .WithArgumentList(
+                        SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("table"))))))
+            .WithBody(SyntaxFactory.Block());
+
+        var members = new List<MemberDeclarationSyntax> { parameterlessConstructor, diConstructor };
+
+        if (integrationOptions.EnableDi)
+        {
+            members.Add(CreateStateMachineRegisterDiMethod(stateTypeName, triggerTypeName, tableClassName, stateMachineClassName));
+        }
+
+        var stateMachineClass = SyntaxFactory.ClassDeclaration(stateMachineClassName)
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.SealedKeyword)))
+            .AddBaseListTypes(
+                SyntaxFactory.SimpleBaseType(
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("StateMachine"))
+                        .WithTypeArgumentList(
+                            SyntaxFactory.TypeArgumentList(
+                                SyntaxFactory.SeparatedList<TypeSyntax>(
+                                    new TypeSyntax[]
+                                    {
+                                        SyntaxFactory.ParseTypeName(stateTypeName),
+                                        SyntaxFactory.ParseTypeName(triggerTypeName),
+                                    })))))
+            .AddMembers(members.ToArray());
+
+        var usings = new List<string> { "DesignPatterns.Behavioral" };
+        if (integrationOptions.EnableDi)
+        {
+            usings.Add("Microsoft.Extensions.DependencyInjection");
+            usings.Add("Microsoft.Extensions.DependencyInjection.Extensions");
+        }
+
+        return WrapInCompilationUnit(namespaceName, stateMachineClass, usings.ToArray());
+    }
+
     public static string FormatEnumMember(INamedTypeSymbol enumType, string memberName) =>
         FormatEnumMember(enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), memberName);
 
@@ -351,6 +429,44 @@ internal static class StateTransitionSyntaxFactory
                         }))))
             .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.ParseExpression(expression)))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+    }
+
+    private static MethodDeclarationSyntax CreateStateMachineRegisterDiMethod(
+        string stateTypeName,
+        string triggerTypeName,
+        string tableClassName,
+        string stateMachineClassName)
+    {
+        var servicesParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("services"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"));
+
+        var lifetimeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("lifetime"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"))
+            .WithDefault(
+                SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
+                        SyntaxFactory.IdentifierName("Singleton"))));
+
+        var interfaceType = $"IStateMachine<{stateTypeName}, {triggerTypeName}>";
+
+        var body = SyntaxFactory.Block(
+            SyntaxFactory.ParseStatement(
+                $"{tableClassName}.RegisterDi(services, lifetime);"),
+            SyntaxFactory.ParseStatement(
+                $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({interfaceType}), sp => new {stateMachineClassName}((ITransitionTable<{stateTypeName}, {triggerTypeName}>)sp.GetRequiredService(typeof(ITransitionTable<{stateTypeName}, {triggerTypeName}>))), lifetime));"),
+            SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                SyntaxFactory.Identifier("RegisterDi"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(servicesParam, lifetimeParam)
+            .WithBody(body);
     }
 
     private static MethodDeclarationSyntax CreateRegisterDiMethod(

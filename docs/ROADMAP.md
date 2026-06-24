@@ -65,7 +65,7 @@
 
 | 项 | 说明 | 涉及诊断 | 状态 |
 |----|------|----------|------|
-| State entry/exit actions + 实例包装器 | `[Transition(..., OnEnter/OnExit)]` 副作用钩子；生成 `IStateMachine<TState,TTrigger>` 自动跟踪 `CurrentState` 并触发 action；异步 action（`ValueTask` + `CancellationToken`）；生成器校验 action 方法签名（复用 guard 校验基础设施） | DP037–DP039 | [~] |
+| State entry/exit actions + 实例包装器 | `[Transition(..., OnEnter/OnExit)]` 副作用钩子；生成 `IStateMachine<TState,TTrigger>` 自动跟踪 `CurrentState` 并触发 action；异步 action（`ValueTask` + `CancellationToken`）；生成器校验 action 方法签名（复用 guard 校验基础设施） | DP037–DP039 | [x] |
 | Composite DI 集成 + Visitor 生成 | 生成 `RegisterDi(IServiceCollection, ServiceLifetime)` + `BuildRoot(IServiceProvider)` 从容器解析节点；生成 `I{Contract}NodeVisitor` 接口 + `AcceptVisitor` 分发，编译期校验 visitor 覆盖所有节点类型 | DP040–DP041 | [x] |
 | Decorator DI 集成 + Async 变体 | 生成 `RegisterDi` + `Build(IServiceProvider, core)`；新增 `IAsyncDecorator<T>` + `DecorateAsync(T, CancellationToken)`，生成器双模式输出；Autofac 对称支持 | DP042–DP043 | [ ] |
 | EventAggregator 源生成器 + 自动订阅 | 新增 `[RegisterEventHandler<TEvent>]` + `RegisterEventHandlerGenerator`；生成 `{Event}HandlerRegistry.RegisterDi(services)` 自动注册并订阅；Analyzer 检测未标注的 `IEventHandler<T>` 实现 | DP044–DP046 | [ ] |

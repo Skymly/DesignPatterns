@@ -268,6 +268,7 @@ git push origin v0.1.0-preview3
 | — | State v2：DI 集成（`RegisterDi` 生成 + `AddTransitionTable` 扩展） | 已完成 |
 | — | State v2：DP036 字面量边校验 Analyzer | 已完成 |
 | — | State v2：entry/exit actions + DP037-DP039 | 已完成 |
+| — | State v2：IStateMachine 实例包装器 + AddStateMachine DI 扩展 | 已完成 |
 | — | Composite DI 集成 + Visitor 生成 + DP040 | 已完成 |
 
 功能 backlog：[docs/ROADMAP.md](docs/ROADMAP.md)。
