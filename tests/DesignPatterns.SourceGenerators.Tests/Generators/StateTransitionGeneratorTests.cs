@@ -331,4 +331,110 @@ public sealed class StateTransitionGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task EmitsSyncOnEnterAndOnExitActions()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                OnEnter = nameof(OnEnterSubmitted), OnExit = nameof(OnExitDraft))]
+            public static partial class OrderStatusMachine
+            {
+                public static void OnEnterSubmitted(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+                public static void OnExitDraft(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsAsyncOnEnterAction()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                OnEnter = nameof(OnEnterSubmittedAsync))]
+            public static partial class OrderStatusMachine
+            {
+                public static ValueTask OnEnterSubmittedAsync(OrderStatus from, OrderStatus to, OrderTrigger trigger, CancellationToken ct) => default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp037ActionMethodNotFound()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, OnEnter = "Nonexistent")]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    // DP038 (ActionMethodNotStatic) cannot be tested via source generator because
+    // the C# compiler rejects instance members in static classes (CS0708) before
+    // the generator runs. The diagnostic is retained for completeness.
+
+    [Fact]
+    public Task ReportsDp039ActionMethodWrongSignature()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, OnExit = nameof(OnExitDraft))]
+            public static partial class OrderStatusMachine
+            {
+                public static void OnExitDraft(OrderStatus from) { }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
 }

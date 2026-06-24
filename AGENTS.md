@@ -31,7 +31,7 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                              # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP036）
+├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP039）
 ├── DesignPatterns.SourceGenerators/             # 增量源生成器
 ├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025、DP033、DP036 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
@@ -133,6 +133,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP026–DP031 | State 转换表（生成器；重复边、非法 enum、holder、孤立态 Info） |
 | DP032、DP034–DP035 | State 转换 guard（生成器；guard 方法未找到、非 static、签名错误） |
 | DP036 | State 转换字面量边校验（Analyzer；`TryTransition` 字面量 (state, trigger) 对未声明） |
+| DP037–DP039 | State 转换 entry/exit action（生成器；action 方法未找到、非 static、签名错误） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP020–DP022 | RegisterFactory（生成器） |
@@ -141,10 +142,11 @@ dotnet test DesignPatterns.slnx -c Release
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP037**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP040**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
+- DP038（action 方法非 static）因 C# 编译器 CS0708 先于生成器拒绝 static 类中的实例成员，无法通过生成器测试触发；诊断保留供完整性。
 
 ---
 

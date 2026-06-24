@@ -43,4 +43,28 @@ public sealed class TransitionAttribute : Attribute
     /// The transition only fires when the guard returns <see langword="true"/>.
     /// </summary>
     public string? Guard { get; set; }
+
+    /// <summary>
+    /// Optional name of a static action method invoked when entering the target state.
+    /// The method must have the signature
+    /// <c>static void Method(TState from, TState to, TTrigger trigger)</c>
+    /// or the async signature
+    /// <c>static ValueTask Method(TState from, TState to, TTrigger trigger, CancellationToken ct)</c>.
+    /// Actions are invoked by <see cref="ITransitionTable{TState,TTrigger}.TryTransitionAsync"/>
+    /// after the guard passes and before the result is returned. The table itself does not
+    /// track current state — the caller is responsible for applying the returned
+    /// <c>NextState</c>.
+    /// </summary>
+    public string? OnEnter { get; set; }
+
+    /// <summary>
+    /// Optional name of a static action method invoked when exiting the source state.
+    /// The method must have the signature
+    /// <c>static void Method(TState from, TState to, TTrigger trigger)</c>
+    /// or the async signature
+    /// <c>static ValueTask Method(TState from, TState to, TTrigger trigger, CancellationToken ct)</c>.
+    /// Actions are invoked by <see cref="ITransitionTable{TState,TTrigger}.TryTransitionAsync"/>
+    /// after the guard passes and before <see cref="OnEnter"/>.
+    /// </summary>
+    public string? OnExit { get; set; }
 }

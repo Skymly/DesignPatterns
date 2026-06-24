@@ -106,6 +106,8 @@ internal static class StateTransitionTransform
             var to = ResolveTransitionArg(attribute.ConstructorArguments[2], stateType, stateTypeInfo);
 
             string? guardName = null;
+            string? onEnterName = null;
+            string? onExitName = null;
             foreach (var namedArgument in attribute.NamedArguments)
             {
                 if (string.Equals(namedArgument.Key, "Guard", StringComparison.Ordinal)
@@ -113,13 +115,31 @@ internal static class StateTransitionTransform
                 {
                     guardName = guardValue;
                 }
+                else if (string.Equals(namedArgument.Key, "OnEnter", StringComparison.Ordinal)
+                    && namedArgument.Value.Value is string onEnterValue)
+                {
+                    onEnterName = onEnterValue;
+                }
+                else if (string.Equals(namedArgument.Key, "OnExit", StringComparison.Ordinal)
+                    && namedArgument.Value.Value is string onExitValue)
+                {
+                    onExitName = onExitValue;
+                }
             }
 
             var guard = guardName is null || stateType is null || triggerType is null
                 ? default(GuardResolution)
                 : ResolveGuard(holderType, guardName, stateType, triggerType);
 
-            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation, guard));
+            var onEnter = onEnterName is null || stateType is null || triggerType is null
+                ? default(ActionResolution)
+                : ResolveAction(holderType, onEnterName, stateType, triggerType);
+
+            var onExit = onExitName is null || stateType is null || triggerType is null
+                ? default(ActionResolution)
+                : ResolveAction(holderType, onExitName, stateType, triggerType);
+
+            transitions.Add(new TransitionModel(from, trigger, to, transitionLocation, guard, onEnter, onExit));
         }
 
         return Result<StateMachineModel>.Success(new StateMachineModel(
@@ -244,6 +264,91 @@ internal static class StateTransitionTransform
             IsFound: true,
             IsStatic: first.IsStatic,
             HasValidSignature: false,
+            MethodReference: null);
+    }
+
+    private static ActionResolution ResolveAction(
+        INamedTypeSymbol holderType,
+        string actionName,
+        INamedTypeSymbol stateType,
+        INamedTypeSymbol triggerType)
+    {
+        var methods = holderType.GetMembers(actionName)
+            .OfType<IMethodSymbol>()
+            .ToList();
+
+        if (methods.Count == 0)
+        {
+            return new ActionResolution(actionName, IsFound: false, IsStatic: false, HasValidSignature: false, IsAsync: false, MethodReference: null);
+        }
+
+        var holderFqn = holderType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        // When overloads exist, prefer the method with the correct signature so
+        // that an unrelated overload does not cause a false DP039 diagnostic.
+        // Valid signatures:
+        //   sync:  static void Method(TState from, TState to, TTrigger trigger)
+        //   async: static ValueTask Method(TState from, TState to, TTrigger trigger, CancellationToken ct)
+        IMethodSymbol? matching = null;
+        foreach (var m in methods)
+        {
+            if (!m.IsStatic)
+            {
+                continue;
+            }
+
+            var isVoid = m.ReturnType.SpecialType == SpecialType.System_Void;
+            var isValueTask = m.ReturnType.Name == "ValueTask"
+                && m.ReturnType.ContainingNamespace is { } ns
+                && ns.ToDisplayString() == "System.Threading.Tasks";
+
+            if (!isVoid && !isValueTask)
+            {
+                continue;
+            }
+
+            if (isVoid
+                && m.Parameters.Length == 3
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, stateType)
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, stateType)
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[2].Type, triggerType))
+            {
+                matching = m;
+                break;
+            }
+
+            if (isValueTask
+                && m.Parameters.Length == 4
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, stateType)
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, stateType)
+                && SymbolEqualityComparer.Default.Equals(m.Parameters[2].Type, triggerType)
+                && m.Parameters[3].Type.Name == "CancellationToken")
+            {
+                matching = m;
+                break;
+            }
+        }
+
+        if (matching is not null)
+        {
+            var isAsync = matching.ReturnType.Name == "ValueTask";
+            return new ActionResolution(
+                actionName,
+                IsFound: true,
+                IsStatic: true,
+                HasValidSignature: true,
+                IsAsync: isAsync,
+                MethodReference: $"{holderFqn}.{matching.Name}");
+        }
+
+        // No matching signature found — report based on the first candidate.
+        var first = methods[0];
+        return new ActionResolution(
+            actionName,
+            IsFound: true,
+            IsStatic: first.IsStatic,
+            HasValidSignature: false,
+            IsAsync: false,
             MethodReference: null);
     }
 }

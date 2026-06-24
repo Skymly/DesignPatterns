@@ -22,7 +22,15 @@ internal static class StateTransitionSyntaxFactory
         string stateTypeName,
         string triggerTypeName,
         string initialStateExpression,
-        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression, string? GuardExpression)> transitions,
+        IReadOnlyList<(
+            string FromExpression,
+            string TriggerExpression,
+            string ToExpression,
+            string? GuardExpression,
+            string? OnEnterSyncReference,
+            string? OnExitSyncReference,
+            string? OnEnterAsyncReference,
+            string? OnExitAsyncReference)> transitions,
         GeneratorIntegrationOptions integrationOptions)
     {
         var tableExpression = BuildTransitionTableExpression(
@@ -82,6 +90,24 @@ internal static class StateTransitionSyntaxFactory
                 },
                 "Table.TryTransition(current, trigger, out next)"),
             CreateForwardingMethod(
+                "TryTransitionAsync",
+                SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
+                    .WithTypeArgumentList(
+                        SyntaxFactory.TypeArgumentList(
+                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                SyntaxFactory.GenericName(SyntaxFactory.Identifier("TransitionResult"))
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(stateTypeName))))))),
+                new[]
+                {
+                    new ParameterModel(stateTypeName, "current"),
+                    new ParameterModel(triggerTypeName, "trigger"),
+                    new ParameterModel("CancellationToken", "cancellationToken"),
+                },
+                "Table.TryTransitionAsync(current, trigger, cancellationToken)"),
+            CreateForwardingMethod(
                 "GetAllowedTriggers",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("IReadOnlyList"))
                     .WithTypeArgumentList(
@@ -120,7 +146,7 @@ internal static class StateTransitionSyntaxFactory
                                     })))))
             .AddMembers(members.ToArray());
 
-        var usings = new List<string> { "System", "System.Collections.Generic", "DesignPatterns.Behavioral" };
+        var usings = new List<string> { "System", "System.Collections.Generic", "System.Threading", "System.Threading.Tasks", "DesignPatterns.Behavioral" };
         if (integrationOptions.EnableDi)
         {
             usings.Add("Microsoft.Extensions.DependencyInjection");
@@ -155,6 +181,25 @@ internal static class StateTransitionSyntaxFactory
                 },
                 $"{tableClassName}.Instance.TryTransition(current, trigger, out next)",
                 isStatic: true),
+            CreateForwardingMethod(
+                "TryTransitionAsync",
+                SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
+                    .WithTypeArgumentList(
+                        SyntaxFactory.TypeArgumentList(
+                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                SyntaxFactory.GenericName(SyntaxFactory.Identifier("TransitionResult"))
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(stateTypeName))))))),
+                new[]
+                {
+                    new ParameterModel(stateTypeName, "current"),
+                    new ParameterModel(triggerTypeName, "trigger"),
+                    new ParameterModel("CancellationToken", "cancellationToken"),
+                },
+                $"{tableClassName}.Instance.TryTransitionAsync(current, trigger, cancellationToken)",
+                isStatic: true),
         };
 
         var holderClass = SyntaxFactory.ClassDeclaration(holderClassName)
@@ -165,7 +210,7 @@ internal static class StateTransitionSyntaxFactory
                     SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
             .AddMembers(members);
 
-        return WrapInCompilationUnit(namespaceName, holderClass, "DesignPatterns.Behavioral");
+        return WrapInCompilationUnit(namespaceName, holderClass, "System.Threading", "System.Threading.Tasks", "DesignPatterns.Behavioral");
     }
 
     public static string FormatEnumMember(INamedTypeSymbol enumType, string memberName) =>
@@ -178,7 +223,15 @@ internal static class StateTransitionSyntaxFactory
         string stateTypeName,
         string triggerTypeName,
         string initialStateExpression,
-        IReadOnlyList<(string FromExpression, string TriggerExpression, string ToExpression, string? GuardExpression)> transitions)
+        IReadOnlyList<(
+            string FromExpression,
+            string TriggerExpression,
+            string ToExpression,
+            string? GuardExpression,
+            string? OnEnterSyncReference,
+            string? OnExitSyncReference,
+            string? OnEnterAsyncReference,
+            string? OnExitAsyncReference)> transitions)
     {
         var builder = new StringBuilder();
         builder.Append("new TransitionTableBuilder<")
@@ -198,10 +251,45 @@ internal static class StateTransitionSyntaxFactory
                 .Append(", ")
                 .Append(transition.ToExpression);
 
-            if (transition.GuardExpression is not null)
+            var hasGuard = transition.GuardExpression is not null;
+            var hasOnEnterSync = transition.OnEnterSyncReference is not null;
+            var hasOnExitSync = transition.OnExitSyncReference is not null;
+            var hasOnEnterAsync = transition.OnEnterAsyncReference is not null;
+            var hasOnExitAsync = transition.OnExitAsyncReference is not null;
+            var hasAnyOption = hasGuard || hasOnEnterSync || hasOnExitSync || hasOnEnterAsync || hasOnExitAsync;
+
+            if (hasAnyOption)
             {
-                builder.Append(", guard: ")
-                    .Append(transition.GuardExpression);
+                // Guard is the 4th positional parameter; actions are named.
+                if (hasGuard)
+                {
+                    builder.Append(", guard: ")
+                        .Append(transition.GuardExpression);
+                }
+
+                if (hasOnEnterSync)
+                {
+                    builder.Append(", onEnterSync: ")
+                        .Append(transition.OnEnterSyncReference);
+                }
+
+                if (hasOnExitSync)
+                {
+                    builder.Append(", onExitSync: ")
+                        .Append(transition.OnExitSyncReference);
+                }
+
+                if (hasOnEnterAsync)
+                {
+                    builder.Append(", onEnterAsync: ")
+                        .Append(transition.OnEnterAsyncReference);
+                }
+
+                if (hasOnExitAsync)
+                {
+                    builder.Append(", onExitAsync: ")
+                        .Append(transition.OnExitAsyncReference);
+                }
             }
 
             builder.Append(')');
