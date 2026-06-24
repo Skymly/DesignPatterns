@@ -232,4 +232,160 @@ public sealed class DecoratorGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task GeneratesAsyncDecoratorStack()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public sealed class AsyncLoggingDecorator : IPaymentService, IAsyncDecorator<IPaymentService>
+            {
+                public ValueTask<IPaymentService> DecorateAsync(IPaymentService inner, CancellationToken cancellationToken = default)
+                    => new ValueTask<IPaymentService>(new Impl(inner));
+
+                public int Pay(int amount) => throw new System.NotSupportedException();
+
+                private sealed class Impl(IPaymentService inner) : IPaymentService
+                {
+                    public int Pay(int amount) => inner.Pay(amount);
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<DecoratorGenerator>(
+            ("Decorators.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesMixedSyncAndAsyncDecoratorStack()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public sealed class LoggingPaymentDecorator : IPaymentService, IDecorator<IPaymentService>
+            {
+                public IPaymentService Decorate(IPaymentService inner) => new Impl(inner);
+
+                public int Pay(int amount) => throw new System.NotSupportedException();
+
+                private sealed class Impl(IPaymentService inner) : IPaymentService
+                {
+                    public int Pay(int amount) => inner.Pay(amount);
+                }
+            }
+
+            [Decorator<IPaymentService>(20)]
+            public sealed class MetricsPaymentDecorator : IPaymentService, IAsyncDecorator<IPaymentService>
+            {
+                public ValueTask<IPaymentService> DecorateAsync(IPaymentService inner, CancellationToken cancellationToken = default)
+                    => new ValueTask<IPaymentService>(new Impl(inner));
+
+                public int Pay(int amount) => throw new System.NotSupportedException();
+
+                private sealed class Impl(IPaymentService inner) : IPaymentService
+                {
+                    public int Pay(int amount) => inner.Pay(amount);
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<DecoratorGenerator>(
+            ("Decorators.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsRegisterDiWhenDiIntegrationEnabled()
+    {
+        const string source = """
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public sealed class LoggingPaymentDecorator : IPaymentService, IDecorator<IPaymentService>
+            {
+                public IPaymentService Decorate(IPaymentService inner) => new Impl(inner);
+
+                public int Pay(int amount) => throw new System.NotSupportedException();
+
+                private sealed class Impl(IPaymentService inner) : IPaymentService
+                {
+                    public int Pay(int amount) => inner.Pay(amount);
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<DecoratorGenerator>(
+            enableDiIntegration: true,
+            ("Decorators.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsRegisterDiWithAsyncDecoratorWhenDiIntegrationEnabled()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Structural;
+
+            namespace TestAssembly;
+
+            public interface IPaymentService
+            {
+                int Pay(int amount);
+            }
+
+            [Decorator<IPaymentService>(10)]
+            public sealed class AsyncLoggingDecorator : IPaymentService, IAsyncDecorator<IPaymentService>
+            {
+                public ValueTask<IPaymentService> DecorateAsync(IPaymentService inner, CancellationToken cancellationToken = default)
+                    => new ValueTask<IPaymentService>(new Impl(inner));
+
+                public int Pay(int amount) => throw new System.NotSupportedException();
+
+                private sealed class Impl(IPaymentService inner) : IPaymentService
+                {
+                    public int Pay(int amount) => inner.Pay(amount);
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<DecoratorGenerator>(
+            enableDiIntegration: true,
+            ("Decorators.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
 }

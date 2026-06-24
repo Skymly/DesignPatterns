@@ -190,6 +190,22 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    public static DiagnosticDescriptor DecoratorAsyncSignatureMismatch { get; } = Create(
+        DiagnosticIds.DecoratorAsyncSignatureMismatch,
+        "Async decorator has wrong DecorateAsync signature",
+        "Async decorator '{0}' must implement 'ValueTask<{1}> DecorateAsync({1} inner, CancellationToken cancellationToken = default)'. Fix the IAsyncDecorator<{1}> implementation.",
+        "Async decorators must follow the IAsyncDecorator<TService> method signature.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor DecoratorDiNotResolvable { get; } = Create(
+        DiagnosticIds.DecoratorDiNotResolvable,
+        "Decorator not resolvable from DI container",
+        "Decorator '{0}' has no public parameterless constructor. Register it in the DI container via RegisterDi(), or add a parameterless constructor for Build() without IServiceProvider.",
+        "When using Build(IServiceProvider, core), decorators are resolved from the container; otherwise a parameterless constructor is required.",
+        DiagnosticSeverity.Warning,
+        GeneratorCategory);
+
     // Factory (DP020–DP022, DP023)
 
     public static KeyedRegistrationDiagnostics RegisterFactory { get; } = new(
