@@ -94,7 +94,8 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 
 ### 与生态边界
 
-- 不重复实现 MediatR、Polly、`Microsoft.Extensions.ObjectPool` 的完整能力；文档中说明何时引用官方包。
+- 本库以**技术探索**为目的，**允许与 MediatR、Polly、`Microsoft.Extensions.ObjectPool`、Stateless 等生态库能力重叠**——重叠不是拒绝理由，能否在源生成 / 诊断 / DI 集成等编译期能力上做出探索价值才是判断标准（见 [`../AGENTS.md`](../AGENTS.md)「项目是什么」）。
+- 模式文档中仍可说明与生态库的**差异点**（设计取向、编译期协同、primitive 粒度），作为用户选型参考，而非「不实现」的理由。
 - Singleton 不作为卖点；诊断可提示静态可变单例，推荐 DI 生命周期。
 
 ## 设计模式实施情况（历史）

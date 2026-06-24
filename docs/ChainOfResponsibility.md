@@ -2,7 +2,7 @@
 
 ## 概述
 
-责任链模式将请求沿 handler 链传递，每个 handler 决定是处理请求还是转发给下一个。本库提供 **中间件式管道 primitives**，不替代 MediatR 或 ASP.NET Core 完整管道框架。
+责任链模式将请求沿 handler 链传递，每个 handler 决定是处理请求还是转发给下一个。本库提供 **中间件式管道 primitives**；与 MediatR 或 ASP.NET Core 管道在能力上可能重叠，但本库聚焦「源生成排序 + 编译期诊断」的探索价值（见 [AGENTS.md](../AGENTS.md)「项目是什么」）。
 
 ## 设计目标
 
