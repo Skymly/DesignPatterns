@@ -21,6 +21,18 @@ internal static class CompositeSyntaxFactory
     public static string GetCatalogClassName(string contractName) =>
         GetBaseName(contractName) + "CompositeCatalog";
 
+    public static string GetVisitorInterfaceName(string contractName) =>
+        "I" + GetBaseName(contractName) + "NodeVisitor";
+
+    public static string GetAsyncVisitorInterfaceName(string contractName) =>
+        "I" + GetBaseName(contractName) + "NodeAsyncVisitor";
+
+    public static string GetAsyncVisitorInterfaceNameFromVisitor(string visitorInterfaceName) =>
+        visitorInterfaceName.Replace("NodeVisitor", "NodeAsyncVisitor");
+
+    public static string GetGenericVisitorInterfaceName(string contractName) =>
+        "I" + GetBaseName(contractName) + "NodeVisitor";
+
     public static string ToConstantName(string key)
     {
         var parts = key.Split(new[] { '_', '-', ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -334,6 +346,203 @@ internal static class CompositeSyntaxFactory
             .WithBody(body);
     }
 
+    public static CompilationUnitSyntax CreateVisitorInterfaceCompilationUnit(
+        string? namespaceName,
+        string visitorInterfaceName,
+        string contractTypeName,
+        IReadOnlyList<(string ImplementationName, string? ImplementationNamespace, string ImplementationFullyQualifiedDisplayString)> implementations)
+    {
+        // void Visit(TImpl node) methods
+        var voidVisitMethods = implementations.Select(impl =>
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    SyntaxFactory.Identifier("Visit"))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)))))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))).ToArray();
+
+        var voidVisitor = SyntaxFactory.InterfaceDeclaration(visitorInterfaceName)
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .AddMembers(voidVisitMethods);
+
+        // async: ValueTask VisitAsync(TImpl node, CancellationToken ct)
+        var asyncVisitorName = GetAsyncVisitorInterfaceNameFromVisitor(visitorInterfaceName);
+        var asyncVisitMethods = implementations.Select(impl =>
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::System.Threading.Tasks.ValueTask"),
+                    SyntaxFactory.Identifier("VisitAsync"))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                        {
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                                .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")),
+                        })))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))).ToArray();
+
+        var asyncVisitor = SyntaxFactory.InterfaceDeclaration(asyncVisitorName)
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .AddMembers(asyncVisitMethods);
+
+        // generic TResult: TResult Visit<TResult>(TImpl node)
+        var genericVisitMethods = implementations.Select(impl =>
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.IdentifierName("TResult"),
+                    SyntaxFactory.Identifier("Visit"))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)))))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))).ToArray();
+
+        var genericVisitor = SyntaxFactory.InterfaceDeclaration(visitorInterfaceName)
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .WithTypeParameterList(
+                SyntaxFactory.TypeParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.TypeParameter(SyntaxFactory.Identifier("TResult")))))
+            .AddMembers(genericVisitMethods);
+
+        // Dispatch extension class — runtime type dispatch via pattern matching
+        var dispatchClass = CreateDispatchExtensionsClass(
+            visitorInterfaceName,
+            asyncVisitorName,
+            contractTypeName,
+            implementations);
+
+        return WrapInCompilationUnit(
+            namespaceName,
+            new MemberDeclarationSyntax[] { voidVisitor, asyncVisitor, genericVisitor, dispatchClass },
+            "System.Threading.Tasks");
+    }
+
+    private static ClassDeclarationSyntax CreateDispatchExtensionsClass(
+        string visitorInterfaceName,
+        string asyncVisitorInterfaceName,
+        string contractTypeName,
+        IReadOnlyList<(string ImplementationName, string? ImplementationNamespace, string ImplementationFullyQualifiedDisplayString)> implementations)
+    {
+        // void AcceptVisitor(this TContract node, IVisitor visitor) — runtime dispatch
+        var voidDispatch = SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                SyntaxFactory.Identifier("AcceptVisitor"))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                    {
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                            .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
+                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
+                            .WithType(SyntaxFactory.ParseTypeName(visitorInterfaceName)),
+                    })))
+            .WithBody(CreateVoidDispatchBody(implementations));
+
+        // ValueTask AcceptVisitorAsync(this TContract node, IAsyncVisitor visitor, CancellationToken ct)
+        var asyncDispatch = SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.ParseTypeName("global::System.Threading.Tasks.ValueTask"),
+                SyntaxFactory.Identifier("AcceptVisitorAsync"))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                    {
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                            .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
+                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
+                            .WithType(SyntaxFactory.ParseTypeName(asyncVisitorInterfaceName)),
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                            .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")),
+                    })))
+            .WithBody(CreateAsyncDispatchBody(implementations));
+
+        // TResult AcceptVisitor<TResult>(this TContract node, IVisitor<TResult> visitor)
+        var genericDispatch = SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.IdentifierName("TResult"),
+                SyntaxFactory.Identifier("AcceptVisitor"))
+            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .WithTypeParameterList(
+                SyntaxFactory.TypeParameterList(
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.TypeParameter(SyntaxFactory.Identifier("TResult")))))
+            .WithParameterList(
+                SyntaxFactory.ParameterList(
+                    SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                    {
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                            .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
+                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
+                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
+                            .WithType(SyntaxFactory.ParseTypeName($"{visitorInterfaceName}<TResult>")),
+                    })))
+            .WithBody(CreateGenericDispatchBody(implementations));
+
+        var baseName = visitorInterfaceName.StartsWith("I", StringComparison.Ordinal) && visitorInterfaceName.Length > 1
+            ? visitorInterfaceName.Substring(1)
+            : visitorInterfaceName;
+
+        return SyntaxFactory.ClassDeclaration(baseName + "Extensions")
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+            .AddMembers(voidDispatch, asyncDispatch, genericDispatch);
+    }
+
+    private static BlockSyntax CreateVoidDispatchBody(
+        IReadOnlyList<(string ImplementationName, string? ImplementationNamespace, string ImplementationFullyQualifiedDisplayString)> implementations)
+    {
+        var sb = new System.Text.StringBuilder("switch (node) { ");
+        foreach (var impl in implementations)
+        {
+            sb.Append($"case {impl.ImplementationFullyQualifiedDisplayString} typed: visitor.Visit(typed); return; ");
+        }
+
+        sb.Append($"default: throw new global::System.InvalidOperationException($\"No visitor overload found for node type '{{node?.GetType().FullName}}'.\"); }}");
+
+        return SyntaxFactory.Block(SyntaxFactory.ParseStatement(sb.ToString()));
+    }
+
+    private static BlockSyntax CreateAsyncDispatchBody(
+        IReadOnlyList<(string ImplementationName, string? ImplementationNamespace, string ImplementationFullyQualifiedDisplayString)> implementations)
+    {
+        var sb = new System.Text.StringBuilder("switch (node) { ");
+        foreach (var impl in implementations)
+        {
+            sb.Append($"case {impl.ImplementationFullyQualifiedDisplayString} typed: return visitor.VisitAsync(typed, cancellationToken); ");
+        }
+
+        sb.Append($"default: throw new global::System.InvalidOperationException($\"No visitor overload found for node type '{{node?.GetType().FullName}}'.\"); }}");
+
+        return SyntaxFactory.Block(SyntaxFactory.ParseStatement(sb.ToString()));
+    }
+
+    private static BlockSyntax CreateGenericDispatchBody(
+        IReadOnlyList<(string ImplementationName, string? ImplementationNamespace, string ImplementationFullyQualifiedDisplayString)> implementations)
+    {
+        var sb = new System.Text.StringBuilder("switch (node) { ");
+        foreach (var impl in implementations)
+        {
+            sb.Append($"case {impl.ImplementationFullyQualifiedDisplayString} typed: return visitor.Visit(typed); ");
+        }
+
+        sb.Append($"default: throw new global::System.InvalidOperationException($\"No visitor overload found for node type '{{node?.GetType().FullName}}'.\"); }}");
+
+        return SyntaxFactory.Block(SyntaxFactory.ParseStatement(sb.ToString()));
+    }
+
     private static string ToPascalCaseSegment(string segment)
     {
         if (string.IsNullOrEmpty(segment))
@@ -372,6 +581,35 @@ internal static class CompositeSyntaxFactory
         }
 
         return compilationUnit.AddMembers(member).NormalizeWhitespace();
+    }
+
+    private static CompilationUnitSyntax WrapInCompilationUnit(
+        string? namespaceName,
+        MemberDeclarationSyntax[] typeDeclarations,
+        params string[] additionalUsings)
+    {
+        var compilationUnit = SyntaxFactory.CompilationUnit()
+            .WithLeadingTrivia(CreateAutoGeneratedHeader())
+            .AddUsings(SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")));
+
+        foreach (var additionalUsing in additionalUsings)
+        {
+            compilationUnit = compilationUnit.AddUsings(
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(additionalUsing)));
+        }
+
+        if (!string.IsNullOrEmpty(namespaceName))
+        {
+            var ns = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(namespaceName!));
+            foreach (var decl in typeDeclarations)
+            {
+                ns = ns.AddMembers(decl);
+            }
+
+            return compilationUnit.AddMembers(ns).NormalizeWhitespace();
+        }
+
+        return compilationUnit.AddMembers(typeDeclarations).NormalizeWhitespace();
     }
 
     private static SyntaxTriviaList CreateAutoGeneratedHeader() =>

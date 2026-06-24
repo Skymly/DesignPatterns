@@ -132,6 +132,9 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 order,
                 contractInfo,
                 implementation.Name,
+                implementation.ContainingNamespace.IsGlobalNamespace
+                    ? null
+                    : implementation.ContainingNamespace.ToDisplayString(),
                 implementation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 ImplementsContract(implementation, contract),
                 HasPublicParameterlessConstructor(implementation),
@@ -319,6 +322,21 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         context.AddSource(
             $"{hintPrefix}.{catalogClassName}.g.cs",
             SourceText.From(catalogUnit.ToFullString(), Encoding.UTF8));
+
+        // Visitor interface + dispatch extension methods
+        var visitorInterfaceName = CompositeSyntaxFactory.GetVisitorInterfaceName(contract.Name);
+        var implTypes = registrations
+            .Select(static r => (r.ImplementationName, r.ImplementationNamespace, r.ImplementationFullyQualifiedDisplayString))
+            .ToList();
+
+        var visitorUnit = CompositeSyntaxFactory.CreateVisitorInterfaceCompilationUnit(
+            contract.Namespace,
+            visitorInterfaceName,
+            contract.FullyQualifiedDisplayString,
+            implTypes);
+        context.AddSource(
+            $"{hintPrefix}.{visitorInterfaceName}.g.cs",
+            SourceText.From(visitorUnit.ToFullString(), Encoding.UTF8));
     }
 
     private static bool IsParentKeyValid(CompositeRegistration registration, List<CompositeRegistration> registrations)
@@ -420,6 +438,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         int Order,
         ContractInfo Contract,
         string ImplementationName,
+        string? ImplementationNamespace,
         string ImplementationFullyQualifiedDisplayString,
         bool ImplementsContract,
         bool HasPublicParameterlessConstructor,
