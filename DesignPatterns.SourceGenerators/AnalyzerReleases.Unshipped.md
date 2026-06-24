@@ -38,3 +38,6 @@ DP032    | DesignPatterns.Generators | Error    | Guard method not found on hold
 DP034    | DesignPatterns.Generators | Error    | Guard method is not static
 DP035    | DesignPatterns.Generators | Error    | Guard method has wrong signature
 DP036    | DesignPatterns.Analyzers | Info     | State transition edge is not declared
+DP037    | DesignPatterns.Generators | Error    | Action method not found on holder class
+DP038    | DesignPatterns.Generators | Error    | Action method is not static
+DP039    | DesignPatterns.Generators | Error    | Action method has wrong signature

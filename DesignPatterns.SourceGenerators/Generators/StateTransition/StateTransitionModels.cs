@@ -79,6 +79,33 @@ internal readonly record struct GuardResolution(
 }
 
 /// <summary>
+/// Resolved entry/exit action method info extracted from the holder class symbol.
+/// Mirrors <see cref="GuardResolution"/> but adds an <c>IsAsync</c> flag to
+/// distinguish sync (<c>void</c>) from async (<c>ValueTask</c>) action signatures.
+/// <c>MethodReference</c> is the fully-qualified delegate reference for
+/// code emission; it is <c>null</c> when the action is invalid or absent.
+/// </summary>
+internal readonly record struct ActionResolution(
+    string Name,
+    bool IsFound,
+    bool IsStatic,
+    bool HasValidSignature,
+    bool IsAsync,
+    string? MethodReference)
+{
+    /// <summary>
+    /// <c>true</c> when the action is absent (no OnEnter/OnExit property on the
+    /// attribute). An absent action is always valid.
+    /// </summary>
+    public bool IsAbsent => Name is null;
+
+    /// <summary>
+    /// <c>true</c> when the action is valid and should be emitted.
+    /// </summary>
+    public bool IsValid => IsAbsent || (IsFound && IsStatic && HasValidSignature);
+}
+
+/// <summary>
 /// A raw transition extracted from a <c>[Transition]</c> attribute, before
 /// validation / deduplication.
 /// </summary>
@@ -87,7 +114,9 @@ internal sealed record TransitionModel(
     TransitionArg Trigger,
     TransitionArg To,
     Location Location,
-    GuardResolution Guard);
+    GuardResolution Guard,
+    ActionResolution OnEnter,
+    ActionResolution OnExit);
 
 /// <summary>
 /// The full state machine model extracted from a class marked with
@@ -117,7 +146,11 @@ internal sealed class ResolvedTransition
         string fromExpression,
         string triggerExpression,
         string toExpression,
-        string? guardMethodReference)
+        string? guardMethodReference,
+        string? onEnterSyncReference,
+        string? onExitSyncReference,
+        string? onEnterAsyncReference,
+        string? onExitAsyncReference)
     {
         FromMember = fromMember;
         TriggerMember = triggerMember;
@@ -127,6 +160,10 @@ internal sealed class ResolvedTransition
         TriggerExpression = triggerExpression;
         ToExpression = toExpression;
         GuardMethodReference = guardMethodReference;
+        OnEnterSyncReference = onEnterSyncReference;
+        OnExitSyncReference = onExitSyncReference;
+        OnEnterAsyncReference = onEnterAsyncReference;
+        OnExitAsyncReference = onExitAsyncReference;
     }
 
     public string FromMember { get; }
@@ -144,4 +181,12 @@ internal sealed class ResolvedTransition
     public string ToExpression { get; }
 
     public string? GuardMethodReference { get; }
+
+    public string? OnEnterSyncReference { get; }
+
+    public string? OnExitSyncReference { get; }
+
+    public string? OnEnterAsyncReference { get; }
+
+    public string? OnExitAsyncReference { get; }
 }

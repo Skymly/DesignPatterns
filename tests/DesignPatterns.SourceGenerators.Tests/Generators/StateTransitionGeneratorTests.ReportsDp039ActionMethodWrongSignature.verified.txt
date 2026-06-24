@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP031,
+    Message: State 'Submitted' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP039,
+    Message: Action method 'OnExitDraft' on holder class 'OrderStatusMachine' must have signature 'void OnExitDraft(TestAssembly.OrderStatus, TestAssembly.OrderStatus, TestAssembly.OrderTrigger)' or 'ValueTask OnExitDraft(TestAssembly.OrderStatus, TestAssembly.OrderStatus, TestAssembly.OrderTrigger, CancellationToken)'. Fix the parameter types or return type.
+  }
+]

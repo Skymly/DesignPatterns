@@ -18,7 +18,6 @@ public sealed class TransitionTableTests
         Pay,
         Cancel,
     }
-
     private static ITransitionTable<OrderStatus, OrderTrigger> CreateOrderTable() =>
         new TransitionTableBuilder<OrderStatus, OrderTrigger>()
             .WithInitial(OrderStatus.Draft)
@@ -251,5 +250,278 @@ public sealed class TransitionTableTests
         // Both edges appear in allowed triggers
         Assert.Equal(new[] { OrderTrigger.Submit, OrderTrigger.Cancel },
             table.GetAllowedTriggers(OrderStatus.Draft));
+    }
+
+    // --- TryTransitionAsync with entry/exit actions ---
+
+    [Fact]
+    public async Task TryTransitionAsync_WithoutActions_BehavesLikeTryTransition()
+    {
+        var table = CreateOrderTable();
+
+        var result = await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(OrderStatus.Submitted, result.NextState);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_ReturnsFailedResultForMissingEdge()
+    {
+        var table = CreateOrderTable();
+
+        var result = await table.TryTransitionAsync(OrderStatus.Paid, OrderTrigger.Pay, CancellationToken.None);
+
+        Assert.False(result.Succeeded);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithSyncOnEnter_InvokesAction()
+    {
+        OrderStatus? capturedFrom = null;
+        OrderStatus? capturedTo = null;
+        OrderTrigger? capturedTrigger = null;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterSync: (from, to, trigger) =>
+                {
+                    capturedFrom = from;
+                    capturedTo = to;
+                    capturedTrigger = trigger;
+                },
+                onExitSync: null)
+            .Build();
+
+        var result = await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(OrderStatus.Draft, capturedFrom);
+        Assert.Equal(OrderStatus.Submitted, capturedTo);
+        Assert.Equal(OrderTrigger.Submit, capturedTrigger);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithSyncOnExit_InvokesActionBeforeOnEnter()
+    {
+        var callOrder = new List<string>();
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterSync: (_, _, _) => callOrder.Add("enter"),
+                onExitSync: (_, _, _) => callOrder.Add("exit"))
+            .Build();
+
+        await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        // OnExit fires before OnEnter
+        Assert.Equal(new[] { "exit", "enter" }, callOrder);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithAsyncOnEnter_AwaitsAction()
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        var actionInvoked = false;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterAsync: async (_, _, _, ct) =>
+                {
+                    actionInvoked = true;
+                    await tcs.Task.ConfigureAwait(false);
+                },
+                onExitAsync: null)
+            .Build();
+
+        // Complete the TCS after a short delay so the async action can proceed
+        _ = Task.Delay(50).ContinueWith(_ => tcs.SetResult(true), TaskScheduler.Default);
+
+        var result = await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.True(actionInvoked);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithGuardReturningFalse_DoesNotInvokeActions()
+    {
+        var actionInvoked = false;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: static (_, _) => false,
+                onEnterSync: (_, _, _) => actionInvoked = true,
+                onExitSync: null)
+            .Build();
+
+        var result = await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.False(result.Succeeded);
+        Assert.False(actionInvoked);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_RespectsCancellationToken()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterAsync: (_, _, _, ct) =>
+                {
+                    ct.ThrowIfCancellationRequested();
+                    return default;
+                },
+                onExitAsync: null)
+            .Build();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, cts.Token).AsTask());
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithMixedSyncAndAsyncActions_InvokesInOrder()
+    {
+        var callOrder = new List<string>();
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterSync: (_, _, _) => callOrder.Add("syncEnter"),
+                onExitSync: (_, _, _) => callOrder.Add("syncExit"),
+                onEnterAsync: (_, _, _, _) =>
+                {
+                    callOrder.Add("asyncEnter");
+                    return default;
+                },
+                onExitAsync: (_, _, _, _) =>
+                {
+                    callOrder.Add("asyncExit");
+                    return default;
+                })
+            .Build();
+
+        await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        // Order: syncExit, asyncExit, syncEnter, asyncEnter
+        Assert.Equal(new[] { "syncExit", "asyncExit", "syncEnter", "asyncEnter" }, callOrder);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithSyncOnExitOnly_InvokesAction()
+    {
+        var invoked = false;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterSync: null,
+                onExitSync: (_, _, _) => invoked = true)
+            .Build();
+
+        var result = await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.True(invoked);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WithAsyncOnExitOnly_AwaitsAction()
+    {
+        var invoked = false;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterAsync: null,
+                onExitAsync: (_, _, _, _) =>
+                {
+                    invoked = true;
+                    return default;
+                })
+            .Build();
+
+        var result = await table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.True(invoked);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WhenGuardThrows_DoesNotInvokeActions()
+    {
+        var actionInvoked = false;
+
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: static (_, _) => throw new InvalidOperationException("guard failed"),
+                onEnterSync: (_, _, _) => actionInvoked = true,
+                onExitSync: null)
+            .Build();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None).AsTask());
+
+        Assert.False(actionInvoked);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_WhenActionThrows_PropagatesException()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(
+                OrderStatus.Draft,
+                OrderTrigger.Submit,
+                OrderStatus.Submitted,
+                guard: null,
+                onEnterSync: (_, _, _) => throw new InvalidOperationException("action failed"),
+                onExitSync: null)
+            .Build();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None).AsTask());
     }
 }

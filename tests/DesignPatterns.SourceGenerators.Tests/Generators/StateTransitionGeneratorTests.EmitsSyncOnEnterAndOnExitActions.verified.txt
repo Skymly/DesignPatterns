@@ -27,7 +27,7 @@ namespace TestAssembly
 {
     public sealed class OrderStatusTransitionTable : ITransitionTable<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger>
     {
-        private static readonly ITransitionTable<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger> Table = new TransitionTableBuilder<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger>().WithInitial(global::TestAssembly.OrderStatus.Draft).Add(global::TestAssembly.OrderStatus.Draft, global::TestAssembly.OrderTrigger.Submit, global::TestAssembly.OrderStatus.Submitted, guard: global::TestAssembly.OrderStatusMachine.CanSubmit).Add(global::TestAssembly.OrderStatus.Draft, global::TestAssembly.OrderTrigger.Cancel, global::TestAssembly.OrderStatus.Cancelled).Add(global::TestAssembly.OrderStatus.Submitted, global::TestAssembly.OrderTrigger.Cancel, global::TestAssembly.OrderStatus.Cancelled).Build();
+        private static readonly ITransitionTable<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger> Table = new TransitionTableBuilder<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger>().WithInitial(global::TestAssembly.OrderStatus.Draft).Add(global::TestAssembly.OrderStatus.Draft, global::TestAssembly.OrderTrigger.Submit, global::TestAssembly.OrderStatus.Submitted, onEnterSync: global::TestAssembly.OrderStatusMachine.OnEnterSubmitted, onExitSync: global::TestAssembly.OrderStatusMachine.OnExitDraft).Build();
         public static OrderStatusTransitionTable Instance { get => new OrderStatusTransitionTable(); }
         public global::TestAssembly.OrderStatus InitialState { get => Table.InitialState; }
 

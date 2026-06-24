@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Collections.Frozen;
 #endif
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DesignPatterns.Behavioral;
 
@@ -50,6 +52,45 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
 
         next = default;
         return false;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<TransitionResult<TState>> TryTransitionAsync(
+        TState current,
+        TTrigger trigger,
+        CancellationToken cancellationToken)
+    {
+        if (_edges.TryGetValue((current, trigger), out var edge))
+        {
+            if (edge.Guard is null || edge.Guard(current, trigger))
+            {
+                // Invoke OnExit (sync first, then async) before leaving the source state.
+                if (edge.OnExitSync is not null)
+                {
+                    edge.OnExitSync(current, edge.To, trigger);
+                }
+
+                if (edge.OnExitAsync is not null)
+                {
+                    await edge.OnExitAsync(current, edge.To, trigger, cancellationToken).ConfigureAwait(false);
+                }
+
+                // Invoke OnEnter (sync first, then async) before entering the target state.
+                if (edge.OnEnterSync is not null)
+                {
+                    edge.OnEnterSync(current, edge.To, trigger);
+                }
+
+                if (edge.OnEnterAsync is not null)
+                {
+                    await edge.OnEnterAsync(current, edge.To, trigger, cancellationToken).ConfigureAwait(false);
+                }
+
+                return new TransitionResult<TState>(true, edge.To);
+            }
+        }
+
+        return default;
     }
 
     /// <inheritdoc />
