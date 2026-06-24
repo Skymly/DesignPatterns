@@ -62,4 +62,76 @@ public sealed class CompositeCatalogIntegrationTests
         Assert.Equal("root", IntegrationMenuNodeCompositeKeys.Root);
         Assert.Equal("child", IntegrationMenuNodeCompositeKeys.Child);
     }
+
+    [Fact]
+    public void GeneratedVisitor_VisitDispatchesToCorrectOverload()
+    {
+        var root = IntegrationMenuNodeCompositeCatalog.BuildRoot();
+        var visitor = new TestMenuVisitor();
+
+        root.AcceptVisitor(visitor);
+        root.Children[0].AcceptVisitor(visitor);
+
+        Assert.Equal(2, visitor.Visited.Count);
+        Assert.Equal("Root", visitor.Visited[0]);
+        Assert.Equal("Child", visitor.Visited[1]);
+    }
+
+    [Fact]
+    public async Task GeneratedAsyncVisitor_VisitAsyncDispatchesToCorrectOverload()
+    {
+        var root = IntegrationMenuNodeCompositeCatalog.BuildRoot();
+        var visitor = new TestAsyncMenuVisitor();
+
+        await root.AcceptVisitorAsync(visitor, CancellationToken.None);
+        await root.Children[0].AcceptVisitorAsync(visitor, CancellationToken.None);
+
+        Assert.Equal(2, visitor.Visited.Count);
+        Assert.Equal("Root", visitor.Visited[0]);
+        Assert.Equal("Child", visitor.Visited[1]);
+    }
+
+    [Fact]
+    public void GeneratedGenericVisitor_AcceptVisitorReturnsResult()
+    {
+        var root = IntegrationMenuNodeCompositeCatalog.BuildRoot();
+        var visitor = new TestGenericMenuVisitor();
+
+        var rootResult = root.AcceptVisitor<string>(visitor);
+        var childResult = root.Children[0].AcceptVisitor<string>(visitor);
+
+        Assert.Equal("Root:Root", rootResult);
+        Assert.Equal("Child:Child", childResult);
+    }
+}
+
+internal sealed class TestMenuVisitor : IIntegrationMenuNodeNodeVisitor
+{
+    public List<string> Visited { get; } = new();
+
+    public void Visit(IntegrationRootMenu node) => Visited.Add(node.Title);
+    public void Visit(IntegrationChildMenu node) => Visited.Add(node.Title);
+}
+
+internal sealed class TestAsyncMenuVisitor : IIntegrationMenuNodeNodeAsyncVisitor
+{
+    public List<string> Visited { get; } = new();
+
+    public ValueTask VisitAsync(IntegrationRootMenu node, CancellationToken cancellationToken)
+    {
+        Visited.Add(node.Title);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask VisitAsync(IntegrationChildMenu node, CancellationToken cancellationToken)
+    {
+        Visited.Add(node.Title);
+        return ValueTask.CompletedTask;
+    }
+}
+
+internal sealed class TestGenericMenuVisitor : IIntegrationMenuNodeNodeVisitor<string>
+{
+    public string Visit(IntegrationRootMenu node) => $"{node.Title}:Root";
+    public string Visit(IntegrationChildMenu node) => $"{node.Title}:Child";
 }
