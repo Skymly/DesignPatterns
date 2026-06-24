@@ -61,6 +61,15 @@ internal static class StateTransitionEmitter
             stateType.FullyQualifiedDisplayString,
             triggerType.FullyQualifiedDisplayString);
 
+        var stateMachineClassName = StateTransitionSyntaxFactory.GetStateMachineClassName(stateType.Name);
+        var stateMachineUnit = StateTransitionSyntaxFactory.CreateStateMachineCompilationUnit(
+            namespaceName,
+            stateMachineClassName,
+            tableClassName,
+            stateType.FullyQualifiedDisplayString,
+            triggerType.FullyQualifiedDisplayString,
+            integrationOptions);
+
         var hintPrefix = HintNameHelper.FromString(stateType.FullyQualifiedDisplayString);
         context.AddSource(
             $"{hintPrefix}.{tableClassName}.g.cs",
@@ -69,5 +78,9 @@ internal static class StateTransitionEmitter
         context.AddSource(
             $"{hintPrefix}.{model.Holder.Name}.g.cs",
             SourceText.From(holderUnit.ToFullString(), Encoding.UTF8));
+
+        context.AddSource(
+            $"{hintPrefix}.{stateMachineClassName}.g.cs",
+            SourceText.From(stateMachineUnit.ToFullString(), Encoding.UTF8));
     }
 }

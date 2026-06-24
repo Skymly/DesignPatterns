@@ -192,6 +192,38 @@ public static class DesignPatternsServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers an <see cref="IStateMachine{TState,TTrigger}"/> that wraps the
+    /// <see cref="ITransitionTable{TState,TTrigger}"/> resolved from <paramref name="services"/>.
+    /// The table must be registered separately (e.g. via generated <c>RegisterDi</c> or
+    /// <see cref="AddTransitionTable{TState,TTrigger}"/>).
+    /// </summary>
+    /// <typeparam name="TState">The state enum type.</typeparam>
+    /// <typeparam name="TTrigger">The trigger enum type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="lifetime">The service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.
+    /// Use <see cref="ServiceLifetime.Transient"/> when each consumer needs its own state tracking.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddStateMachine<TState, TTrigger>(
+        this IServiceCollection services,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TState : struct, Enum
+        where TTrigger : struct, Enum
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(IStateMachine<TState, TTrigger>),
+            sp => new StateMachine<TState, TTrigger>(
+                sp.GetRequiredService<ITransitionTable<TState, TTrigger>>()),
+            lifetime));
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers a pre-built composite tree root as a singleton service.
     /// </summary>
     /// <typeparam name="TNode">The composite contract type.</typeparam>
