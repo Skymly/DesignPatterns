@@ -35,6 +35,12 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor MissingParameterlessConstructorDescriptor =
         DesignPatternsDiagnosticDescriptors.DecoratorMissingParameterlessConstructor;
 
+    private static readonly DiagnosticDescriptor AsyncSignatureMismatchDescriptor =
+        DesignPatternsDiagnosticDescriptors.DecoratorAsyncSignatureMismatch;
+
+    private static readonly DiagnosticDescriptor DiNotResolvableDescriptor =
+        DesignPatternsDiagnosticDescriptors.DecoratorDiNotResolvable;
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -50,9 +56,11 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             static (ctx, _) => Transform(ctx, isGenericAttribute: true))
             .WithTrackingName(TrackingNames.DecoratorGenericTransform);
 
+        var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
+
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()),
-            static (spc, source) => Execute(spc, source.Left, source.Right));
+            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 
     private static Result<DecoratorRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
@@ -112,6 +120,8 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 decoratorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 ImplementsContract(decoratorType, serviceType),
                 ImplementsDecoratorInterface(decoratorType, serviceType),
+                ImplementsAsyncDecoratorInterface(decoratorType, serviceType),
+                HasValidAsyncSignature(decoratorType, serviceType),
                 HasPublicParameterlessConstructor(decoratorType),
                 context.TargetNode.GetLocation()));
         }
@@ -122,7 +132,8 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
     private static void Execute(
         SourceProductionContext context,
         ImmutableArray<Result<DecoratorRegistration>> nonGeneric,
-        ImmutableArray<Result<DecoratorRegistration>> generic)
+        ImmutableArray<Result<DecoratorRegistration>> generic,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var registrations = ResultExtensions.ReportAndCollect(context, nonGeneric.Concat(generic));
 
@@ -131,7 +142,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             return;
         }
 
-        ReportValidationDiagnostics(context, registrations);
+        ReportValidationDiagnostics(context, registrations, integrationOptions);
 
         foreach (var group in registrations.GroupBy(static r => r.Service.FullyQualifiedName, StringComparer.Ordinal))
         {
@@ -139,8 +150,9 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
 
             var valid = group
                 .Where(static r => r.ImplementsContract)
-                .Where(static r => r.ImplementsDecoratorInterface)
+                .Where(static r => r.ImplementsDecoratorInterface || r.ImplementsAsyncDecoratorInterface)
                 .Where(static r => r.HasPublicParameterlessConstructor)
+                .Where(static r => !r.ImplementsAsyncDecoratorInterface || r.HasValidAsyncSignature)
                 .GroupBy(static r => r.Order)
                 .Where(static g => g.Count() == 1)
                 .Select(static g => g.First())
@@ -153,13 +165,14 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitStack(context, serviceInfo, valid);
+            EmitStack(context, serviceInfo, valid, integrationOptions);
         }
     }
 
     private static void ReportValidationDiagnostics(
         SourceProductionContext context,
-        List<DecoratorRegistration> registrations)
+        List<DecoratorRegistration> registrations,
+        GeneratorIntegrationOptions integrationOptions)
     {
         foreach (var duplicateGroup in registrations
                      .GroupBy(static r => (r.Service.FullyQualifiedName, r.Order))
@@ -185,7 +198,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 registration.Service.FullyQualifiedName));
         }
 
-        foreach (var registration in registrations.Where(static r => !r.ImplementsDecoratorInterface))
+        foreach (var registration in registrations.Where(static r => !r.ImplementsDecoratorInterface && !r.ImplementsAsyncDecoratorInterface))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingDecoratorInterfaceDescriptor,
@@ -194,30 +207,53 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 registration.Service.FullyQualifiedName));
         }
 
-        foreach (var registration in registrations.Where(static r => !r.HasPublicParameterlessConstructor))
+        foreach (var registration in registrations.Where(static r => r.ImplementsAsyncDecoratorInterface && !r.HasValidAsyncSignature))
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                MissingParameterlessConstructorDescriptor,
+                AsyncSignatureMismatchDescriptor,
                 registration.Location,
-                registration.DecoratorName));
+                registration.DecoratorName,
+                registration.Service.FullyQualifiedName));
+        }
+
+        foreach (var registration in registrations.Where(static r => !r.HasPublicParameterlessConstructor))
+        {
+            if (integrationOptions.EnableDi)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DiNotResolvableDescriptor,
+                    registration.Location,
+                    registration.DecoratorName));
+            }
+            else
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    MissingParameterlessConstructorDescriptor,
+                    registration.Location,
+                    registration.DecoratorName));
+            }
         }
     }
 
     private static void EmitStack(
         SourceProductionContext context,
         ContractInfo serviceInfo,
-        List<DecoratorRegistration> decorators)
+        List<DecoratorRegistration> decorators,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var stackClassName = DecoratorStackSyntaxFactory.GetStackClassName(serviceInfo.Name);
-        var decoratorTypeNames = decorators
-            .Select(static d => d.DecoratorFullyQualifiedDisplayString)
+        var decoratorEntries = decorators
+            .Select(static d => (d.DecoratorFullyQualifiedDisplayString, d.ImplementsAsyncDecoratorInterface, d.ImplementsDecoratorInterface))
             .ToList();
+        var hasAsyncDecorators = decorators.Any(static d => d.ImplementsAsyncDecoratorInterface);
 
         var compilationUnit = DecoratorStackSyntaxFactory.CreateStackCompilationUnit(
             serviceInfo.Namespace,
             stackClassName,
             serviceInfo.FullyQualifiedDisplayString,
-            decoratorTypeNames);
+            decoratorEntries,
+            hasAsyncDecorators,
+            integrationOptions);
 
         context.AddSource(
             $"{serviceInfo.Name}.{stackClassName}.g.cs",
@@ -274,6 +310,77 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         return false;
     }
 
+    private static bool ImplementsAsyncDecoratorInterface(INamedTypeSymbol decoratorType, INamedTypeSymbol serviceType)
+    {
+        foreach (var iface in decoratorType.AllInterfaces)
+        {
+            if (iface.Name != "IAsyncDecorator" || iface.TypeArguments.Length != 1)
+            {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], serviceType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasValidAsyncSignature(INamedTypeSymbol decoratorType, INamedTypeSymbol serviceType)
+    {
+        // Look for DecorateAsync method matching IAsyncDecorator<TService> signature
+        foreach (var member in decoratorType.GetMembers())
+        {
+            if (member is not IMethodSymbol method)
+            {
+                continue;
+            }
+
+            if (method.Name != "DecorateAsync")
+            {
+                continue;
+            }
+
+            // Check return type is ValueTask<TService>
+            if (method.ReturnType is not INamedTypeSymbol returnType)
+            {
+                continue;
+            }
+
+            if (returnType.Name != "ValueTask" || returnType.TypeArguments.Length != 1)
+            {
+                continue;
+            }
+
+            if (!SymbolEqualityComparer.Default.Equals(returnType.TypeArguments[0], serviceType))
+            {
+                continue;
+            }
+
+            // Check parameters: (TService inner, CancellationToken cancellationToken = default)
+            if (method.Parameters.Length != 2)
+            {
+                continue;
+            }
+
+            if (!SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, serviceType))
+            {
+                continue;
+            }
+
+            if (method.Parameters[1].Type.Name != "CancellationToken")
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     private static bool HasPublicParameterlessConstructor(INamedTypeSymbol decoratorType) =>
         decoratorType.InstanceConstructors.Any(static c =>
             c.Parameters.IsEmpty && c.DeclaredAccessibility == Accessibility.Public);
@@ -285,6 +392,8 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         string DecoratorFullyQualifiedDisplayString,
         bool ImplementsContract,
         bool ImplementsDecoratorInterface,
+        bool ImplementsAsyncDecoratorInterface,
+        bool HasValidAsyncSignature,
         bool HasPublicParameterlessConstructor,
         Location Location);
 }

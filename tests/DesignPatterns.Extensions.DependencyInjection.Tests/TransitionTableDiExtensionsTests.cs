@@ -132,4 +132,61 @@ public sealed class TransitionTableDiExtensionsTests
         Assert.Throws<ArgumentNullException>(() =>
             ((IServiceCollection)null!).AddStateMachine<TestState, TestTrigger>());
     }
+
+    [Fact]
+    public void AddDecoratorStack_RegistersDecoratedService()
+    {
+        var services = new ServiceCollection();
+        services.AddDecoratorStack<ICounterDiTest>(
+            (sp, core) => new CounterDiTestDecorator(core),
+            sp => new CounterDiTestCore(),
+            ServiceLifetime.Singleton);
+
+        var provider = services.BuildServiceProvider();
+        var service = provider.GetRequiredService<ICounterDiTest>();
+
+        Assert.Equal(2, service.GetValue());
+    }
+
+    [Fact]
+    public void AddDecoratorStack_NullServices_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            ((IServiceCollection)null!).AddDecoratorStack<ICounterDiTest>(
+                (_, core) => core,
+                _ => new CounterDiTestCore()));
+    }
+
+    [Fact]
+    public void AddDecoratorStack_NullBuildFunc_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new ServiceCollection().AddDecoratorStack<ICounterDiTest>(
+                null!,
+                _ => new CounterDiTestCore()));
+    }
+
+    [Fact]
+    public void AddDecoratorStack_NullCoreFactory_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new ServiceCollection().AddDecoratorStack<ICounterDiTest>(
+                (_, core) => core,
+                null!));
+    }
+
+    private interface ICounterDiTest
+    {
+        int GetValue();
+    }
+
+    private sealed class CounterDiTestCore : ICounterDiTest
+    {
+        public int GetValue() => 1;
+    }
+
+    private sealed class CounterDiTestDecorator(ICounterDiTest inner) : ICounterDiTest
+    {
+        public int GetValue() => inner.GetValue() + 1;
+    }
 }

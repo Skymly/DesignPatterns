@@ -52,6 +52,25 @@ public sealed class IntegrationInnerDecorator : IIntegrationPaymentService, IDec
     }
 }
 
+[Decorator<IIntegrationPaymentService>(30)]
+public sealed class IntegrationAsyncDecorator : IIntegrationPaymentService, IAsyncDecorator<IIntegrationPaymentService>
+{
+    public static bool WasInvoked { get; set; }
+
+    public ValueTask<IIntegrationPaymentService> DecorateAsync(IIntegrationPaymentService inner, CancellationToken cancellationToken = default)
+    {
+        WasInvoked = true;
+        return new ValueTask<IIntegrationPaymentService>(new Impl(inner));
+    }
+
+    public string Pay(decimal amount) => throw new NotSupportedException();
+
+    private sealed class Impl(IIntegrationPaymentService inner) : IIntegrationPaymentService
+    {
+        public string Pay(decimal amount) => $"async:{inner.Pay(amount)}";
+    }
+}
+
 public sealed class DecoratorStackIntegrationTests
 {
     [Fact]
@@ -65,5 +84,16 @@ public sealed class DecoratorStackIntegrationTests
         Assert.Equal("paid:10", service.Pay(10m));
         Assert.Equal("outer-after", IntegrationOuterDecorator.LastSeen);
         Assert.Equal("inner", IntegrationInnerDecorator.LastSeen);
+    }
+
+    [Fact]
+    public async Task GeneratedBuildAsync_AppliesSyncAndAsyncDecorators()
+    {
+        IntegrationAsyncDecorator.WasInvoked = false;
+
+        var service = await IntegrationPaymentServiceDecoratorStack.BuildAsync(new IntegrationPaymentService());
+
+        Assert.True(IntegrationAsyncDecorator.WasInvoked);
+        Assert.Equal("async:paid:10", service.Pay(10m));
     }
 }

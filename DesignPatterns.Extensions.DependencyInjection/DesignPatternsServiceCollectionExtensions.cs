@@ -254,4 +254,45 @@ public static class DesignPatternsServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Registers a decorator stack factory that resolves decorators from the service provider.
+    /// The generated <c>RegisterDi</c> on the stack class should be called first, or decorators
+    /// must be registered manually.
+    /// </summary>
+    /// <typeparam name="TService">The service contract type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="buildFunc">A delegate that builds the decorated service from an <see cref="IServiceProvider"/> and a core instance.</param>
+    /// <param name="coreFactory">A delegate that resolves the core (undecorated) service from the service provider.</param>
+    /// <param name="lifetime">The service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddDecoratorStack<TService>(
+        this IServiceCollection services,
+        Func<IServiceProvider, TService, TService> buildFunc,
+        Func<IServiceProvider, TService> coreFactory,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TService : class
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (buildFunc is null)
+        {
+            throw new ArgumentNullException(nameof(buildFunc));
+        }
+
+        if (coreFactory is null)
+        {
+            throw new ArgumentNullException(nameof(coreFactory));
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(TService),
+            sp => buildFunc(sp, coreFactory(sp)),
+            lifetime));
+
+        return services;
+    }
 }

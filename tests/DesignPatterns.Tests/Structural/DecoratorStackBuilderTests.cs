@@ -99,7 +99,7 @@ public sealed class DecoratorStackBuilderTests
     public void Add_NullDecorator_Throws()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new DecoratorStackBuilder<ICounter>().Add(null!));
+            new DecoratorStackBuilder<ICounter>().Add((IDecorator<ICounter>)null!));
     }
 
     [Fact]
@@ -124,6 +124,43 @@ public sealed class DecoratorStackBuilderTests
 
         Assert.Same(core, result);
         Assert.Equal(0, TrackingDecorator.DecorateCallCount);
+    }
+
+    private sealed class AsyncAddOneDecorator : IAsyncDecorator<ICounter>
+    {
+        public ValueTask<ICounter> DecorateAsync(ICounter inner, CancellationToken cancellationToken = default)
+        {
+            return new ValueTask<ICounter>(new Impl(inner));
+        }
+
+        private sealed class Impl(ICounter inner) : ICounter
+        {
+            public int Invoke() => inner.Invoke() + 1;
+        }
+    }
+
+    private sealed class AsyncMultiplyDecorator : IAsyncDecorator<ICounter>
+    {
+        public ValueTask<ICounter> DecorateAsync(ICounter inner, CancellationToken cancellationToken = default)
+        {
+            return new ValueTask<ICounter>(new Impl(inner));
+        }
+
+        private sealed class Impl(ICounter inner) : ICounter
+        {
+            public int Invoke() => inner.Invoke() * 10;
+        }
+    }
+
+    private sealed class AsyncTrackingDecorator : IAsyncDecorator<ICounter>
+    {
+        public static int DecorateCallCount { get; set; }
+
+        public ValueTask<ICounter> DecorateAsync(ICounter inner, CancellationToken cancellationToken = default)
+        {
+            DecorateCallCount++;
+            return new ValueTask<ICounter>(inner);
+        }
     }
 
     [Fact]
@@ -171,5 +208,76 @@ public sealed class DecoratorStackBuilderTests
             .Build(new CoreCounter());
 
         Assert.Equal(20, result.Invoke());
+    }
+
+    [Fact]
+    public async Task BuildAsync_WithNoDecorators_ReturnsSameCoreReference()
+    {
+        var core = new CoreCounter();
+
+        var result = await new DecoratorStackBuilder<ICounter>().BuildAsync(core);
+
+        Assert.Same(core, result);
+    }
+
+    [Fact]
+    public async Task BuildAsync_WithSyncDecoratorsOnly_AppliesDecorators()
+    {
+        var result = await new DecoratorStackBuilder<ICounter>()
+            .Add<AddOneDecorator>()
+            .Add<MultiplyDecorator>()
+            .BuildAsync(new CoreCounter());
+
+        Assert.Equal(20, result.Invoke());
+    }
+
+    [Fact]
+    public async Task BuildAsync_WithAsyncDecoratorsOnly_AppliesDecorators()
+    {
+        var result = await new DecoratorStackBuilder<ICounter>()
+            .Add(new AsyncAddOneDecorator())
+            .Add(new AsyncMultiplyDecorator())
+            .BuildAsync(new CoreCounter());
+
+        Assert.Equal(20, result.Invoke());
+    }
+
+    [Fact]
+    public async Task BuildAsync_WithMixedSyncAndAsync_AppliesSyncThenAsync()
+    {
+        // sync AddOne first (outer), then async Multiply (inner)
+        // result = (1 + 1) * 10 = 20
+        var result = await new DecoratorStackBuilder<ICounter>()
+            .Add<AddOneDecorator>()
+            .Add(new AsyncMultiplyDecorator())
+            .BuildAsync(new CoreCounter());
+
+        Assert.Equal(20, result.Invoke());
+    }
+
+    [Fact]
+    public async Task BuildAsync_NullCore_Throws()
+    {
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await new DecoratorStackBuilder<ICounter>().BuildAsync(null!));
+    }
+
+    [Fact]
+    public void Add_NullAsyncDecorator_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            new DecoratorStackBuilder<ICounter>().Add((IAsyncDecorator<ICounter>)null!));
+    }
+
+    [Fact]
+    public async Task BuildAsync_AsyncDecoratorIsInvoked()
+    {
+        AsyncTrackingDecorator.DecorateCallCount = 0;
+
+        await new DecoratorStackBuilder<ICounter>()
+            .Add(new AsyncTrackingDecorator())
+            .BuildAsync(new CoreCounter());
+
+        Assert.Equal(1, AsyncTrackingDecorator.DecorateCallCount);
     }
 }
