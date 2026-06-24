@@ -117,11 +117,33 @@ internal static class StateTransitionValidator
                 ReportGuardDiagnostics(context, transition, model.Holder.Name, stateType, triggerType);
             }
 
-            // Invalid guards are reported as diagnostics but the transition is still
-            // emitted without a guard (GuardMethodReference is null). This is intentional:
-            // the transition's state semantics are valid even when the guard method
-            // reference is broken. The Error-level diagnostic forces the user to fix the
-            // guard before the build succeeds, at which point the guard is re-emitted.
+            if (!transition.OnEnter.IsValid)
+            {
+                ReportActionDiagnostics(
+                    context,
+                    transition.Location,
+                    transition.OnEnter,
+                    model.Holder.Name,
+                    stateType,
+                    triggerType);
+            }
+
+            if (!transition.OnExit.IsValid)
+            {
+                ReportActionDiagnostics(
+                    context,
+                    transition.Location,
+                    transition.OnExit,
+                    model.Holder.Name,
+                    stateType,
+                    triggerType);
+            }
+
+            // Invalid guards/actions are reported as diagnostics but the transition is still
+            // emitted without the broken delegate (reference is null). This is intentional:
+            // the transition's state semantics are valid even when a delegate reference is
+            // broken. The Error-level diagnostic forces the user to fix the method before
+            // the build succeeds, at which point the delegate is re-emitted.
             validTransitions.Add(new ResolvedTransition(
                 transition.From.MemberName!,
                 transition.Trigger.MemberName!,
@@ -130,7 +152,11 @@ internal static class StateTransitionValidator
                 StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.From.MemberName!),
                 StateTransitionSyntaxFactory.FormatEnumMember(triggerType.FullyQualifiedDisplayString, transition.Trigger.MemberName!),
                 StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, transition.To.MemberName!),
-                transition.Guard.MethodReference));
+                transition.Guard.MethodReference,
+                transition.OnEnter.IsAsync ? null : transition.OnEnter.MethodReference,
+                transition.OnExit.IsAsync ? null : transition.OnExit.MethodReference,
+                transition.OnEnter.IsAsync ? transition.OnEnter.MethodReference : null,
+                transition.OnExit.IsAsync ? transition.OnExit.MethodReference : null));
         }
 
         return validTransitions;
@@ -221,6 +247,48 @@ internal static class StateTransitionValidator
                 DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodWrongSignature,
                 transition.Location,
                 guard.Name,
+                holderName,
+                stateType.FullyQualifiedName,
+                triggerType.FullyQualifiedName));
+        }
+    }
+
+    private static void ReportActionDiagnostics(
+        SourceProductionContext context,
+        Location location,
+        ActionResolution action,
+        string holderName,
+        EnumTypeInfo stateType,
+        EnumTypeInfo triggerType)
+    {
+        if (!action.IsFound)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionActionMethodNotFound,
+                location,
+                action.Name,
+                holderName,
+                stateType.FullyQualifiedName,
+                triggerType.FullyQualifiedName));
+            return;
+        }
+
+        if (!action.IsStatic)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionActionMethodNotStatic,
+                location,
+                action.Name,
+                holderName));
+            return;
+        }
+
+        if (!action.HasValidSignature)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.StateTransitionActionMethodWrongSignature,
+                location,
+                action.Name,
                 holderName,
                 stateType.FullyQualifiedName,
                 triggerType.FullyQualifiedName));

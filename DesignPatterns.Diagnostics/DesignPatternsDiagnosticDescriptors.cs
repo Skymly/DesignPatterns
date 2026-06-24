@@ -317,6 +317,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         AnalyzerCategory);
 
+    // State transition entry/exit actions (DP037–DP039)
+
+    public static DiagnosticDescriptor StateTransitionActionMethodNotFound { get; } = Create(
+        DiagnosticIds.StateTransitionActionMethodNotFound,
+        "Action method not found on holder class",
+        "Action method '{0}' was not found on holder class '{1}'. Add a static method with signature 'void {0}({2}, {2}, {3})' or 'ValueTask {0}({2}, {2}, {3}, CancellationToken)' or remove the OnEnter/OnExit property from [Transition].",
+        "Transition action names must reference a declared method on the state machine holder class.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionActionMethodNotStatic { get; } = Create(
+        DiagnosticIds.StateTransitionActionMethodNotStatic,
+        "Action method is not static",
+        "Action method '{0}' on holder class '{1}' must be static. Add the static keyword to the method declaration.",
+        "Transition actions must be static so the source generator can emit a delegate reference.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateTransitionActionMethodWrongSignature { get; } = Create(
+        DiagnosticIds.StateTransitionActionMethodWrongSignature,
+        "Action method has wrong signature",
+        "Action method '{0}' on holder class '{1}' must have signature 'void {0}({2}, {2}, {3})' or 'ValueTask {0}({2}, {2}, {3}, CancellationToken)'. Fix the parameter types or return type.",
+        "Transition actions must accept (TState, TState, TTrigger) or (TState, TState, TTrigger, CancellationToken) and return void or ValueTask.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

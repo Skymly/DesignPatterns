@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DesignPatterns.Behavioral;
 
@@ -51,6 +53,70 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
         TTrigger trigger,
         TState to,
         Func<TState, TTrigger, bool>? guard)
+        => Add(from, trigger, to, guard, onEnterSync: null, onExitSync: null, onEnterAsync: null, onExitAsync: null);
+
+    /// <summary>
+    /// Registers a directed transition edge with an optional guard and optional
+    /// synchronous entry/exit actions. Actions are invoked by
+    /// <see cref="ITransitionTable{TState,TTrigger}.TryTransitionAsync"/>.
+    /// </summary>
+    /// <param name="from">Source state.</param>
+    /// <param name="trigger">Trigger that fires the transition.</param>
+    /// <param name="to">Target state.</param>
+    /// <param name="guard">Optional guard delegate.</param>
+    /// <param name="onEnterSync">Optional sync action invoked when entering the target state.</param>
+    /// <param name="onExitSync">Optional sync action invoked when exiting the source state.</param>
+    public TransitionTableBuilder<TState, TTrigger> Add(
+        TState from,
+        TTrigger trigger,
+        TState to,
+        Func<TState, TTrigger, bool>? guard,
+        Action<TState, TState, TTrigger>? onEnterSync,
+        Action<TState, TState, TTrigger>? onExitSync)
+        => Add(from, trigger, to, guard, onEnterSync, onExitSync, onEnterAsync: null, onExitAsync: null);
+
+    /// <summary>
+    /// Registers a directed transition edge with an optional guard and optional
+    /// async entry/exit actions. Actions are invoked by
+    /// <see cref="ITransitionTable{TState,TTrigger}.TryTransitionAsync"/>.
+    /// </summary>
+    /// <param name="from">Source state.</param>
+    /// <param name="trigger">Trigger that fires the transition.</param>
+    /// <param name="to">Target state.</param>
+    /// <param name="guard">Optional guard delegate.</param>
+    /// <param name="onEnterAsync">Optional async action invoked when entering the target state.</param>
+    /// <param name="onExitAsync">Optional async action invoked when exiting the source state.</param>
+    public TransitionTableBuilder<TState, TTrigger> Add(
+        TState from,
+        TTrigger trigger,
+        TState to,
+        Func<TState, TTrigger, bool>? guard,
+        Func<TState, TState, TTrigger, CancellationToken, ValueTask>? onEnterAsync,
+        Func<TState, TState, TTrigger, CancellationToken, ValueTask>? onExitAsync)
+        => Add(from, trigger, to, guard, onEnterSync: null, onExitSync: null, onEnterAsync, onExitAsync);
+
+    /// <summary>
+    /// Registers a directed transition edge with all options: guard, sync actions, and async actions.
+    /// When both sync and async delegates are registered for the same action (e.g. <paramref name="onEnterSync"/>
+    /// and <paramref name="onEnterAsync"/>), both execute in order: sync first, then async.
+    /// </summary>
+    /// <param name="from">Source state.</param>
+    /// <param name="trigger">Trigger that fires the transition.</param>
+    /// <param name="to">Target state.</param>
+    /// <param name="guard">Optional guard delegate.</param>
+    /// <param name="onEnterSync">Optional sync action invoked when entering the target state.</param>
+    /// <param name="onExitSync">Optional sync action invoked when exiting the source state.</param>
+    /// <param name="onEnterAsync">Optional async action invoked when entering the target state.</param>
+    /// <param name="onExitAsync">Optional async action invoked when exiting the source state.</param>
+    public TransitionTableBuilder<TState, TTrigger> Add(
+        TState from,
+        TTrigger trigger,
+        TState to,
+        Func<TState, TTrigger, bool>? guard,
+        Action<TState, TState, TTrigger>? onEnterSync,
+        Action<TState, TState, TTrigger>? onExitSync,
+        Func<TState, TState, TTrigger, CancellationToken, ValueTask>? onEnterAsync,
+        Func<TState, TState, TTrigger, CancellationToken, ValueTask>? onExitAsync)
     {
         var key = (from, trigger);
         if (_edges.ContainsKey(key))
@@ -60,7 +126,8 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
                 nameof(trigger));
         }
 
-        _edges.Add(key, new TransitionEdge<TState, TTrigger>(to, guard));
+        _edges.Add(key, new TransitionEdge<TState, TTrigger>(
+            to, guard, onEnterSync, onExitSync, onEnterAsync, onExitAsync));
 
         if (!_triggersByState.TryGetValue(from, out var triggers))
         {
