@@ -19,7 +19,7 @@
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP037**（DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP041**（DP040 为 Composite DI 节点未注册诊断，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
 
 诊断 ID 预分配（F2+ 增强项，登记后不提前占用，实现时按序领取）：
 
@@ -65,8 +65,8 @@
 
 | 项 | 说明 | 涉及诊断 | 状态 |
 |----|------|----------|------|
-| State entry/exit actions + 实例包装器 | `[Transition(..., OnEnter/OnExit)]` 副作用钩子；生成 `IStateMachine<TState,TTrigger>` 自动跟踪 `CurrentState` 并触发 action；异步 action（`ValueTask` + `CancellationToken`）；生成器校验 action 方法签名（复用 guard 校验基础设施） | DP037–DP039 | [ ] |
-| Composite DI 集成 + Visitor 生成 | 生成 `RegisterDi(IServiceCollection, ServiceLifetime)` + `BuildRoot(IServiceProvider)` 从容器解析节点；生成 `I{Contract}NodeVisitor` 接口 + `AcceptVisitor` 分发，编译期校验 visitor 覆盖所有节点类型 | DP040–DP041 | [ ] |
+| State entry/exit actions + 实例包装器 | `[Transition(..., OnEnter/OnExit)]` 副作用钩子；生成 `IStateMachine<TState,TTrigger>` 自动跟踪 `CurrentState` 并触发 action；异步 action（`ValueTask` + `CancellationToken`）；生成器校验 action 方法签名（复用 guard 校验基础设施） | DP037–DP039 | [~] |
+| Composite DI 集成 + Visitor 生成 | 生成 `RegisterDi(IServiceCollection, ServiceLifetime)` + `BuildRoot(IServiceProvider)` 从容器解析节点；生成 `I{Contract}NodeVisitor` 接口 + `AcceptVisitor` 分发，编译期校验 visitor 覆盖所有节点类型 | DP040–DP041 | [~] |
 | Decorator DI 集成 + Async 变体 | 生成 `RegisterDi` + `Build(IServiceProvider, core)`；新增 `IAsyncDecorator<T>` + `DecorateAsync(T, CancellationToken)`，生成器双模式输出；Autofac 对称支持 | DP042–DP043 | [ ] |
 | EventAggregator 源生成器 + 自动订阅 | 新增 `[RegisterEventHandler<TEvent>]` + `RegisterEventHandlerGenerator`；生成 `{Event}HandlerRegistry.RegisterDi(services)` 自动注册并订阅；Analyzer 检测未标注的 `IEventHandler<T>` 实现 | DP044–DP046 | [ ] |
 

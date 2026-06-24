@@ -44,4 +44,5 @@ public static class DiagnosticIds
     public const string StateTransitionActionMethodNotFound = "DP037";
     public const string StateTransitionActionMethodNotStatic = "DP038";
     public const string StateTransitionActionMethodWrongSignature = "DP039";
+    public const string CompositePartDiNodeNotRegistered = "DP040";
 }

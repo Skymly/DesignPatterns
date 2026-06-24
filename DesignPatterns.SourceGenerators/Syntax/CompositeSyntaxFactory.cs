@@ -68,7 +68,8 @@ internal static class CompositeSyntaxFactory
         string? namespaceName,
         string catalogClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string? ParentKey, int Order, string ImplementationTypeName)> entries)
+        IReadOnlyList<(string Key, string? ParentKey, int Order, string ImplementationTypeName)> entries,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var entryType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("CompositeCatalogEntry"))
             .WithTypeArgumentList(
@@ -184,11 +185,25 @@ internal static class CompositeSyntaxFactory
                     SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
             .AddMembers(entriesField, buildRootMethod, buildForestMethod);
 
+        if (integrationOptions.EnableDi)
+        {
+            var buildRootFromServicesMethod = CreateBuildRootFromServicesMethod(contractTypeName);
+            var buildForestFromServicesMethod = CreateBuildForestFromServicesMethod(contractTypeName);
+            var registerDiMethod = CreateRegisterDiMethod(contractTypeName, entries);
+            catalogClass = catalogClass.AddMembers(buildRootFromServicesMethod, buildForestFromServicesMethod, registerDiMethod);
+        }
+
+        var additionalUsings = new List<string> { "System.Collections.Generic", "DesignPatterns.Structural" };
+        if (integrationOptions.EnableDi)
+        {
+            additionalUsings.Add("Microsoft.Extensions.DependencyInjection");
+            additionalUsings.Add("Microsoft.Extensions.DependencyInjection.Extensions");
+        }
+
         return WrapInCompilationUnit(
             namespaceName,
             catalogClass,
-            "System.Collections.Generic",
-            "DesignPatterns.Structural");
+            additionalUsings.ToArray());
     }
 
     private static string GetBaseName(string name)
@@ -199,6 +214,124 @@ internal static class CompositeSyntaxFactory
         }
 
         return name;
+    }
+
+    private static MethodDeclarationSyntax CreateBuildRootFromServicesMethod(string contractTypeName)
+    {
+        var spParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceProvider"))
+            .WithType(SyntaxFactory.ParseTypeName("global::System.IServiceProvider"));
+
+        var body = SyntaxFactory.Block(
+            SyntaxFactory.SingletonList<StatementSyntax>(
+                SyntaxFactory.ReturnStatement(
+                    SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("CompositeCatalogAssembler"),
+                                SyntaxFactory.GenericName(SyntaxFactory.Identifier("Assemble"))
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(contractTypeName))))))
+                        .WithArgumentList(
+                            SyntaxFactory.ArgumentList(
+                                SyntaxFactory.SeparatedList<ArgumentSyntax>(new[]
+                                {
+                                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_entries")),
+                                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("serviceProvider")),
+                                }))))));
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.ParseTypeName(contractTypeName),
+                SyntaxFactory.Identifier("BuildRoot"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(spParam)
+            .WithBody(body);
+    }
+
+    private static MethodDeclarationSyntax CreateBuildForestFromServicesMethod(string contractTypeName)
+    {
+        var spParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceProvider"))
+            .WithType(SyntaxFactory.ParseTypeName("global::System.IServiceProvider"));
+
+        var forestReturnType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("IReadOnlyList"))
+            .WithTypeArgumentList(
+                SyntaxFactory.TypeArgumentList(
+                    SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                        SyntaxFactory.ParseTypeName(contractTypeName))));
+
+        var body = SyntaxFactory.Block(
+            SyntaxFactory.SingletonList<StatementSyntax>(
+                SyntaxFactory.ReturnStatement(
+                    SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName("CompositeCatalogAssembler"),
+                                SyntaxFactory.GenericName(SyntaxFactory.Identifier("AssembleForest"))
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(contractTypeName))))))
+                        .WithArgumentList(
+                            SyntaxFactory.ArgumentList(
+                                SyntaxFactory.SeparatedList<ArgumentSyntax>(new[]
+                                {
+                                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_entries")),
+                                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("serviceProvider")),
+                                }))))));
+
+        return SyntaxFactory.MethodDeclaration(
+                forestReturnType,
+                SyntaxFactory.Identifier("BuildForest"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(spParam)
+            .WithBody(body);
+    }
+
+    private static MethodDeclarationSyntax CreateRegisterDiMethod(
+        string contractTypeName,
+        IReadOnlyList<(string Key, string? ParentKey, int Order, string ImplementationTypeName)> entries)
+    {
+        var servicesParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("services"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"));
+
+        var lifetimeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("lifetime"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"))
+            .WithDefault(
+                SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
+                        SyntaxFactory.IdentifierName("Singleton"))));
+
+        var statements = new List<StatementSyntax>();
+
+        // Register each implementation type
+        foreach (var entry in entries)
+        {
+            statements.Add(SyntaxFactory.ParseStatement(
+                $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({entry.ImplementationTypeName}), {entry.ImplementationTypeName}, lifetime));"));
+        }
+
+        // Register the contract type to resolve root from BuildRoot()
+        statements.Add(SyntaxFactory.ParseStatement(
+            $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({contractTypeName}), _ => BuildRoot(), global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton));"));
+
+        statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
+
+        var body = SyntaxFactory.Block(statements);
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                SyntaxFactory.Identifier("RegisterDi"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(servicesParam, lifetimeParam)
+            .WithBody(body);
     }
 
     private static string ToPascalCaseSegment(string segment)

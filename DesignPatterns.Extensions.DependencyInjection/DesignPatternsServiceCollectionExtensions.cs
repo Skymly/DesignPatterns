@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using DesignPatterns.Behavioral;
 using DesignPatterns.Creational;
+using DesignPatterns.Structural;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -184,6 +186,38 @@ public static class DesignPatternsServiceCollectionExtensions
         services.TryAdd(new ServiceDescriptor(
             typeof(ITransitionTable<TState, TTrigger>),
             _ => table,
+            lifetime));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a pre-built composite tree root as a singleton service.
+    /// </summary>
+    /// <typeparam name="TNode">The composite contract type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="root">The pre-built root node to register.</param>
+    /// <param name="lifetime">The service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddCompositeCatalog<TNode>(
+        this IServiceCollection services,
+        TNode root,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TNode : class, ICompositeNode<TNode>
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (root is null)
+        {
+            throw new ArgumentNullException(nameof(root));
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(TNode),
+            _ => root,
             lifetime));
 
         return services;

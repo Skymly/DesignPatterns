@@ -56,9 +56,11 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             static (ctx, _) => Transform(ctx, isGenericAttribute: true))
             .WithTrackingName(TrackingNames.CompositeGenericTransform);
 
+        var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
+
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()),
-            static (spc, source) => Execute(spc, source.Left, source.Right));
+            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 
     private static Result<CompositeRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
@@ -143,7 +145,8 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
     private static void Execute(
         SourceProductionContext context,
         ImmutableArray<Result<CompositeRegistration>> nonGeneric,
-        ImmutableArray<Result<CompositeRegistration>> generic)
+        ImmutableArray<Result<CompositeRegistration>> generic,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var registrations = ResultExtensions.ReportAndCollect(context, nonGeneric.Concat(generic));
 
@@ -180,7 +183,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 continue;
             }
 
-            EmitGeneratedSources(context, contract, valid);
+            EmitGeneratedSources(context, contract, valid, integrationOptions);
         }
     }
 
@@ -273,7 +276,8 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
     private static void EmitGeneratedSources(
         SourceProductionContext context,
         ContractInfo contract,
-        List<CompositeRegistration> registrations)
+        List<CompositeRegistration> registrations,
+        GeneratorIntegrationOptions integrationOptions)
     {
         var keysClassName = CompositeSyntaxFactory.GetKeysClassName(contract.Name);
         var catalogClassName = CompositeSyntaxFactory.GetCatalogClassName(contract.Name);
@@ -304,7 +308,8 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             contract.Namespace,
             catalogClassName,
             contract.FullyQualifiedDisplayString,
-            catalogEntries);
+            catalogEntries,
+            integrationOptions);
 
         var hintPrefix = contract.Name;
         context.AddSource(
