@@ -90,7 +90,9 @@ services.AddEventAggregator(); // 默认 Singleton
 
 ---
 
-## 与 MediatR / 消息总线的边界
+## 与 MediatR / 消息总线的差异
+
+> 本库以技术探索为目的，**允许与 MediatR 能力重叠**。下表用于说明当前实现的设计取向差异，供选型参考，**非**「不实现」的理由（见 [AGENTS.md](../AGENTS.md)「项目是什么」）。
 
 | | Event Aggregator | 典型 MediatR |
 |---|---|---|
@@ -98,7 +100,7 @@ services.AddEventAggregator(); // 默认 Singleton
 | 路由 | 按 `TEvent` 类型 | 按 Request/Notification 类型 + 管道 |
 | 编译期 | 无源生成器、无 DP 诊断 | 通常基于约定或显式注册 |
 
-本库**不做** 跨进程、持久化、重试策略或请求/响应关联 ID。
+当前实现**不**做跨进程、持久化、重试策略或请求/响应关联 ID；这些是后续探索候选，准入标准见 [ROADMAP.md](ROADMAP.md) F3。
 
 ---
 

@@ -15,12 +15,14 @@
 
 ## 项目是什么
 
-**DesignPatterns** 是一个 .NET 设计模式工具库：
+**DesignPatterns** 是一个以**技术探索**为目的的 .NET 设计模式工具库：发挥当前库的最大技术潜能，**即使与现有其他项目（MediatR / Polly / `Microsoft.Extensions.*` / Stateless 等）能力重叠也无所谓**——重叠不是拒绝实现的理由，能否在编译期胶水 + 运行时 primitives 的组合上做出有技术价值的探索才是判断标准。
 
 - **运行时**：轻量、可组合的 primitives（责任链、策略、工厂注册表、Singleton 特性等），组合优于继承。
 - **编译期**：`DesignPatterns.SourceGenerators` 源生成器；`DesignPatterns.Analyzers` 诊断；`DesignPatterns.CodeFixes` CodeFix。
+- **语言**：**C# 优先**；后续再考虑 .NET 生态其他语言（F# / VB 等待评估）。
+- **模式范围**：**包含 GoF 但不局限于 GoF**——并发模式、反应式模式、函数式模式、分布式模式等只要能用「primitive + 编译期胶水」表达且具备技术探索价值，均可纳入。
 
-不要把它做成「23 种模式的厚重框架」或 MediatR/Polly 的替代品。
+仍须遵守的硬约束（与探索方针并存，非自我设限而是工程底线）：primitives 而非厚重基类体系；Core 不引用 MSDI；异步一等；显式失败优先 `TryResolve` 与明确异常。
 
 ---
 
