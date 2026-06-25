@@ -59,6 +59,9 @@ public abstract class KeyedRegistrationGeneratorBase : IIncrementalGenerator
     /// <summary>Tracking name for the generic transform stage.</summary>
     protected abstract string GenericTrackingName { get; }
 
+    /// <summary>Tracking name for the Combine stage.</summary>
+    protected abstract string CombineTrackingName { get; }
+
     /// <summary>Diagnostic descriptors for this generator.</summary>
     protected abstract KeyedRegistrationDiagnostics Diagnostics { get; }
 
@@ -89,9 +92,14 @@ public abstract class KeyedRegistrationGeneratorBase : IIncrementalGenerator
 
         var diagnostics = Diagnostics;
         var syntaxFactory = SyntaxFactory;
+        var combineTrackingName = CombineTrackingName;
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            nonGeneric.Collect()
+                .Combine(generic.Collect())
+                .WithTrackingName(combineTrackingName)
+                .Combine(integrationOptions)
+                .WithTrackingName(combineTrackingName),
             (spc, source) => RegistrationGeneratorHelper.Execute(
                 spc,
                 source.Left.Left.SelectMany(static list => list).ToImmutableArray(),

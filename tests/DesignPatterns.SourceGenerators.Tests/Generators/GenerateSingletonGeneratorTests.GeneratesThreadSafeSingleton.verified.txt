@@ -1,10 +1,11 @@
-{
+﻿{
   AppSettings.Singleton.g.cs:
 using System;
 using System.Threading;
 
 namespace TestAssembly
 {
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     partial class AppSettings
     {
         private static readonly Lazy<AppSettings> _instance = new Lazy<AppSettings>(() =>

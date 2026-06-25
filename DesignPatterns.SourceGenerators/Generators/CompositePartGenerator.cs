@@ -59,7 +59,10 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            nonGeneric.Collect().Combine(generic.Collect())
+                .WithTrackingName(TrackingNames.CompositeCombine)
+                .Combine(integrationOptions)
+                .WithTrackingName(TrackingNames.CompositeCombine),
             static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 

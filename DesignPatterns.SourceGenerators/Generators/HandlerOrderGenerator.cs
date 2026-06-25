@@ -50,7 +50,10 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            nonGeneric.Collect().Combine(generic.Collect())
+                .WithTrackingName(TrackingNames.HandlerCombine)
+                .Combine(integrationOptions)
+                .WithTrackingName(TrackingNames.HandlerCombine),
             static (spc, source) => Execute(spc,
                 source.Left.Left.SelectMany(static list => list).ToImmutableArray(),
                 source.Left.Right.SelectMany(static list => list).ToImmutableArray(),

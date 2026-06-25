@@ -1,10 +1,11 @@
-{
+﻿{
   FastCache.Singleton.g.cs:
 using System;
 using System.Threading;
 
 namespace TestAssembly
 {
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     partial class FastCache
     {
         private static readonly Lazy<FastCache> _instance = new Lazy<FastCache>(() =>

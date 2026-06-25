@@ -59,7 +59,10 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            nonGeneric.Collect().Combine(generic.Collect())
+                .WithTrackingName(TrackingNames.DecoratorCombine)
+                .Combine(integrationOptions)
+                .WithTrackingName(TrackingNames.DecoratorCombine),
             static (spc, source) => Execute(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 
