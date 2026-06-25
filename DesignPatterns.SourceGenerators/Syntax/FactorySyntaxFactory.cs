@@ -46,13 +46,17 @@ internal static class FactorySyntaxFactory
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        IReadOnlyList<(string Key, string ImplementationTypeName, string? GuardMethodReference)> entries,
         GeneratorIntegrationOptions integrationOptions = default)
     {
         var returnType = CreateFactoryRegistryInterfaceType(contractTypeName);
+        // Factory does not use guards; project to the 2-tuple expected by helpers.
+        var entriesWithoutGuard = entries
+            .Select(static e => (e.Key, e.ImplementationTypeName))
+            .ToList();
         var buildCall = DiIntegrationSyntaxHelper.CreateFactoryRegistryBuilderExpression(
             contractTypeName,
-            entries,
+            entriesWithoutGuard,
             RegistrationResolveTarget.DirectNew);
 
         var members = new List<MemberDeclarationSyntax>
@@ -68,7 +72,7 @@ internal static class FactorySyntaxFactory
 
         if (integrationOptions.EnableDi)
         {
-            members.Add(DiIntegrationSyntaxHelper.CreateFactoryCreateFromServiceProviderMethod(contractTypeName, entries));
+            members.Add(DiIntegrationSyntaxHelper.CreateFactoryCreateFromServiceProviderMethod(contractTypeName, entriesWithoutGuard));
             members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 returnType));
@@ -76,7 +80,7 @@ internal static class FactorySyntaxFactory
 
         if (integrationOptions.EnableAutofac)
         {
-            members.Add(AutofacIntegrationSyntaxHelper.CreateFactoryCreateFromComponentContextMethod(contractTypeName, entries));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateFactoryCreateFromComponentContextMethod(contractTypeName, entriesWithoutGuard));
             members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 returnType));

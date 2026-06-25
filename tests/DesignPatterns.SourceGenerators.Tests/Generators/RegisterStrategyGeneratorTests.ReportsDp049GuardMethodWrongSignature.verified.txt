@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP049,
+    Message: Guard method 'CanUse' on strategy class 'UpperProcessor' must have signature 'bool CanUse(string)'. Fix the parameter types or return type.
+  }
+]

@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP047,
+    Message: Guard method 'Missing' was not found on strategy class 'UpperProcessor'. Add a static method with signature 'bool Missing(string)' or remove the Guard property from [RegisterStrategy].
+  }
+]

@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP048,
+    Message: Guard method 'CanUse' on strategy class 'UpperProcessor' must be static. Add the static keyword to the method declaration.
+  }
+]

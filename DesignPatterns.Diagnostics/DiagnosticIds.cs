@@ -50,4 +50,7 @@ public static class DiagnosticIds
     public const string EventHandlerUnregisteredImplementation = "DP044";
     public const string RegisterEventHandlerDuplicateOnSameClass = "DP045";
     public const string RegisterEventHandlerContractMismatch = "DP046";
+    public const string StrategyGuardMethodNotFound = "DP047";
+    public const string StrategyGuardMethodNotStatic = "DP048";
+    public const string StrategyGuardMethodWrongSignature = "DP049";
 }

@@ -16,6 +16,7 @@ public sealed class ServiceProviderStrategyRegistry<TKey, TStrategy> : IStrategy
     private readonly IServiceProvider _serviceProvider;
     private readonly IReadOnlyList<(TKey Key, Type ImplementationType)> _entries;
     private readonly Dictionary<TKey, Type> _typeByKey;
+    private readonly IReadOnlyDictionary<TKey, Func<TKey, bool>>? _guards;
 
     /// <summary>
     /// Initializes a new instance.
@@ -23,6 +24,17 @@ public sealed class ServiceProviderStrategyRegistry<TKey, TStrategy> : IStrategy
     public ServiceProviderStrategyRegistry(
         IServiceProvider serviceProvider,
         IReadOnlyList<(TKey Key, Type ImplementationType)> entries)
+        : this(serviceProvider, entries, guards: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance with optional static guard predicates.
+    /// </summary>
+    public ServiceProviderStrategyRegistry(
+        IServiceProvider serviceProvider,
+        IReadOnlyList<(TKey Key, Type ImplementationType)> entries,
+        IReadOnlyDictionary<TKey, Func<TKey, bool>>? guards)
     {
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _entries = entries ?? throw new ArgumentNullException(nameof(entries));
@@ -31,6 +43,8 @@ public sealed class ServiceProviderStrategyRegistry<TKey, TStrategy> : IStrategy
         {
             _typeByKey[key] = implementationType;
         }
+
+        _guards = guards;
     }
 
     /// <inheritdoc />
@@ -59,6 +73,20 @@ public sealed class ServiceProviderStrategyRegistry<TKey, TStrategy> : IStrategy
 
         strategy = (TStrategy)_serviceProvider.GetRequiredService(implementationType);
         return true;
+    }
+
+    /// <inheritdoc />
+    public bool TryGetWithGuard(TKey key, out TStrategy strategy)
+    {
+        if (_guards is not null
+            && _guards.TryGetValue(key, out var guard)
+            && !guard(key))
+        {
+            strategy = default!;
+            return false;
+        }
+
+        return TryGet(key, out strategy);
     }
 
     /// <inheritdoc />

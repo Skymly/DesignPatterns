@@ -46,7 +46,7 @@ internal static class StrategySyntaxFactory
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        IReadOnlyList<(string Key, string ImplementationTypeName, string? GuardMethodReference)> entries,
         GeneratorIntegrationOptions integrationOptions = default)
     {
         var dictionaryType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Dictionary"))
@@ -89,10 +89,59 @@ internal static class StrategySyntaxFactory
                             SyntaxFactory.ParseTypeName(contractTypeName),
                         })));
 
+        // Build guard dictionary when any entry has a guard method reference.
+        var guardedEntries = entries
+            .Where(static e => !string.IsNullOrEmpty(e.GuardMethodReference))
+            .ToList();
+
+        ArgumentListSyntax registryConstructorArgs;
+        if (guardedEntries.Count > 0)
+        {
+            var guardDictType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("Dictionary"))
+                .WithTypeArgumentList(
+                    SyntaxFactory.TypeArgumentList(
+                        SyntaxFactory.SeparatedList<TypeSyntax>(
+                            new TypeSyntax[]
+                            {
+                                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                                SyntaxFactory.ParseTypeName("global::System.Func<string, bool>"),
+                            })));
+
+            var guardDictInitializer = SyntaxFactory.InitializerExpression(
+                SyntaxKind.ObjectInitializerExpression,
+                SyntaxFactory.SeparatedList<ExpressionSyntax>(
+                    guardedEntries.Select(e =>
+                        SyntaxFactory.AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            SyntaxFactory.ImplicitElementAccess()
+                                .WithArgumentList(
+                                    SyntaxFactory.BracketedArgumentList(
+                                        SyntaxFactory.SingletonSeparatedList(
+                                            SyntaxFactory.Argument(
+                                                SyntaxFactory.LiteralExpression(
+                                                    SyntaxKind.StringLiteralExpression,
+                                                    SyntaxFactory.Literal(e.Key)))))),
+                            SyntaxFactory.ParseExpression(e.GuardMethodReference!)))));
+
+            var guardDictCreation = SyntaxFactory.ObjectCreationExpression(guardDictType)
+                .WithInitializer(guardDictInitializer);
+
+            registryConstructorArgs = SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList(
+                    new[]
+                    {
+                        SyntaxFactory.Argument(dictionaryCreation),
+                        SyntaxFactory.Argument(guardDictCreation),
+                    }));
+        }
+        else
+        {
+            registryConstructorArgs = SyntaxFactory.ArgumentList(
+                SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(dictionaryCreation)));
+        }
+
         var registryInstanceCreation = SyntaxFactory.ObjectCreationExpression(strategyRegistryType)
-            .WithArgumentList(
-                SyntaxFactory.ArgumentList(
-                    SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(dictionaryCreation))));
+            .WithArgumentList(registryConstructorArgs);
 
         var registryFieldType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("IStrategyRegistry"))
             .WithTypeArgumentList(
@@ -140,9 +189,14 @@ internal static class StrategySyntaxFactory
 
         var members = new List<MemberDeclarationSyntax> { registryField, instanceProperty };
 
+        // Project to 2-tuple for helpers that don't need guard info.
+        var entriesWithoutGuard = entries
+            .Select(static e => (e.Key, e.ImplementationTypeName))
+            .ToList();
+
         if (integrationOptions.NeedsRegistrationEntries)
         {
-            members.Add(DiIntegrationSyntaxHelper.CreateDiEntriesField(entries));
+            members.Add(DiIntegrationSyntaxHelper.CreateDiEntriesField(entriesWithoutGuard));
         }
 
         if (integrationOptions.EnableDi)

@@ -225,4 +225,111 @@ public sealed class RegisterStrategyGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task GeneratesRegistryWithGuard()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface ITextProcessor
+            {
+                string Process(string text);
+            }
+
+            [RegisterStrategy("upper", typeof(ITextProcessor), Guard = "CanUse")]
+            public sealed class UpperProcessor : ITextProcessor
+            {
+                public string Process(string text) => text.ToUpper();
+                public static bool CanUse(string key) => key == "upper";
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterStrategyGenerator>(
+            ("Strategies.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp047GuardMethodNotFound()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface ITextProcessor
+            {
+                string Process(string text);
+            }
+
+            [RegisterStrategy("upper", typeof(ITextProcessor), Guard = "Missing")]
+            public sealed class UpperProcessor : ITextProcessor
+            {
+                public string Process(string text) => text.ToUpper();
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterStrategyGenerator>(
+            ("Strategies.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp048GuardMethodNotStatic()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface ITextProcessor
+            {
+                string Process(string text);
+            }
+
+            [RegisterStrategy("upper", typeof(ITextProcessor), Guard = "CanUse")]
+            public sealed class UpperProcessor : ITextProcessor
+            {
+                public string Process(string text) => text.ToUpper();
+                public bool CanUse(string key) => key == "upper";
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterStrategyGenerator>(
+            ("Strategies.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp049GuardMethodWrongSignature()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface ITextProcessor
+            {
+                string Process(string text);
+            }
+
+            [RegisterStrategy("upper", typeof(ITextProcessor), Guard = "CanUse")]
+            public sealed class UpperProcessor : ITextProcessor
+            {
+                public string Process(string text) => text.ToUpper();
+                public static bool CanUse(int key) => key == 0;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterStrategyGenerator>(
+            ("Strategies.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
 }

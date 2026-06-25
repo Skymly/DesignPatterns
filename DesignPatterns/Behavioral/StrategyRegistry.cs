@@ -17,11 +17,23 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
     where TKey : notnull
 {
     private readonly IReadOnlyDictionary<TKey, TStrategy> _strategies;
+    private readonly IReadOnlyDictionary<TKey, Func<TKey, bool>>? _guards;
 
     /// <summary>
     /// Initializes a new instance from an existing dictionary.
     /// </summary>
     public StrategyRegistry(IReadOnlyDictionary<TKey, TStrategy> strategies)
+        : this(strategies, guards: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance from an existing dictionary with optional
+    /// static guard predicates keyed by strategy key.
+    /// </summary>
+    public StrategyRegistry(
+        IReadOnlyDictionary<TKey, TStrategy> strategies,
+        IReadOnlyDictionary<TKey, Func<TKey, bool>>? guards)
     {
         var dict = strategies ?? throw new ArgumentNullException(nameof(strategies));
 #if NET8_0_OR_GREATER
@@ -31,6 +43,7 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
 #else
         _strategies = dict;
 #endif
+        _guards = guards;
     }
 
     /// <inheritdoc />
@@ -47,6 +60,27 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
 
         strategy = default!;
         return false;
+    }
+
+    /// <inheritdoc />
+    public bool TryGetWithGuard(TKey key, out TStrategy strategy)
+    {
+        if (!_strategies.TryGetValue(key, out var value))
+        {
+            strategy = default!;
+            return false;
+        }
+
+        if (_guards is not null
+            && _guards.TryGetValue(key, out var guard)
+            && !guard(key))
+        {
+            strategy = default!;
+            return false;
+        }
+
+        strategy = value;
+        return true;
     }
 
     /// <inheritdoc />
