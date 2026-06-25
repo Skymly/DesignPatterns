@@ -72,7 +72,10 @@ public sealed class RegisterEventHandlerGenerator : IIncrementalGenerator
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect()).Combine(integrationOptions),
+            nonGeneric.Collect().Combine(generic.Collect())
+                .WithTrackingName(TrackingNames.EventHandlerCombine)
+                .Combine(integrationOptions)
+                .WithTrackingName(TrackingNames.EventHandlerCombine),
             (spc, source) => Execute(
                 spc,
                 source.Left.Left.SelectMany(static list => list).ToImmutableArray(),

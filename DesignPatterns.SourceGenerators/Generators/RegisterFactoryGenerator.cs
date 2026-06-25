@@ -35,6 +35,9 @@ public sealed class RegisterFactoryGenerator : KeyedRegistrationGeneratorBase
     protected override string GenericTrackingName => TrackingNames.FactoryGenericTransform;
 
     /// <inheritdoc />
+    protected override string CombineTrackingName => TrackingNames.FactoryCombine;
+
+    /// <inheritdoc />
     protected override KeyedRegistrationDiagnostics Diagnostics => DiagnosticsField;
 
     /// <inheritdoc />

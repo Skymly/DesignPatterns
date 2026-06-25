@@ -35,4 +35,28 @@ internal static class TrackingNames
     // RegisterEventHandlerGenerator
     public const string EventHandlerNonGenericTransform = nameof(EventHandlerNonGenericTransform);
     public const string EventHandlerGenericTransform = nameof(EventHandlerGenericTransform);
+
+    // Collect + Combine stages (shared naming: {Generator}Collect, {Generator}Combine)
+    public const string SingletonCollect = nameof(SingletonCollect);
+
+    public const string FactoryCollect = nameof(FactoryCollect);
+    public const string FactoryCombine = nameof(FactoryCombine);
+
+    public const string StrategyCollect = nameof(StrategyCollect);
+    public const string StrategyCombine = nameof(StrategyCombine);
+
+    public const string HandlerCollect = nameof(HandlerCollect);
+    public const string HandlerCombine = nameof(HandlerCombine);
+
+    public const string CompositeCollect = nameof(CompositeCollect);
+    public const string CompositeCombine = nameof(CompositeCombine);
+
+    public const string DecoratorCollect = nameof(DecoratorCollect);
+    public const string DecoratorCombine = nameof(DecoratorCombine);
+
+    public const string StateMachineCollect = nameof(StateMachineCollect);
+    public const string StateMachineCombine = nameof(StateMachineCombine);
+
+    public const string EventHandlerCollect = nameof(EventHandlerCollect);
+    public const string EventHandlerCombine = nameof(EventHandlerCombine);
 }

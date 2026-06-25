@@ -41,7 +41,8 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
         context.RegisterSourceOutput(
-            machines.Collect().Combine(integrationOptions),
+            machines.Collect().Combine(integrationOptions)
+                .WithTrackingName(TrackingNames.StateMachineCombine),
             static (spc, source) => Execute(spc, source.Left, source.Right));
     }
 

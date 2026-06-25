@@ -35,6 +35,9 @@ public sealed class RegisterStrategyGenerator : KeyedRegistrationGeneratorBase
     protected override string GenericTrackingName => TrackingNames.StrategyGenericTransform;
 
     /// <inheritdoc />
+    protected override string CombineTrackingName => TrackingNames.StrategyCombine;
+
+    /// <inheritdoc />
     protected override KeyedRegistrationDiagnostics Diagnostics => DiagnosticsField;
 
     /// <inheritdoc />
