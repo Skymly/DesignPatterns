@@ -51,7 +51,8 @@ public sealed class RegisterEventHandlerGenerator : IIncrementalGenerator
     /// <summary>Metadata name for generic <c>RegisterEventHandlerAttribute&lt;TEvent&gt;</c>.</summary>
     public const string RegisterEventHandlerGenericMetadataName = "DesignPatterns.Behavioral.RegisterEventHandlerAttribute`1";
 
-    private const string HandlerInterfaceMetadataName = "DesignPatterns.Behavioral.IEventHandler`1";
+    private const string HandlerInterfaceMetadataName = "IEventHandler`1";
+    private const string HandlerInterfaceNamespace = "DesignPatterns.Behavioral";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -255,8 +256,8 @@ public sealed class RegisterEventHandlerGenerator : IIncrementalGenerator
     {
         foreach (var iface in handler.AllInterfaces)
         {
-            if (iface.MetadataName == "IEventHandler`1" &&
-                iface.ContainingNamespace.ToDisplayString() == "DesignPatterns.Behavioral" &&
+            if (iface.MetadataName == HandlerInterfaceMetadataName &&
+                iface.ContainingNamespace.ToDisplayString() == HandlerInterfaceNamespace &&
                 iface.TypeArguments.Length == 1 &&
                 SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], eventType))
             {

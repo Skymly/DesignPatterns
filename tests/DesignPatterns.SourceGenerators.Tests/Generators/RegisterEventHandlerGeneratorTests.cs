@@ -141,4 +141,124 @@ public sealed class RegisterEventHandlerGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task GeneratesRegistriesForMultipleEventTypesOnSameHandler()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public record OrderPlacedEvent(string OrderId);
+            public record OrderCancelledEvent(string OrderId);
+
+            [RegisterEventHandler<OrderPlacedEvent>]
+            [RegisterEventHandler<OrderCancelledEvent>]
+            public sealed class OrderHandler : IEventHandler<OrderPlacedEvent>, IEventHandler<OrderCancelledEvent>
+            {
+                public ValueTask HandleAsync(OrderPlacedEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+
+                public ValueTask HandleAsync(OrderCancelledEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterEventHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesRegistryForGlobalNamespaceEvent()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            public record GlobalEvent(int Value);
+
+            [RegisterEventHandler<GlobalEvent>]
+            public sealed class GlobalHandler : IEventHandler<GlobalEvent>
+            {
+                public ValueTask HandleAsync(GlobalEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterEventHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task SeparatesStaticAndDiPathsByParameterlessConstructor()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public record MixedEvent(int Value);
+
+            [RegisterEventHandler<MixedEvent>]
+            public sealed class ParameterlessHandler : IEventHandler<MixedEvent>
+            {
+                public ValueTask HandleAsync(MixedEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+
+            [RegisterEventHandler<MixedEvent>]
+            public sealed class InjectedHandler : IEventHandler<MixedEvent>
+            {
+                private readonly string _dep;
+                public InjectedHandler(string dep) => _dep = dep;
+                public ValueTask HandleAsync(MixedEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterEventHandlerGenerator>(
+            enableDiIntegration: true,
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task DoesNotGenerateRegistryWhenAllHandlersHaveContractMismatch()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public record AllBrokenEvent(int Value);
+
+            [RegisterEventHandler<AllBrokenEvent>]
+            public sealed class BrokenHandlerA
+            {
+            }
+
+            [RegisterEventHandler<AllBrokenEvent>]
+            public sealed class BrokenHandlerB
+            {
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterEventHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
 }
