@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP046,
+    Message: Type 'BrokenHandler' does not implement IEventHandler<TestAssembly.MismatchEvent>. Implement IEventHandler<TestAssembly.MismatchEvent> or fix the [RegisterEventHandler] event type argument.
+  }
+]

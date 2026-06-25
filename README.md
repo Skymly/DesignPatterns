@@ -72,7 +72,7 @@
 
 | Decorator | `DesignPatterns.Structural` | `IDecorator<T>` / `DecoratorStackBuilder`（条件 `Add`） | `[Decorator]` → `{Contract}DecoratorStack` + `{Contract}DecoratorOrder` |
 
-| Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | — |
+| Event Aggregator | `DesignPatterns.Behavioral` | `IEventAggregator` / `IEventHandler<T>` | `[RegisterEventHandler]` → `{Event}EventHandlerRegistry`（`SubscribeAll` / `RegisterDi`） |
 
 | State transition table | `DesignPatterns.Behavioral` | `ITransitionTable` / `TransitionTableBuilder` | `[StateMachine]` / `[Transition]` → `{State}TransitionTable` |
 

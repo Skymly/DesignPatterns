@@ -367,6 +367,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // EventAggregator (DP044–DP046)
+
+    public static DiagnosticDescriptor EventHandlerUnregisteredImplementation { get; } = Create(
+        DiagnosticIds.EventHandlerUnregisteredImplementation,
+        "Event handler implementation is not registered",
+        "Type '{0}' implements IEventHandler<{1}> but has no [RegisterEventHandler] attribute. Add [RegisterEventHandler(typeof({1}))] (or the generic form) to register it for automatic subscription.",
+        "Concrete event handler types should be registered when an event aggregator registry is in use.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
+    public static DiagnosticDescriptor RegisterEventHandlerDuplicateOnSameClass { get; } = Create(
+        DiagnosticIds.RegisterEventHandlerDuplicateOnSameClass,
+        "Duplicate RegisterEventHandler on same class for same event type",
+        "Type '{0}' has multiple [RegisterEventHandler] attributes for event type '{1}'. Remove the duplicate attribute or use a different event type.",
+        "A handler class may register at most once per event type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor RegisterEventHandlerContractMismatch { get; } = Create(
+        DiagnosticIds.RegisterEventHandlerContractMismatch,
+        "Event handler does not implement IEventHandler for event type",
+        "Type '{0}' does not implement IEventHandler<{1}>. Implement IEventHandler<{1}> or fix the [RegisterEventHandler] event type argument.",
+        "RegisterEventHandler implementations must implement IEventHandler<TEvent> for the declared event type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

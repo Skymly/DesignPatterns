@@ -47,4 +47,7 @@ public static class DiagnosticIds
     public const string CompositePartDiNodeNotRegistered = "DP040";
     public const string DecoratorAsyncSignatureMismatch = "DP042";
     public const string DecoratorDiNotResolvable = "DP043";
+    public const string EventHandlerUnregisteredImplementation = "DP044";
+    public const string RegisterEventHandlerDuplicateOnSameClass = "DP045";
+    public const string RegisterEventHandlerContractMismatch = "DP046";
 }

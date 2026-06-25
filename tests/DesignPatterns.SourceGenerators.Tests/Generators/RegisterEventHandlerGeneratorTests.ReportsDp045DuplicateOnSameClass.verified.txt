@@ -1,0 +1,10 @@
+﻿[
+  {
+    Id: DP045,
+    Message: Type 'DuplicateHandler' has multiple [RegisterEventHandler] attributes for event type 'TestAssembly.DuplicateEvent'. Remove the duplicate attribute or use a different event type.
+  },
+  {
+    Id: DP045,
+    Message: Type 'DuplicateHandler' has multiple [RegisterEventHandler] attributes for event type 'TestAssembly.DuplicateEvent'. Remove the duplicate attribute or use a different event type.
+  }
+]

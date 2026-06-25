@@ -1,0 +1,1 @@
+﻿DP044 [Info] Type 'NotifyOrderHandler' implements IEventHandler<OrderPlacedEvent> but has no [RegisterEventHandler] attribute. Add [RegisterEventHandler(typeof(OrderPlacedEvent))] (or the generic form) to register it for automatic subscription. @ Test.cs:(16,21)

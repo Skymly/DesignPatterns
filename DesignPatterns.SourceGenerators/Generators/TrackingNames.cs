@@ -31,4 +31,8 @@ internal static class TrackingNames
 
     // StateTransitionGenerator
     public const string StateMachineTransform = nameof(StateMachineTransform);
+
+    // RegisterEventHandlerGenerator
+    public const string EventHandlerNonGenericTransform = nameof(EventHandlerNonGenericTransform);
+    public const string EventHandlerGenericTransform = nameof(EventHandlerGenericTransform);
 }
