@@ -47,3 +47,6 @@ DP043    | DesignPatterns.Generators | Warning  | Decorator not resolvable from 
 DP044    | DesignPatterns.Analyzers | Info     | Event handler implementation missing RegisterEventHandler attribute
 DP045    | DesignPatterns.Generators | Error    | Duplicate RegisterEventHandler on same class for same event type
 DP046    | DesignPatterns.Generators | Error    | Event handler does not implement IEventHandler for event type
+DP047    | DesignPatterns.Generators | Error    | Strategy guard method not found on implementation class
+DP048    | DesignPatterns.Generators | Error    | Strategy guard method is not static
+DP049    | DesignPatterns.Generators | Error    | Strategy guard method has wrong signature

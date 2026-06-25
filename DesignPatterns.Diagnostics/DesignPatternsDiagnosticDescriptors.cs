@@ -393,6 +393,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // Strategy guard (DP047–DP049)
+
+    public static DiagnosticDescriptor StrategyGuardMethodNotFound { get; } = Create(
+        DiagnosticIds.StrategyGuardMethodNotFound,
+        "Strategy guard method not found on implementation class",
+        "Guard method '{0}' was not found on strategy class '{1}'. Add a static method with signature 'bool {0}({2})' or remove the Guard property from [RegisterStrategy].",
+        "Strategy guard names must reference a declared method on the strategy implementation class.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StrategyGuardMethodNotStatic { get; } = Create(
+        DiagnosticIds.StrategyGuardMethodNotStatic,
+        "Strategy guard method is not static",
+        "Guard method '{0}' on strategy class '{1}' must be static. Add the static keyword to the method declaration.",
+        "Strategy guards must be static so the source generator can emit a delegate reference.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StrategyGuardMethodWrongSignature { get; } = Create(
+        DiagnosticIds.StrategyGuardMethodWrongSignature,
+        "Strategy guard method has wrong signature",
+        "Guard method '{0}' on strategy class '{1}' must have signature 'bool {0}({2})'. Fix the parameter types or return type.",
+        "Strategy guards must accept (TKey) and return bool.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

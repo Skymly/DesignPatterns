@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using DesignPatterns.Diagnostics;
+using DesignPatterns.SourceGenerators.Generators.StateTransition;
 using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Generators;
@@ -28,6 +29,7 @@ internal sealed record KeyedRegistration(
     string ImplementationFullyQualifiedDisplayString,
     bool ImplementsContract,
     bool HasPublicParameterlessConstructor,
+    GuardResolution Guard,
     Location Location);
 
 internal static class RegistrationGeneratorHelper
@@ -81,6 +83,27 @@ internal static class RegistrationGeneratorHelper
                 contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
             var location = context.TargetNode.GetLocation();
+
+            // Resolve optional Guard property from the attribute.
+            string? guardName = null;
+            foreach (var namedArg in attribute.NamedArguments)
+            {
+                if (string.Equals(namedArg.Key, "Guard", StringComparison.Ordinal)
+                    && namedArg.Value.Value is string guardValue)
+                {
+                    guardName = guardValue;
+                    break;
+                }
+            }
+
+            var guard = guardName is null
+                ? default(GuardResolution)
+                : GuardMethodValidator.Resolve(
+                    implementation,
+                    guardName,
+                    ImmutableArray.Create<ITypeSymbol>(
+                        context.SemanticModel.Compilation.GetSpecialType(SpecialType.System_String)));
+
             result.Add(new KeyedRegistration(
                 key!,
                 contractInfo,
@@ -88,6 +111,7 @@ internal static class RegistrationGeneratorHelper
                 implementation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 ImplementsContract(implementation, contract),
                 HasPublicParameterlessConstructor(implementation),
+                guard,
                 location));
         }
 
@@ -128,10 +152,12 @@ internal static class RegistrationGeneratorHelper
             ReportDuplicateKeys(context, contractRegistrations, diagnostics.DuplicateKey);
             ReportContractMismatches(context, contractRegistrations, diagnostics.ContractMismatch);
             ReportMissingConstructors(context, contractRegistrations, diagnostics.MissingParameterlessConstructor);
+            ReportGuardDiagnostics(context, contractRegistrations);
 
             var valid = contractRegistrations
                 .Where(static r => r.ImplementsContract)
                 .Where(static r => r.HasPublicParameterlessConstructor)
+                .Where(static r => r.Guard.IsValid)
                 .GroupBy(static r => r.Key, StringComparer.Ordinal)
                 .Where(static g => g.Count() == 1)
                 .Select(static g => g.First())
@@ -197,6 +223,53 @@ internal static class RegistrationGeneratorHelper
                 descriptor,
                 registration.Location,
                 registration.ImplementationName));
+        }
+    }
+
+    private static void ReportGuardDiagnostics(
+        SourceProductionContext context,
+        List<KeyedRegistration> registrations)
+    {
+        foreach (var registration in registrations)
+        {
+            var guard = registration.Guard;
+            if (guard.IsValid)
+            {
+                continue;
+            }
+
+            var keyTypeDisplay = "string";
+
+            if (!guard.IsFound)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StrategyGuardMethodNotFound,
+                    registration.Location,
+                    guard.Name,
+                    registration.ImplementationName,
+                    keyTypeDisplay));
+                continue;
+            }
+
+            if (!guard.IsStatic)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StrategyGuardMethodNotStatic,
+                    registration.Location,
+                    guard.Name,
+                    registration.ImplementationName));
+                continue;
+            }
+
+            if (!guard.HasValidSignature)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StrategyGuardMethodWrongSignature,
+                    registration.Location,
+                    guard.Name,
+                    registration.ImplementationName,
+                    keyTypeDisplay));
+            }
         }
     }
 

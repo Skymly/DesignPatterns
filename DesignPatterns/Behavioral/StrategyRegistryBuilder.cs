@@ -12,6 +12,7 @@ public sealed class StrategyRegistryBuilder<TKey, TStrategy>
     where TKey : notnull
 {
     private readonly Dictionary<TKey, TStrategy> _strategies = new();
+    private readonly Dictionary<TKey, Func<TKey, bool>> _guards = new();
 
     /// <summary>
     /// Registers a strategy instance for the given key.
@@ -38,6 +39,23 @@ public sealed class StrategyRegistryBuilder<TKey, TStrategy>
     }
 
     /// <summary>
+    /// Registers a strategy instance for the given key with a static guard predicate.
+    /// The guard is evaluated on each <see cref="IStrategyRegistry{TKey,TStrategy}.TryGetWithGuard"/> call.
+    /// </summary>
+    public StrategyRegistryBuilder<TKey, TStrategy> Register(TKey key, TStrategy strategy, Func<TKey, bool> guard)
+    {
+        Register(key, strategy);
+
+        if (guard is null)
+        {
+            throw new ArgumentNullException(nameof(guard));
+        }
+
+        _guards[key] = guard;
+        return this;
+    }
+
+    /// <summary>
     /// Registers a strategy factory for the given key. The factory is invoked once at build time.
     /// </summary>
     public StrategyRegistryBuilder<TKey, TStrategy> Register(TKey key, Func<TStrategy> factory)
@@ -54,5 +72,7 @@ public sealed class StrategyRegistryBuilder<TKey, TStrategy>
     /// Builds the registry.
     /// </summary>
     public IStrategyRegistry<TKey, TStrategy> Build() =>
-        new StrategyRegistry<TKey, TStrategy>(_strategies);
+        new StrategyRegistry<TKey, TStrategy>(
+            _strategies,
+            _guards.Count > 0 ? _guards : null);
 }

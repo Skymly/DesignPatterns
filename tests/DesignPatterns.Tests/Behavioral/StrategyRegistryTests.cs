@@ -122,4 +122,65 @@ public sealed class StrategyRegistryTests
     {
         Assert.Throws<ArgumentNullException>(() => new StrategyRegistry<string, ITestStrategy>(null!));
     }
+
+    [Fact]
+    public void TryGetWithGuard_ReturnsTrue_WhenGuardPasses()
+    {
+        var registry = new StrategyRegistryBuilder<string, ITestStrategy>()
+            .Register("alpha", new AlphaStrategy(), _ => true)
+            .Build();
+
+        Assert.True(registry.TryGetWithGuard("alpha", out var strategy));
+        Assert.NotNull(strategy);
+        Assert.Equal("alpha", strategy.Name);
+    }
+
+    [Fact]
+    public void TryGetWithGuard_ReturnsFalse_WhenGuardFails()
+    {
+        var registry = new StrategyRegistryBuilder<string, ITestStrategy>()
+            .Register("alpha", new AlphaStrategy(), _ => false)
+            .Build();
+
+        Assert.False(registry.TryGetWithGuard("alpha", out _));
+    }
+
+    [Fact]
+    public void TryGetWithGuard_ReturnsTrue_WhenNoGuardRegistered()
+    {
+        var registry = new StrategyRegistryBuilder<string, ITestStrategy>()
+            .Register("alpha", new AlphaStrategy())
+            .Build();
+
+        Assert.True(registry.TryGetWithGuard("alpha", out var strategy));
+        Assert.Equal("alpha", strategy.Name);
+    }
+
+    [Fact]
+    public void TryGetWithGuard_ReturnsFalse_WhenKeyNotFound()
+    {
+        var registry = new StrategyRegistryBuilder<string, ITestStrategy>()
+            .Register("alpha", new AlphaStrategy(), _ => true)
+            .Build();
+
+        Assert.False(registry.TryGetWithGuard("missing", out _));
+    }
+
+    [Fact]
+    public void Builder_RegisterWithGuard_StoresGuard()
+    {
+        var guardCalled = false;
+        var registry = new StrategyRegistryBuilder<string, ITestStrategy>()
+            .Register("alpha", new AlphaStrategy(), key =>
+            {
+                guardCalled = true;
+                Assert.Equal("alpha", key);
+                return true;
+            })
+            .Build();
+
+        Assert.True(registry.TryGetWithGuard("alpha", out var strategy));
+        Assert.True(guardCalled);
+        Assert.Equal("alpha", strategy.Name);
+    }
 }

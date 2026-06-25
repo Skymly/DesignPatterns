@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -220,51 +221,10 @@ internal static class StateTransitionTransform
         INamedTypeSymbol stateType,
         INamedTypeSymbol triggerType)
     {
-        var methods = holderType.GetMembers(guardName)
-            .OfType<IMethodSymbol>()
-            .ToList();
-
-        if (methods.Count == 0)
-        {
-            return new GuardResolution(guardName, IsFound: false, IsStatic: false, HasValidSignature: false, MethodReference: null);
-        }
-
-        var holderFqn = holderType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-        // When overloads exist, prefer the method with the correct signature so
-        // that an unrelated overload does not cause a false DP035 diagnostic.
-        IMethodSymbol? matching = null;
-        foreach (var m in methods)
-        {
-            if (m.IsStatic
-                && m.ReturnType.SpecialType == SpecialType.System_Boolean
-                && m.Parameters.Length == 2
-                && SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, stateType)
-                && SymbolEqualityComparer.Default.Equals(m.Parameters[1].Type, triggerType))
-            {
-                matching = m;
-                break;
-            }
-        }
-
-        if (matching is not null)
-        {
-            return new GuardResolution(
-                guardName,
-                IsFound: true,
-                IsStatic: true,
-                HasValidSignature: true,
-                MethodReference: $"{holderFqn}.{matching.Name}");
-        }
-
-        // No matching signature found — report based on the first candidate.
-        var first = methods[0];
-        return new GuardResolution(
+        return GuardMethodValidator.Resolve(
+            holderType,
             guardName,
-            IsFound: true,
-            IsStatic: first.IsStatic,
-            HasValidSignature: false,
-            MethodReference: null);
+            ImmutableArray.Create<ITypeSymbol>(stateType, triggerType));
     }
 
     private static ActionResolution ResolveAction(

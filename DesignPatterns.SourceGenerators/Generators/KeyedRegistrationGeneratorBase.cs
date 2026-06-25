@@ -29,7 +29,7 @@ public interface IKeyedRegistrationSyntaxFactory
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        IReadOnlyList<(string Key, string ImplementationTypeName, string? GuardMethodReference)> entries,
         GeneratorIntegrationOptions integrationOptions = default);
 
     string GetKeysClassName(string contractName);
@@ -135,7 +135,7 @@ public abstract class KeyedRegistrationGeneratorBase : IIncrementalGenerator
         }
 
         var registryEntries = registrations
-            .Select(static r => (r.Key, r.ImplementationFullyQualifiedDisplayString))
+            .Select(static r => (r.Key, r.ImplementationFullyQualifiedDisplayString, r.Guard.MethodReference))
             .ToList();
 
         var keysUnit = syntaxFactory.CreateKeysCompilationUnit(contract.Namespace, keysClassName, keys);
@@ -173,7 +173,7 @@ public sealed class FactorySyntaxFactoryAdapter : IKeyedRegistrationSyntaxFactor
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        IReadOnlyList<(string Key, string ImplementationTypeName, string? GuardMethodReference)> entries,
         GeneratorIntegrationOptions integrationOptions = default) =>
         FactorySyntaxFactory.CreateRegistryCompilationUnit(
             namespaceName, registryClassName, contractTypeName, entries, integrationOptions);
@@ -204,7 +204,7 @@ public sealed class StrategySyntaxFactoryAdapter : IKeyedRegistrationSyntaxFacto
         string? namespaceName,
         string registryClassName,
         string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName)> entries,
+        IReadOnlyList<(string Key, string ImplementationTypeName, string? GuardMethodReference)> entries,
         GeneratorIntegrationOptions integrationOptions = default) =>
         StrategySyntaxFactory.CreateRegistryCompilationUnit(
             namespaceName, registryClassName, contractTypeName, entries, integrationOptions);

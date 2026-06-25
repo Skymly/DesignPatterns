@@ -16,6 +16,7 @@ public sealed class ComponentContextStrategyRegistry<TKey, TStrategy> : IStrateg
     private readonly ILifetimeScope _lifetimeScope;
     private readonly IReadOnlyList<(TKey Key, Type ImplementationType)> _entries;
     private readonly Dictionary<TKey, Type> _typeByKey;
+    private readonly IReadOnlyDictionary<TKey, Func<TKey, bool>>? _guards;
 
     /// <summary>
     /// Initializes a new instance.
@@ -23,6 +24,17 @@ public sealed class ComponentContextStrategyRegistry<TKey, TStrategy> : IStrateg
     public ComponentContextStrategyRegistry(
         ILifetimeScope lifetimeScope,
         IReadOnlyList<(TKey Key, Type ImplementationType)> entries)
+        : this(lifetimeScope, entries, guards: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance with optional static guard predicates.
+    /// </summary>
+    public ComponentContextStrategyRegistry(
+        ILifetimeScope lifetimeScope,
+        IReadOnlyList<(TKey Key, Type ImplementationType)> entries,
+        IReadOnlyDictionary<TKey, Func<TKey, bool>>? guards)
     {
         _lifetimeScope = lifetimeScope ?? throw new ArgumentNullException(nameof(lifetimeScope));
         _entries = entries ?? throw new ArgumentNullException(nameof(entries));
@@ -31,6 +43,8 @@ public sealed class ComponentContextStrategyRegistry<TKey, TStrategy> : IStrateg
         {
             _typeByKey[key] = implementationType;
         }
+
+        _guards = guards;
     }
 
     /// <inheritdoc />
@@ -59,6 +73,20 @@ public sealed class ComponentContextStrategyRegistry<TKey, TStrategy> : IStrateg
 
         strategy = (TStrategy)_lifetimeScope.Resolve(implementationType);
         return true;
+    }
+
+    /// <inheritdoc />
+    public bool TryGetWithGuard(TKey key, out TStrategy strategy)
+    {
+        if (_guards is not null
+            && _guards.TryGetValue(key, out var guard)
+            && !guard(key))
+        {
+            strategy = default!;
+            return false;
+        }
+
+        return TryGet(key, out strategy);
     }
 
     /// <inheritdoc />

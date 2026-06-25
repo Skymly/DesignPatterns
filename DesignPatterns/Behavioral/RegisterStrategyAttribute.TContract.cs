@@ -29,6 +29,14 @@ public sealed class RegisterStrategyAttribute<TContract> : Attribute
     /// The key used to resolve this strategy.
     /// </summary>
     public string Key { get; }
+
+    /// <summary>
+    /// Optional name of a static guard method on the implementation class.
+    /// When set, the method must have the signature
+    /// <c>static bool Method(TKey key)</c>.
+    /// The strategy is only resolved when the guard returns <see langword="true"/>.
+    /// </summary>
+    public string? Guard { get; set; }
 }
 
 #endif
