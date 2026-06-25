@@ -19,13 +19,17 @@ internal static class HandlerPipelineSyntaxFactory
         string? namespaceName,
         string pipelineClassName,
         string contextTypeName,
-        IReadOnlyList<string> handlerTypeNames,
+        IReadOnlyList<(string HandlerTypeName, string? GuardMethodReference)> handlers,
         GeneratorIntegrationOptions integrationOptions = default)
     {
         var buildInvocation = DiIntegrationSyntaxHelper.CreateHandlerPipelineBuilderExpression(
             contextTypeName,
-            handlerTypeNames,
+            handlers,
             RegistrationResolveTarget.DirectNew);
+
+        var handlerTypeNames = handlers
+            .Select(static h => h.HandlerTypeName)
+            .ToList();
 
         var instanceField = SyntaxFactory.FieldDeclaration(
                 SyntaxFactory.VariableDeclaration(
@@ -66,7 +70,7 @@ internal static class HandlerPipelineSyntaxFactory
 
         if (integrationOptions.EnableDi)
         {
-            members.Add(DiIntegrationSyntaxHelper.CreateHandlerCreateFromServiceProviderMethod(contextTypeName, handlerTypeNames));
+            members.Add(DiIntegrationSyntaxHelper.CreateHandlerCreateFromServiceProviderMethod(contextTypeName, handlers));
             var pipelineType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
                 .WithTypeArgumentList(
                     SyntaxFactory.TypeArgumentList(
@@ -77,7 +81,7 @@ internal static class HandlerPipelineSyntaxFactory
 
         if (integrationOptions.EnableAutofac)
         {
-            members.Add(AutofacIntegrationSyntaxHelper.CreateHandlerCreateFromComponentContextMethod(contextTypeName, handlerTypeNames));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateHandlerCreateFromComponentContextMethod(contextTypeName, handlers));
             var pipelineType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
                 .WithTypeArgumentList(
                     SyntaxFactory.TypeArgumentList(

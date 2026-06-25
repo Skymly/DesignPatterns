@@ -28,6 +28,22 @@ public sealed class HandlerPipelineBuilder<TContext>
     }
 
     /// <summary>
+    /// Adds a handler to the pipeline with an optional guard predicate.
+    /// When the guard returns <see langword="false"/>, the handler is skipped
+    /// and the pipeline continues to the next handler.
+    /// </summary>
+    public HandlerPipelineBuilder<TContext> Use(IHandler<TContext> handler, Func<TContext, bool>? guard)
+    {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler));
+        }
+
+        _handlers.Add(new HandlerPipelineRegistration<TContext>(handler, handler.GetType().Name, guard));
+        return this;
+    }
+
+    /// <summary>
     /// Adds a handler delegate to the pipeline. Handlers run in registration order.
     /// </summary>
     public HandlerPipelineBuilder<TContext> Use(

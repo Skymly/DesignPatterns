@@ -51,9 +51,23 @@ public sealed class HandlerPipeline<TContext>
 
         for (var i = registrations.Count - 1; i >= 0; i--)
         {
-            var handler = registrations[i].Handler;
+            var registration = registrations[i];
             var next = pipeline;
-            pipeline = (context, cancellationToken) => handler.InvokeAsync(context, next, cancellationToken);
+            var guard = registration.Guard;
+
+            if (guard is null)
+            {
+                var handler = registration.Handler;
+                pipeline = (context, cancellationToken) => handler.InvokeAsync(context, next, cancellationToken);
+            }
+            else
+            {
+                var handler = registration.Handler;
+                pipeline = (context, cancellationToken) =>
+                    guard(context)
+                        ? handler.InvokeAsync(context, next, cancellationToken)
+                        : next(context, cancellationToken);
+            }
         }
 
         return pipeline;
@@ -70,25 +84,59 @@ public sealed class HandlerPipeline<TContext>
             var index = i;
             var registration = registrations[i];
             var next = pipeline;
-            pipeline = async (context, cancellationToken) =>
+            var guard = registration.Guard;
+
+            if (guard is null)
             {
-                var nextInvoked = false;
-                HandlerDelegate<TContext> tracedNext = (ctx, ct) =>
+                pipeline = async (context, cancellationToken) =>
                 {
-                    nextInvoked = true;
-                    return next(ctx, ct);
+                    var nextInvoked = false;
+                    HandlerDelegate<TContext> tracedNext = (ctx, ct) =>
+                    {
+                        nextInvoked = true;
+                        return next(ctx, ct);
+                    };
+
+                    await registration.Handler
+                        .InvokeAsync(context, tracedNext, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    traceBuilder.Record(
+                        index,
+                        nextInvoked
+                            ? HandlerPipelineStepStatus.Completed
+                            : HandlerPipelineStepStatus.ShortCircuited);
                 };
+            }
+            else
+            {
+                pipeline = async (context, cancellationToken) =>
+                {
+                    if (!guard(context))
+                    {
+                        traceBuilder.Record(index, HandlerPipelineStepStatus.Skipped);
+                        await next(context, cancellationToken).ConfigureAwait(false);
+                        return;
+                    }
 
-                await registration.Handler
-                    .InvokeAsync(context, tracedNext, cancellationToken)
-                    .ConfigureAwait(false);
+                    var nextInvoked = false;
+                    HandlerDelegate<TContext> tracedNext = (ctx, ct) =>
+                    {
+                        nextInvoked = true;
+                        return next(ctx, ct);
+                    };
 
-                traceBuilder.Record(
-                    index,
-                    nextInvoked
-                        ? HandlerPipelineStepStatus.Completed
-                        : HandlerPipelineStepStatus.ShortCircuited);
-            };
+                    await registration.Handler
+                        .InvokeAsync(context, tracedNext, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    traceBuilder.Record(
+                        index,
+                        nextInvoked
+                            ? HandlerPipelineStepStatus.Completed
+                            : HandlerPipelineStepStatus.ShortCircuited);
+                };
+            }
         }
 
         return pipeline;

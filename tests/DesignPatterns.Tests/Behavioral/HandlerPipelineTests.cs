@@ -259,6 +259,89 @@ public sealed class HandlerPipelineTests
         Assert.Equal(plainResult, tracedResult);
     }
 
+    [Fact]
+    public async Task Guard_Passes_ExecutesHandler()
+    {
+        var executed = false;
+
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new RecordingHandler("A", _ => executed = true), _ => true)
+            .Build();
+
+        await pipeline.InvokeAsync("req");
+
+        Assert.True(executed);
+    }
+
+    [Fact]
+    public async Task Guard_Fails_SkipsHandler()
+    {
+        var log = new List<string>();
+
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new RecordingHandler("A", _ => log.Add("A")), _ => false)
+            .Use(new RecordingHandler("B", _ => log.Add("B")), _ => true)
+            .Build();
+
+        await pipeline.InvokeAsync("req");
+
+        Assert.DoesNotContain("A", log);
+        Assert.Contains("B", log);
+    }
+
+    [Fact]
+    public async Task Guard_Null_ExecutesHandler()
+    {
+        var executed = false;
+
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new RecordingHandler("A", _ => executed = true), guard: null)
+            .Build();
+
+        await pipeline.InvokeAsync("req");
+
+        Assert.True(executed);
+    }
+
+    [Fact]
+    public async Task Trace_GuardFails_RecordsSkipped()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new RecordingHandler("A", _ => { }), _ => false)
+            .Build();
+
+        var trace = await pipeline.InvokeTracedAsync("req");
+
+        Assert.Single(trace.Steps);
+        Assert.Equal(HandlerPipelineStepStatus.Skipped, trace.Steps[0].Status);
+    }
+
+    [Fact]
+    public async Task Trace_WasSkipped_True()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new RecordingHandler("A", _ => { }), _ => false)
+            .Use(new RecordingHandler("B", _ => { }), _ => true)
+            .Build();
+
+        var trace = await pipeline.InvokeTracedAsync("req");
+
+        Assert.True(trace.WasSkipped);
+    }
+
+    [Fact]
+    public async Task Trace_WasSkipped_False_WhenNoGuards()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        var trace = await pipeline.InvokeTracedAsync("hi");
+
+        Assert.False(trace.WasSkipped);
+    }
+
     private sealed class AppendHandler : IHandler<string>
     {
         private readonly string _suffix;
@@ -285,6 +368,27 @@ public sealed class HandlerPipelineTests
         {
             _capture(cancellationToken);
             return default;
+        }
+    }
+
+    private sealed class RecordingHandler : IHandler<string>
+    {
+        private readonly string _name;
+        private readonly Action<string> _onInvoke;
+
+        public RecordingHandler(string name, Action<string> onInvoke)
+        {
+            _name = name;
+            _onInvoke = onInvoke;
+        }
+
+        public ValueTask InvokeAsync(
+            string context,
+            HandlerDelegate<string> next,
+            CancellationToken cancellationToken = default)
+        {
+            _onInvoke(_name);
+            return next(context, cancellationToken);
         }
     }
 }

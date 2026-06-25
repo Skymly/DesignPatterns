@@ -53,4 +53,7 @@ public static class DiagnosticIds
     public const string StrategyGuardMethodNotFound = "DP047";
     public const string StrategyGuardMethodNotStatic = "DP048";
     public const string StrategyGuardMethodWrongSignature = "DP049";
+    public const string HandlerOrderGuardMethodNotFound = "DP050";
+    public const string HandlerOrderGuardMethodNotStatic = "DP051";
+    public const string HandlerOrderGuardMethodWrongSignature = "DP052";
 }

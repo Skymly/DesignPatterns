@@ -19,4 +19,10 @@ public enum HandlerPipelineStepStatus
     /// The handler was never invoked because an earlier handler short-circuited.
     /// </summary>
     NotReached = 2,
+
+    /// <summary>
+    /// The handler was skipped because its guard predicate returned <see langword="false"/>.
+    /// The pipeline continued to the next handler.
+    /// </summary>
+    Skipped = 3,
 }

@@ -70,7 +70,7 @@ internal static class AutofacIntegrationSyntaxHelper
 
     internal static MethodDeclarationSyntax CreateHandlerCreateFromComponentContextMethod(
         string contextTypeName,
-        IReadOnlyList<string> handlerTypeNames)
+        IReadOnlyList<(string HandlerTypeName, string? GuardMethodReference)> handlers)
     {
         var lifetimeScopeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("lifetimeScope"))
             .WithType(SyntaxFactory.ParseTypeName("global::Autofac.ILifetimeScope"));
@@ -83,7 +83,7 @@ internal static class AutofacIntegrationSyntaxHelper
 
         var buildCall = DiIntegrationSyntaxHelper.CreateHandlerPipelineBuilderExpression(
             contextTypeName,
-            handlerTypeNames,
+            handlers,
             RegistrationResolveTarget.ComponentContext);
 
         return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))

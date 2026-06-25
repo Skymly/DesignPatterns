@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP051,
+    Message: Guard method 'CanHandle' on handler class 'FirstHandler' must be static. Add the static keyword to the method declaration.
+  }
+]
