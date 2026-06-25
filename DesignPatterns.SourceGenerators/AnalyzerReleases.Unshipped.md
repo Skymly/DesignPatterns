@@ -44,3 +44,6 @@ DP039    | DesignPatterns.Generators | Error    | Action method has wrong signat
 DP040    | DesignPatterns.Generators | Error    | Composite node not registered with DI container
 DP042    | DesignPatterns.Generators | Error    | Async decorator has wrong DecorateAsync signature
 DP043    | DesignPatterns.Generators | Warning  | Decorator not resolvable from DI container
+DP044    | DesignPatterns.Analyzers | Info     | Event handler implementation missing RegisterEventHandler attribute
+DP045    | DesignPatterns.Generators | Error    | Duplicate RegisterEventHandler on same class for same event type
+DP046    | DesignPatterns.Generators | Error    | Event handler does not implement IEventHandler for event type

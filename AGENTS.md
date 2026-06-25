@@ -111,7 +111,7 @@ dotnet test DesignPatterns.slnx -c Release
 | Chain | `IHandler<T>`、`HandlerPipeline` | `HandlerOrderGenerator` |
 | Composite | `[CompositePart]` | `CompositePartGenerator` |
 | Decorator | `[Decorator]` | `DecoratorGenerator` |
-| Event Aggregator | `IEventAggregator` | — |
+| Event Aggregator | `IEventAggregator`、`[RegisterEventHandler]` | `RegisterEventHandlerGenerator` |
 | State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
 
 模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/StateTransitionTable.md](docs/StateTransitionTable.md)、[docs/rfc/StateTransitionTable.md](docs/rfc/StateTransitionTable.md)。
@@ -138,15 +138,18 @@ dotnet test DesignPatterns.slnx -c Release
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP042–DP043 | Decorator async 签名校验 + DI 可解析性（生成器） |
+| DP044 | 未注册 EventHandler（Analyzer；实现 `IEventHandler<T>` 但未标注 `[RegisterEventHandler]`） |
+| DP045 | RegisterEventHandler 重复标注（生成器；同一 handler 对同一 event type 重复） |
+| DP046 | RegisterEventHandler 契约不匹配（生成器；标注但未实现 `IEventHandler<T>`） |
 | DP020–DP022 | RegisterFactory（生成器） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP044**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP047**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
-- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 属 **Analyzer**；其余属**生成器**。
+- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
 - DP038（action 方法非 static）因 C# 编译器 CS0708 先于生成器拒绝 static 类中的实例成员，无法通过生成器测试触发；诊断保留供完整性。
 
