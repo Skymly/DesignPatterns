@@ -133,4 +133,73 @@ public sealed class UnregisteredEventHandlerAnalyzerTests
 
         await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP044"));
     }
+
+    [Fact]
+    public async Task DoesNotReportForAbstractHandler()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public record OrderPlacedEvent(string OrderId);
+
+            [RegisterEventHandler<OrderPlacedEvent>]
+            public sealed class RegisteredHandler : IEventHandler<OrderPlacedEvent>
+            {
+                public ValueTask HandleAsync(OrderPlacedEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+
+            public abstract class AbstractHandler : IEventHandler<OrderPlacedEvent>
+            {
+                public ValueTask HandleAsync(OrderPlacedEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new UnregisteredEventHandlerAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP044"));
+    }
+
+    [Fact]
+    public async Task DoesNotReportForPrivateNestedHandler()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public record OrderPlacedEvent(string OrderId);
+
+            [RegisterEventHandler<OrderPlacedEvent>]
+            public sealed class RegisteredHandler : IEventHandler<OrderPlacedEvent>
+            {
+                public ValueTask HandleAsync(OrderPlacedEvent evt, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+
+            public sealed class Outer
+            {
+                private sealed class PrivateNestedHandler : IEventHandler<OrderPlacedEvent>
+                {
+                    public ValueTask HandleAsync(OrderPlacedEvent evt, CancellationToken cancellationToken = default) =>
+                        default;
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new UnregisteredEventHandlerAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP044"));
+    }
 }
