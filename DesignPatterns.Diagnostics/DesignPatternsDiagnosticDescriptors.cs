@@ -419,6 +419,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // Handler order guard (DP050–DP052)
+
+    public static DiagnosticDescriptor HandlerOrderGuardMethodNotFound { get; } = Create(
+        DiagnosticIds.HandlerOrderGuardMethodNotFound,
+        "Handler guard method not found on handler class",
+        "Guard method '{0}' was not found on handler class '{1}'. Add a static method with signature 'bool {0}({2})' or remove the Guard property from [HandlerOrder].",
+        "Handler guard names must reference a declared method on the handler class.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor HandlerOrderGuardMethodNotStatic { get; } = Create(
+        DiagnosticIds.HandlerOrderGuardMethodNotStatic,
+        "Handler guard method is not static",
+        "Guard method '{0}' on handler class '{1}' must be static. Add the static keyword to the method declaration.",
+        "Handler guards must be static so the source generator can emit a delegate reference.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor HandlerOrderGuardMethodWrongSignature { get; } = Create(
+        DiagnosticIds.HandlerOrderGuardMethodWrongSignature,
+        "Handler guard method has wrong signature",
+        "Guard method '{0}' on handler class '{1}' must have signature 'bool {0}({2})'. Fix the parameter types or return type.",
+        "Handler guards must accept (TContext) and return bool.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,

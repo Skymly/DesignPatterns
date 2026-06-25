@@ -157,7 +157,7 @@ internal static class DiIntegrationSyntaxHelper
 
     internal static MethodDeclarationSyntax CreateHandlerCreateFromServiceProviderMethod(
         string contextTypeName,
-        IReadOnlyList<string> handlerTypeNames)
+        IReadOnlyList<(string HandlerTypeName, string? GuardMethodReference)> handlers)
     {
         var serviceProviderParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceProvider"))
             .WithType(SyntaxFactory.ParseTypeName("global::System.IServiceProvider"));
@@ -170,7 +170,7 @@ internal static class DiIntegrationSyntaxHelper
 
         var buildCall = CreateHandlerPipelineBuilderExpression(
             contextTypeName,
-            handlerTypeNames,
+            handlers,
             RegistrationResolveTarget.ServiceProvider);
 
         return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
@@ -243,7 +243,7 @@ internal static class DiIntegrationSyntaxHelper
 
     internal static ExpressionSyntax CreateHandlerPipelineBuilderExpression(
         string contextTypeName,
-        IReadOnlyList<string> handlerTypeNames,
+        IReadOnlyList<(string HandlerTypeName, string? GuardMethodReference)> handlers,
         RegistrationResolveTarget resolveTarget)
     {
         var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipelineBuilder"))
@@ -255,7 +255,7 @@ internal static class DiIntegrationSyntaxHelper
         ExpressionSyntax builderExpression = SyntaxFactory.ObjectCreationExpression(builderType)
             .WithArgumentList(SyntaxFactory.ArgumentList());
 
-        foreach (var handlerTypeName in handlerTypeNames)
+        foreach (var (handlerTypeName, guardMethodReference) in handlers)
         {
             ExpressionSyntax handlerExpression = resolveTarget switch
             {
@@ -265,14 +265,33 @@ internal static class DiIntegrationSyntaxHelper
                     .WithArgumentList(SyntaxFactory.ArgumentList()),
             };
 
-            builderExpression = SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        builderExpression,
-                        SyntaxFactory.IdentifierName("Use")))
-                .WithArgumentList(
-                    SyntaxFactory.ArgumentList(
-                        SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(handlerExpression))));
+            if (string.IsNullOrEmpty(guardMethodReference))
+            {
+                builderExpression = SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            builderExpression,
+                            SyntaxFactory.IdentifierName("Use")))
+                    .WithArgumentList(
+                        SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(handlerExpression))));
+            }
+            else
+            {
+                var guardExpression = SyntaxFactory.ParseExpression(guardMethodReference!);
+                builderExpression = SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            builderExpression,
+                            SyntaxFactory.IdentifierName("Use")))
+                    .WithArgumentList(
+                        SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SeparatedList(new[]
+                            {
+                                SyntaxFactory.Argument(handlerExpression),
+                                SyntaxFactory.Argument(guardExpression),
+                            })));
+            }
         }
 
         return SyntaxFactory.InvocationExpression(

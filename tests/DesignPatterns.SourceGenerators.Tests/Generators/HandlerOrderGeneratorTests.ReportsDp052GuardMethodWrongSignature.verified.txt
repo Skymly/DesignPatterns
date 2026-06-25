@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP052,
+    Message: Guard method 'CanHandle' on handler class 'FirstHandler' must have signature 'bool CanHandle(global::TestAssembly.TestContext)'. Fix the parameter types or return type.
+  }
+]

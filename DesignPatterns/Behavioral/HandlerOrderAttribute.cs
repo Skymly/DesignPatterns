@@ -29,4 +29,13 @@ public sealed class HandlerOrderAttribute : Attribute
     /// The context type flowing through the pipeline.
     /// </summary>
     public Type ContextType { get; }
+
+    /// <summary>
+    /// Optional name of a static guard method on the handler class.
+    /// When set, the method must have the signature
+    /// <c>static bool Method(TContext context)</c>.
+    /// The handler only executes when the guard returns <see langword="true"/>;
+    /// otherwise the handler is skipped and the pipeline continues.
+    /// </summary>
+    public string? Guard { get; set; }
 }

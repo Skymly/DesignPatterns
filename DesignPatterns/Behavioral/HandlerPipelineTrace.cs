@@ -36,4 +36,23 @@ public sealed class HandlerPipelineTrace
             return false;
         }
     }
+
+    /// <summary>
+    /// <see langword="true"/> when any handler was skipped due to a guard returning <see langword="false"/>.
+    /// </summary>
+    public bool WasSkipped
+    {
+        get
+        {
+            for (var i = 0; i < Steps.Count; i++)
+            {
+                if (Steps[i].Status == HandlerPipelineStepStatus.Skipped)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
 }

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using DesignPatterns.Diagnostics;
+using DesignPatterns.SourceGenerators.Generators.StateTransition;
 using DesignPatterns.SourceGenerators.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -116,6 +117,25 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                     : contextType.ContainingNamespace.ToDisplayString(),
                 contextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
+            // Resolve optional Guard property from the attribute.
+            string? guardName = null;
+            foreach (var namedArg in attribute.NamedArguments)
+            {
+                if (string.Equals(namedArg.Key, "Guard", StringComparison.Ordinal)
+                    && namedArg.Value.Value is string guardValue)
+                {
+                    guardName = guardValue;
+                    break;
+                }
+            }
+
+            var guard = guardName is null
+                ? default(GuardResolution)
+                : GuardMethodValidator.Resolve(
+                    handlerType,
+                    guardName,
+                    ImmutableArray.Create<ITypeSymbol>(contextType));
+
             result.Add(new HandlerRegistration(
                 order,
                 contextInfo,
@@ -123,6 +143,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 handlerFullyQualifiedDisplayString,
                 ImplementsHandler(handlerType, contextType),
                 HasPublicParameterlessConstructor(handlerType),
+                guard,
                 location));
         }
 
@@ -162,6 +183,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             var valid = group
                 .Where(static r => r.ImplementsHandler)
                 .Where(static r => r.HasPublicParameterlessConstructor)
+                .Where(static r => r.Guard.IsValid)
                 .GroupBy(static r => r.Order)
                 .Where(static g => g.Count() == 1)
                 .Select(static g => g.First())
@@ -218,6 +240,55 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 registration.Location,
                 registration.HandlerName));
         }
+
+        ReportGuardDiagnostics(context, registrations);
+    }
+
+    private static void ReportGuardDiagnostics(
+        SourceProductionContext context,
+        List<HandlerRegistration> registrations)
+    {
+        foreach (var registration in registrations)
+        {
+            var guard = registration.Guard;
+            if (guard.IsValid)
+            {
+                continue;
+            }
+
+            var contextTypeDisplay = registration.Context.FullyQualifiedDisplayString;
+
+            if (!guard.IsFound)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.HandlerOrderGuardMethodNotFound,
+                    registration.Location,
+                    guard.Name,
+                    registration.HandlerName,
+                    contextTypeDisplay));
+                continue;
+            }
+
+            if (!guard.IsStatic)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.HandlerOrderGuardMethodNotStatic,
+                    registration.Location,
+                    guard.Name,
+                    registration.HandlerName));
+                continue;
+            }
+
+            if (!guard.HasValidSignature)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.HandlerOrderGuardMethodWrongSignature,
+                    registration.Location,
+                    guard.Name,
+                    registration.HandlerName,
+                    contextTypeDisplay));
+            }
+        }
     }
 
     private static void EmitPipeline(
@@ -228,15 +299,15 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         bool qualifyHintName)
     {
         var pipelineClassName = HandlerPipelineSyntaxFactory.GetPipelineClassName(contextInfo.Name);
-        var handlerTypeNames = handlers
-            .Select(static h => h.HandlerFullyQualifiedDisplayString)
+        var handlerEntries = handlers
+            .Select(static h => (h.HandlerFullyQualifiedDisplayString, h.Guard.MethodReference))
             .ToList();
 
         var compilationUnit = HandlerPipelineSyntaxFactory.CreatePipelineCompilationUnit(
             contextInfo.Namespace,
             pipelineClassName,
             contextInfo.FullyQualifiedDisplayString,
-            handlerTypeNames,
+            handlerEntries,
             integrationOptions);
 
         var hintPrefix = qualifyHintName ? HintNameHelper.FromString(contextInfo.FullyQualifiedDisplayString) : contextInfo.Name;
@@ -274,5 +345,6 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         string HandlerFullyQualifiedDisplayString,
         bool ImplementsHandler,
         bool HasPublicParameterlessConstructor,
+        GuardResolution Guard,
         Location Location);
 }

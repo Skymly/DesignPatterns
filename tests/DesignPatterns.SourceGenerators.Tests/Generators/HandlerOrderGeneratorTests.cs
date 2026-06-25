@@ -270,6 +270,137 @@ public sealed class HandlerOrderGeneratorTests
     }
 
     [Fact]
+    public Task GeneratesPipelineWithGuard()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class TestContext
+            {
+                public bool Flag { get; set; }
+            }
+
+            [HandlerOrder(1, typeof(TestContext), Guard = "CanHandle")]
+            public sealed class FirstHandler : IHandler<TestContext>
+            {
+                public ValueTask InvokeAsync(
+                    TestContext context,
+                    HandlerDelegate<TestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(context, cancellationToken);
+
+                public static bool CanHandle(TestContext context) => context.Flag;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp050GuardMethodNotFound()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class TestContext
+            {
+            }
+
+            [HandlerOrder(1, typeof(TestContext), Guard = "Missing")]
+            public sealed class FirstHandler : IHandler<TestContext>
+            {
+                public ValueTask InvokeAsync(
+                    TestContext context,
+                    HandlerDelegate<TestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(context, cancellationToken);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp051GuardMethodNotStatic()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class TestContext
+            {
+            }
+
+            [HandlerOrder(1, typeof(TestContext), Guard = "CanHandle")]
+            public sealed class FirstHandler : IHandler<TestContext>
+            {
+                public ValueTask InvokeAsync(
+                    TestContext context,
+                    HandlerDelegate<TestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(context, cancellationToken);
+
+                public bool CanHandle(TestContext context) => true;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp052GuardMethodWrongSignature()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class TestContext
+            {
+            }
+
+            [HandlerOrder(1, typeof(TestContext), Guard = "CanHandle")]
+            public sealed class FirstHandler : IHandler<TestContext>
+            {
+                public ValueTask InvokeAsync(
+                    TestContext context,
+                    HandlerDelegate<TestContext> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(context, cancellationToken);
+
+                public static bool CanHandle(string context) => true;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<HandlerOrderGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp009MissingParameterlessConstructor()
     {
         const string source = """

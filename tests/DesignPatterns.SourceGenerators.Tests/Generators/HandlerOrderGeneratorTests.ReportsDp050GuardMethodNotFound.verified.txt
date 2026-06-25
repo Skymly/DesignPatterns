@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP050,
+    Message: Guard method 'Missing' was not found on handler class 'FirstHandler'. Add a static method with signature 'bool Missing(global::TestAssembly.TestContext)' or remove the Guard property from [HandlerOrder].
+  }
+]

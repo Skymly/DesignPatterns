@@ -22,6 +22,15 @@ public sealed class HandlerOrderAttribute<TContext> : Attribute
     /// The handler order. Lower values run first.
     /// </summary>
     public int Order { get; }
+
+    /// <summary>
+    /// Optional name of a static guard method on the handler class.
+    /// When set, the method must have the signature
+    /// <c>static bool Method(TContext context)</c>.
+    /// The handler only executes when the guard returns <see langword="true"/>;
+    /// otherwise the handler is skipped and the pipeline continues.
+    /// </summary>
+    public string? Guard { get; set; }
 }
 
 #endif

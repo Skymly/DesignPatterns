@@ -50,3 +50,6 @@ DP046    | DesignPatterns.Generators | Error    | Event handler does not impleme
 DP047    | DesignPatterns.Generators | Error    | Strategy guard method not found on implementation class
 DP048    | DesignPatterns.Generators | Error    | Strategy guard method is not static
 DP049    | DesignPatterns.Generators | Error    | Strategy guard method has wrong signature
+DP050    | DesignPatterns.Generators | Error    | Handler guard method not found on handler class
+DP051    | DesignPatterns.Generators | Error    | Handler guard method is not static
+DP052    | DesignPatterns.Generators | Error    | Handler guard method has wrong signature
