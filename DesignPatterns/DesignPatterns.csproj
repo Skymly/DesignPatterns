@@ -14,4 +14,8 @@
     <PackageReference Include="System.Threading.Tasks.Extensions" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DesignPatterns.Tests" />
+  </ItemGroup>
+
 </Project>

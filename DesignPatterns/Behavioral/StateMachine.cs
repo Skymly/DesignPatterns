@@ -8,6 +8,11 @@ namespace DesignPatterns.Behavioral;
 /// Default implementation of <see cref="IStateMachine{TState,TTrigger}"/>.
 /// Tracks <see cref="CurrentState"/> and delegates transitions to an
 /// <see cref="ITransitionTable{TState,TTrigger}"/>.
+/// <para>
+/// <b>Thread safety</b>: this class is <b>not</b> thread-safe. It is designed
+/// for single-thread use. For multi-threaded scenarios, synchronize access
+/// externally or use a separate instance per thread.
+/// </para>
 /// </summary>
 /// <typeparam name="TState">State enum type.</typeparam>
 /// <typeparam name="TTrigger">Trigger enum type.</typeparam>
@@ -31,7 +36,7 @@ public class StateMachine<TState, TTrigger> : IStateMachine<TState, TTrigger>
     }
 
     /// <inheritdoc />
-    public TState CurrentState { get; set; }
+    public TState CurrentState { get; internal set; }
 
     /// <inheritdoc />
     public ITransitionTable<TState, TTrigger> Table => _table;
