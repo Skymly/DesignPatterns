@@ -1,5 +1,9 @@
 using System;
 using System.Collections.Generic;
+#if NET8_0_OR_GREATER
+using System.Collections.Frozen;
+#endif
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DesignPatterns.Creational;
@@ -16,20 +20,28 @@ public sealed class FactoryRegistry<TKey, TProduct> : IFactoryRegistry<TKey, TPr
 
     /// <summary>
     /// Initializes a new instance from an existing factory map.
+    /// On net8.0+ the dictionary is frozen for faster lookups.
     /// </summary>
     public FactoryRegistry(IReadOnlyDictionary<TKey, Func<TProduct>> factories)
     {
-        _factories = factories ?? throw new ArgumentNullException(nameof(factories));
+        var dict = factories ?? throw new ArgumentNullException(nameof(factories));
+#if NET8_0_OR_GREATER
+        _factories = dict is FrozenDictionary<TKey, Func<TProduct>> frozen
+            ? frozen
+            : dict.ToFrozenDictionary();
+#else
+        _factories = dict;
+#endif
     }
 
     /// <inheritdoc />
     public IReadOnlyCollection<TKey> Keys => _factories.Keys.ToArray();
 
     /// <inheritdoc />
-    public bool TryGet(TKey key, out TProduct value) => TryCreate(key, out value);
+    public bool TryGet(TKey key, [MaybeNullWhen(false)] out TProduct value) => TryCreate(key, out value);
 
     /// <inheritdoc />
-    public bool TryCreate(TKey key, out TProduct product)
+    public bool TryCreate(TKey key, [MaybeNullWhen(false)] out TProduct product)
     {
         if (_factories.TryGetValue(key, out var factory))
         {

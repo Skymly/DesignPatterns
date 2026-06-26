@@ -3,6 +3,7 @@ using System.Collections.Generic;
 #if NET8_0_OR_GREATER
 using System.Collections.Frozen;
 #endif
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DesignPatterns.Behavioral;
@@ -50,7 +51,7 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
     public IReadOnlyCollection<TKey> Keys => _strategies.Keys.ToArray();
 
     /// <inheritdoc />
-    public bool TryGet(TKey key, out TStrategy strategy)
+    public bool TryGet(TKey key, [MaybeNullWhen(false)] out TStrategy strategy)
     {
         if (_strategies.TryGetValue(key, out var value))
         {
@@ -63,7 +64,7 @@ public sealed class StrategyRegistry<TKey, TStrategy> : IStrategyRegistry<TKey, 
     }
 
     /// <inheritdoc />
-    public bool TryGetWithGuard(TKey key, out TStrategy strategy)
+    public bool TryGetWithGuard(TKey key, [MaybeNullWhen(false)] out TStrategy strategy)
     {
         if (!_strategies.TryGetValue(key, out var value))
         {

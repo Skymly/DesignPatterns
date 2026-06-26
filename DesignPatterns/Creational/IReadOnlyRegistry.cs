@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DesignPatterns;
 
@@ -21,5 +22,5 @@ public interface IReadOnlyRegistry<TKey, TValue>
     /// <param name="key">The registry key.</param>
     /// <param name="value">The resolved value when the key is registered.</param>
     /// <returns><see langword="true"/> when the key is registered; otherwise <see langword="false"/>.</returns>
-    bool TryGet(TKey key, out TValue value);
+    bool TryGet(TKey key, [MaybeNullWhen(false)] out TValue value);
 }
