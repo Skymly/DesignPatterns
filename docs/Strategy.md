@@ -53,16 +53,19 @@ namespace DesignPatterns.Behavioral;
 /// <summary>
 /// 按 key 解析策略实现的只读注册表。
 /// </summary>
-public interface IStrategyRegistry<TKey, out TStrategy>
+public interface IStrategyRegistry<TKey, TStrategy>
     where TKey : notnull
 {
     bool TryGet(TKey key, [MaybeNullWhen(false)] out TStrategy strategy);
     TStrategy Get(TKey key); // 找不到抛 StrategyNotFoundException
+    bool TryGetWithGuard(TKey key, [MaybeNullWhen(false)] out TStrategy strategy);
     IReadOnlyCollection<TKey> Keys { get; }
 }
 ```
 
-提供不可变实现 `StrategyRegistry<TKey, TStrategy>`，内部使用 `IReadOnlyDictionary` 包装 `Dictionary`（`FrozenDictionary` 优化留 P3）。
+> **注意**：`TStrategy` 为不变（invariant），非协变 `out`——`TryGetWithGuard` 的 `out TStrategy` 参数阻止协变。
+
+提供不可变实现 `StrategyRegistry<TKey, TStrategy>`，net8.0 上内部使用 `FrozenDictionary` 优化查找。
 
 ### Builder（手动注册，无生成器时）
 
@@ -97,6 +100,23 @@ var length = await registry.Get(TextProcessorKeys.Length).ExecuteAsync("hello");
 
 DI 场景：`{Contract}Registry.RegisterDi(services)` 后从容器解析 `IStrategyRegistry<string, TContract>`，再 `await registry.ExecuteAsync<...>(...)` 或 `Get(key).ExecuteAsync(...)`。
 
+### Guard 谓词
+
+`TryGetWithGuard` 在解析策略时额外评估注册的 guard 谓词。guard 返回 `false` 时该策略视为未注册（返回 `false`）。
+
+```csharp
+var builder = new StrategyRegistryBuilder<string, IPaymentStrategy>()
+    .Register("alipay", new AlipayPayment(), guard: key => isEnabled("alipay"));
+var registry = builder.Build();
+
+// guard 通过时返回策略；guard 返回 false 时返回 false
+if (registry.TryGetWithGuard("alipay", out var strategy)) { ... }
+```
+
+> **设计约束**：guard 签名为 `Func<TKey, bool>`（仅接收 key），非 `Func<TInput, bool>`。注册表层面不知道 `TInput`（`TStrategy` 不要求实现 `IStrategy<TInput, TOutput>`），因此无法基于输入判断。基于输入的动态路由是业务逻辑，不在此库范围。
+
+源生成器支持：`[RegisterStrategy<TContract>("key", Guard = nameof(CanEnable))]`，生成器校验 guard 方法签名（DP047-DP049）。
+
 ---
 
 ## 编译期：`[RegisterStrategy]` 源生成器
@@ -120,6 +140,12 @@ public sealed class RegisterStrategyAttribute<TContract> : Attribute
     /// </summary>
     public string Key { get; }
 
+    /// <summary>
+    /// 可选：实现类上的 static guard 方法名。设置后该方法须有签名
+    /// <c>static bool Method(TKey key)</c>。guard 返回 false 时该策略视为未注册。
+    /// </summary>
+    public string? Guard { get; set; }
+
     public RegisterStrategyAttribute(string key)
     {
         Key = key;
@@ -138,6 +164,11 @@ public sealed class RegisterStrategyAttribute : Attribute
     /// 策略契约接口类型。
     /// </summary>
     public Type For { get; }
+
+    /// <summary>
+    /// 可选：实现类上的 static guard 方法名。签名须为 <c>static bool Method(TKey key)</c>。
+    /// </summary>
+    public string? Guard { get; set; }
 
     public RegisterStrategyAttribute(string key, Type @for)
     {
@@ -243,6 +274,9 @@ var registry = services.BuildServiceProvider()
 | DP004 | Error | 源生成器 | 标记的类未实现指定的 `TContract` | 接口不匹配 |
 | DP006 | Info | Analyzer | 实现了某策略契约但未加 `[RegisterStrategy]` | 建议添加特性 |
 | DP007 | Error | 源生成器 | 标记的类缺少 public 无参构造 | 无法 `new()` 实例化 |
+| DP047 | Error | 源生成器 | `Guard` 指定的方法在实现类上未找到 | 添加 static 方法或移除 Guard |
+| DP048 | Error | 源生成器 | `Guard` 指定的方法非 static | 改为 static |
+| DP049 | Error | 源生成器 | `Guard` 指定的方法签名错误（须 `static bool Method(TKey key)`） | 修正参数类型或返回类型 |
 
 > **注意**：DP005 属于 Handler（`[HandlerOrder]` 重复 Order），不属于 Strategy。
 
@@ -288,7 +322,7 @@ public sealed class RegisterStrategyAttribute : Attribute { ... }
 | 注册内容 | key → 实例（或 build 时 invoke 一次的 factory） | key → `Func<TProduct>` |
 | 生命周期 | 通常 Singleton（生成器用 `new()` 静态单例） | 每次 `Create` 调用 factory |
 | 编译期 | `[RegisterStrategy]` 生成 Keys + Registry | `[RegisterFactory]` 生成 Keys + `Create()` |
-| 共享抽象 | `IStrategyRegistry` 继承 `IReadOnlyRegistry` | Factory 不继承 |
+| 共享抽象 | `IStrategyRegistry` 继承 `IReadOnlyRegistry` | `IFactoryRegistry` 继承 `IReadOnlyRegistry` |
 | DI | `PaymentStrategyRegistry.RegisterDi(services)` | `ProductFactoryRegistry.RegisterDi(services)` |
 
 详见 [FactoryRegistry.md](FactoryRegistry.md)。
