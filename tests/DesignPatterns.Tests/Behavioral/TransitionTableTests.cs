@@ -524,4 +524,131 @@ public sealed class TransitionTableTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             table.TryTransitionAsync(OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None).AsTask());
     }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenNoEdge_ReturnsFailedTrace()
+    {
+        var table = CreateOrderTable();
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Paid, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.False(trace.Succeeded);
+        Assert.Null(trace.Exception);
+        Assert.True(trace.OnExitCompleted);
+        Assert.True(trace.OnEnterCompleted);
+    }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenGuardReturnsFalse_ReturnsFailedTrace()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: (_, _) => false)
+            .Build();
+
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.False(trace.Succeeded);
+        Assert.Null(trace.Exception);
+    }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenGuardThrows_RecordsException()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: (_, _) => throw new InvalidOperationException("guard failed"))
+            .Build();
+
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.False(trace.Succeeded);
+        Assert.NotNull(trace.Exception);
+        Assert.IsType<InvalidOperationException>(trace.Exception);
+        Assert.False(trace.OnExitCompleted);
+        Assert.False(trace.OnEnterCompleted);
+    }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenOnExitThrows_RecordsPartialExecution()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: null,
+                onExitSync: (_, _, _) => throw new InvalidOperationException("exit failed"),
+                onEnterSync: (_, _, _) => Assert.Fail("enter should not run"))
+            .Build();
+
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.False(trace.Succeeded);
+        Assert.NotNull(trace.Exception);
+        Assert.Equal("exit failed", trace.Exception.Message);
+        Assert.False(trace.OnExitCompleted);
+        Assert.False(trace.OnEnterCompleted);
+    }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenOnExitSucceedsButOnEnterThrows_RecordsPartialExecution()
+    {
+        var exitInvoked = false;
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: null,
+                onExitSync: (_, _, _) => exitInvoked = true,
+                onEnterSync: (_, _, _) => throw new InvalidOperationException("enter failed"))
+            .Build();
+
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.False(trace.Succeeded);
+        Assert.True(exitInvoked);
+        Assert.NotNull(trace.Exception);
+        Assert.Equal("enter failed", trace.Exception.Message);
+        Assert.True(trace.OnExitCompleted);
+        Assert.False(trace.OnEnterCompleted);
+    }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenAllActionsSucceed_ReturnsSuccessTrace()
+    {
+        var table = new TransitionTableBuilder<OrderStatus, OrderTrigger>()
+            .WithInitial(OrderStatus.Draft)
+            .Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted,
+                guard: null,
+                onEnterSync: (_, _, _) => { },
+                onExitSync: (_, _, _) => { })
+            .Build();
+
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(trace.Succeeded);
+        Assert.Equal(OrderStatus.Submitted, trace.NextState);
+        Assert.Null(trace.Exception);
+        Assert.True(trace.OnExitCompleted);
+        Assert.True(trace.OnEnterCompleted);
+    }
+
+    [Fact]
+    public async Task TryTransitionTracedAsync_WhenNoActions_ReturnsSuccessWithCompletedFlags()
+    {
+        var table = CreateOrderTable();
+
+        var trace = await table.TryTransitionTracedAsync(
+            OrderStatus.Draft, OrderTrigger.Submit, CancellationToken.None);
+
+        Assert.True(trace.Succeeded);
+        Assert.Equal(OrderStatus.Submitted, trace.NextState);
+        Assert.True(trace.OnExitCompleted);
+        Assert.True(trace.OnEnterCompleted);
+    }
 }

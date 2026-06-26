@@ -111,6 +111,24 @@ internal static class StateTransitionSyntaxFactory
                 },
                 "Table.TryTransitionAsync(current, trigger, cancellationToken)"),
             CreateForwardingMethod(
+                "TryTransitionTracedAsync",
+                SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
+                    .WithTypeArgumentList(
+                        SyntaxFactory.TypeArgumentList(
+                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                SyntaxFactory.GenericName(SyntaxFactory.Identifier("TransitionTrace"))
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(stateTypeName))))))),
+                new[]
+                {
+                    new ParameterModel(stateTypeName, "current"),
+                    new ParameterModel(triggerTypeName, "trigger"),
+                    new ParameterModel("CancellationToken", "cancellationToken"),
+                },
+                "Table.TryTransitionTracedAsync(current, trigger, cancellationToken)"),
+            CreateForwardingMethod(
                 "GetAllowedTriggers",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("IReadOnlyList"))
                     .WithTypeArgumentList(
@@ -202,6 +220,25 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel("CancellationToken", "cancellationToken"),
                 },
                 $"{tableClassName}.Instance.TryTransitionAsync(current, trigger, cancellationToken)",
+                isStatic: true),
+            CreateForwardingMethod(
+                "TryTransitionTracedAsync",
+                SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
+                    .WithTypeArgumentList(
+                        SyntaxFactory.TypeArgumentList(
+                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                SyntaxFactory.GenericName(SyntaxFactory.Identifier("TransitionTrace"))
+                                    .WithTypeArgumentList(
+                                        SyntaxFactory.TypeArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                SyntaxFactory.ParseTypeName(stateTypeName))))))),
+                new[]
+                {
+                    new ParameterModel(stateTypeName, "current"),
+                    new ParameterModel(triggerTypeName, "trigger"),
+                    new ParameterModel("CancellationToken", "cancellationToken"),
+                },
+                $"{tableClassName}.Instance.TryTransitionTracedAsync(current, trigger, cancellationToken)",
                 isStatic: true),
         };
 
