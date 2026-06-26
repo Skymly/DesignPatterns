@@ -24,9 +24,27 @@ public interface IEventAggregator
 
     /// <summary>
     /// Publishes an event, invoking all subscribed handlers sequentially.
+    /// When a handler throws, the exception propagates immediately and
+    /// remaining handlers are not invoked (equivalent to
+    /// <see cref="EventPublishErrorHandling.StopOnError"/>).
     /// </summary>
     /// <typeparam name="TEvent">The event type.</typeparam>
     /// <param name="evt">The event instance.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     ValueTask PublishAsync<TEvent>(TEvent evt, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes an event with a configurable error handling strategy.
+    /// </summary>
+    /// <typeparam name="TEvent">The event type.</typeparam>
+    /// <param name="evt">The event instance.</param>
+    /// <param name="errorHandling">
+    /// Controls how handler exceptions are handled. See
+    /// <see cref="EventPublishErrorHandling"/> for available strategies.
+    /// </param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    ValueTask PublishAsync<TEvent>(
+        TEvent evt,
+        EventPublishErrorHandling errorHandling,
+        CancellationToken cancellationToken = default);
 }

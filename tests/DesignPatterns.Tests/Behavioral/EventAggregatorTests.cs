@@ -193,6 +193,142 @@ public sealed class EventAggregatorTests
         Assert.Equal(5, counter);
     }
 
+    [Fact]
+    public async Task PublishAsync_StopOnError_StopsAtFirstThrowingHandler()
+    {
+        var aggregator = new EventAggregator();
+        var invoked = new List<int>();
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(1);
+            return default;
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(2);
+            throw new InvalidOperationException("handler 2 failed");
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(3);
+            return default;
+        }));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            aggregator.PublishAsync(
+                new TestEvent("x"),
+                EventPublishErrorHandling.StopOnError).AsTask());
+
+        Assert.Equal("handler 2 failed", ex.Message);
+        Assert.Equal(new[] { 1, 2 }, invoked);
+    }
+
+    [Fact]
+    public async Task PublishAsync_ContinueOnError_InvokesAllHandlers()
+    {
+        var aggregator = new EventAggregator();
+        var invoked = new List<int>();
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(1);
+            return default;
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(2);
+            throw new InvalidOperationException("handler 2 failed");
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(3);
+            return default;
+        }));
+
+        await aggregator.PublishAsync(
+            new TestEvent("x"),
+            EventPublishErrorHandling.ContinueOnError);
+
+        Assert.Equal(new[] { 1, 2, 3 }, invoked);
+    }
+
+    [Fact]
+    public async Task PublishAsync_AggregateErrors_InvokesAllAndThrowsAggregate()
+    {
+        var aggregator = new EventAggregator();
+        var invoked = new List<int>();
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(1);
+            throw new InvalidOperationException("handler 1 failed");
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(2);
+            return default;
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(3);
+            throw new InvalidOperationException("handler 3 failed");
+        }));
+
+        var ex = await Assert.ThrowsAsync<AggregateException>(() =>
+            aggregator.PublishAsync(
+                new TestEvent("x"),
+                EventPublishErrorHandling.AggregateErrors).AsTask());
+
+        Assert.Equal(new[] { 1, 2, 3 }, invoked);
+        Assert.Equal(2, ex.InnerExceptions.Count);
+        Assert.Equal("handler 1 failed", ex.InnerExceptions[0].Message);
+        Assert.Equal("handler 3 failed", ex.InnerExceptions[1].Message);
+    }
+
+    [Fact]
+    public async Task PublishAsync_AggregateErrors_NoExceptions_DoesNotThrow()
+    {
+        var aggregator = new EventAggregator();
+        var invoked = 0;
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked++;
+            return default;
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked++;
+            return default;
+        }));
+
+        await aggregator.PublishAsync(
+            new TestEvent("x"),
+            EventPublishErrorHandling.AggregateErrors);
+
+        Assert.Equal(2, invoked);
+    }
+
+    [Fact]
+    public async Task PublishAsync_DefaultOverload_UsesStopOnError()
+    {
+        var aggregator = new EventAggregator();
+        var invoked = new List<int>();
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(1);
+            throw new InvalidOperationException("failed");
+        }));
+        aggregator.Subscribe(new DelegateHandler<TestEvent>(_ =>
+        {
+            invoked.Add(2);
+            return default;
+        }));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            aggregator.PublishAsync(new TestEvent("x")).AsTask());
+
+        // Second handler should not be invoked (StopOnError default)
+        Assert.Equal(new[] { 1 }, invoked);
+    }
+
     // Helper types
 
     private sealed record TestEvent(string Message);
