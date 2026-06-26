@@ -286,6 +286,30 @@ public sealed class StateTransitionGeneratorTests
     }
 
     [Fact]
+    public Task EmitsRegisterAutofacWhenAutofacIntegrationEnabled()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            enableDiIntegration: false,
+            enableAutofacIntegration: true,
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp032GuardMethodNotFound()
     {
         const string source = """

@@ -14,11 +14,20 @@ internal static class SourceGeneratorTestContext
     internal static GeneratorDriverRunResult Run<TGenerator>(params (string Path, string Source)[] sources)
         where TGenerator : IIncrementalGenerator, new()
     {
-        return Run<TGenerator>(enableDiIntegration: false, sources);
+        return Run<TGenerator>(enableDiIntegration: false, enableAutofacIntegration: false, sources);
     }
 
     internal static GeneratorDriverRunResult Run<TGenerator>(
         bool enableDiIntegration,
+        params (string Path, string Source)[] sources)
+        where TGenerator : IIncrementalGenerator, new()
+    {
+        return Run<TGenerator>(enableDiIntegration, enableAutofacIntegration: false, sources);
+    }
+
+    internal static GeneratorDriverRunResult Run<TGenerator>(
+        bool enableDiIntegration,
+        bool enableAutofacIntegration,
         params (string Path, string Source)[] sources)
         where TGenerator : IIncrementalGenerator, new()
     {
@@ -45,7 +54,7 @@ internal static class SourceGeneratorTestContext
         }
 
         var analyzerConfigOptions = new TestAnalyzerConfigOptionsProvider(
-            new TestGlobalOptions(enableDiIntegration));
+            new TestGlobalOptions(enableDiIntegration, enableAutofacIntegration));
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(new TGenerator())
             .WithUpdatedAnalyzerConfigOptions(analyzerConfigOptions);
@@ -217,10 +226,12 @@ internal static class SourceGeneratorTestContext
 file sealed class TestGlobalOptions : AnalyzerConfigOptions
 {
     private readonly bool _enableDiIntegration;
+    private readonly bool _enableAutofacIntegration;
 
-    public TestGlobalOptions(bool enableDiIntegration)
+    public TestGlobalOptions(bool enableDiIntegration, bool enableAutofacIntegration = false)
     {
         _enableDiIntegration = enableDiIntegration;
+        _enableAutofacIntegration = enableAutofacIntegration;
     }
 
     public override bool TryGetValue(string key, out string value)
@@ -228,6 +239,12 @@ file sealed class TestGlobalOptions : AnalyzerConfigOptions
         if (string.Equals(key, "build_property.DesignPatterns_EnableDiIntegration", StringComparison.Ordinal))
         {
             value = _enableDiIntegration.ToString().ToLowerInvariant();
+            return true;
+        }
+
+        if (string.Equals(key, "build_property.DesignPatterns_EnableAutofacIntegration", StringComparison.Ordinal))
+        {
+            value = _enableAutofacIntegration.ToString().ToLowerInvariant();
             return true;
         }
 

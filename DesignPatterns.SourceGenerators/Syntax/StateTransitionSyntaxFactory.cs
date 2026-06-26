@@ -149,6 +149,11 @@ internal static class StateTransitionSyntaxFactory
             members.Add(CreateRegisterDiMethod(stateTypeName, triggerTypeName));
         }
 
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(CreateTableRegisterAutofacMethod(stateTypeName, triggerTypeName));
+        }
+
         var tableClass = SyntaxFactory.ClassDeclaration(tableClassName)
             .WithModifiers(
                 SyntaxFactory.TokenList(
@@ -172,6 +177,11 @@ internal static class StateTransitionSyntaxFactory
         {
             usings.Add("Microsoft.Extensions.DependencyInjection");
             usings.Add("Microsoft.Extensions.DependencyInjection.Extensions");
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            usings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
         }
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, tableClass, "StateTransitionGenerator", usings.ToArray());
@@ -300,6 +310,11 @@ internal static class StateTransitionSyntaxFactory
             members.Add(CreateStateMachineRegisterDiMethod(stateTypeName, triggerTypeName, tableClassName, stateMachineClassName));
         }
 
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(CreateStateMachineRegisterAutofacMethod(stateTypeName, triggerTypeName, tableClassName, stateMachineClassName));
+        }
+
         var stateMachineClass = SyntaxFactory.ClassDeclaration(stateMachineClassName)
             .WithModifiers(
                 SyntaxFactory.TokenList(
@@ -323,6 +338,11 @@ internal static class StateTransitionSyntaxFactory
         {
             usings.Add("Microsoft.Extensions.DependencyInjection");
             usings.Add("Microsoft.Extensions.DependencyInjection.Extensions");
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            usings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
         }
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, stateMachineClass, "StateTransitionGenerator", usings.ToArray());
@@ -537,6 +557,106 @@ internal static class StateTransitionSyntaxFactory
                     SyntaxFactory.Token(SyntaxKind.PublicKeyword),
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
             .AddParameterListParameters(servicesParam, lifetimeParam)
+            .WithBody(body);
+    }
+
+    private static MethodDeclarationSyntax CreateTableRegisterAutofacMethod(
+        string stateTypeName,
+        string triggerTypeName)
+    {
+        var builderParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("builder"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Autofac.ContainerBuilder"));
+
+        var sharingParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("sharing"))
+            .WithType(SyntaxFactory.ParseTypeName("global::DesignPatterns.Extensions.Autofac.InstanceSharing"))
+            .WithDefault(
+                SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.ParseTypeName("global::DesignPatterns.Extensions.Autofac.InstanceSharing"),
+                        SyntaxFactory.IdentifierName("Shared"))));
+
+        var serviceKeyParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceKey"))
+            .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword)))
+            .WithDefault(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
+
+        var interfaceType = $"ITransitionTable<{stateTypeName}, {triggerTypeName}>";
+
+        // Tables are immutable/stateless — always registered as singleton.
+        // The sharing parameter is accepted for API symmetry but ignored.
+        var body = SyntaxFactory.Block(
+            SyntaxFactory.ParseStatement(
+                $"builder.Register(_ => Instance).As<{interfaceType}>().SingleInstance();"),
+            SyntaxFactory.ParseStatement(
+                $"if (serviceKey is not null) {{ builder.Register(_ => Instance).Keyed<{interfaceType}>(serviceKey).SingleInstance(); }}"));
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                SyntaxFactory.Identifier("RegisterAutofac"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
+            .WithBody(body);
+    }
+
+    private static MethodDeclarationSyntax CreateStateMachineRegisterAutofacMethod(
+        string stateTypeName,
+        string triggerTypeName,
+        string tableClassName,
+        string stateMachineClassName)
+    {
+        var builderParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("builder"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Autofac.ContainerBuilder"));
+
+        var sharingParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("sharing"))
+            .WithType(SyntaxFactory.ParseTypeName("global::DesignPatterns.Extensions.Autofac.InstanceSharing"))
+            .WithDefault(
+                SyntaxFactory.EqualsValueClause(
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.ParseTypeName("global::DesignPatterns.Extensions.Autofac.InstanceSharing"),
+                        SyntaxFactory.IdentifierName("Shared"))));
+
+        var serviceKeyParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceKey"))
+            .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword)))
+            .WithDefault(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
+
+        var tableInterfaceType = $"ITransitionTable<{stateTypeName}, {triggerTypeName}>";
+        var machineInterfaceType = $"IStateMachine<{stateTypeName}, {triggerTypeName}>";
+
+        // Register the table first (always singleton), then the state machine.
+        // State machines are stateful — respect the sharing parameter.
+        var sharedRegistration = SyntaxFactory.ParseStatement(
+            $"builder.Register(ctx => new {stateMachineClassName}(ctx.Resolve<{tableInterfaceType}>())).As<{machineInterfaceType}>().SingleInstance();");
+
+        var transientRegistration = SyntaxFactory.ParseStatement(
+            $"builder.Register(ctx => new {stateMachineClassName}(ctx.Resolve<{tableInterfaceType}>())).As<{machineInterfaceType}>().InstancePerDependency();");
+
+        var sharedCondition = SyntaxFactory.BinaryExpression(
+            SyntaxKind.EqualsExpression,
+            SyntaxFactory.IdentifierName("sharing"),
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.ParseTypeName("global::DesignPatterns.Extensions.Autofac.InstanceSharing"),
+                SyntaxFactory.IdentifierName("Shared")));
+
+        var body = SyntaxFactory.Block(
+            SyntaxFactory.ParseStatement($"{tableClassName}.RegisterAutofac(builder, sharing, serviceKey);"),
+            SyntaxFactory.IfStatement(
+                sharedCondition,
+                SyntaxFactory.Block(sharedRegistration),
+                SyntaxFactory.ElseClause(SyntaxFactory.Block(transientRegistration))));
+
+        return SyntaxFactory.MethodDeclaration(
+                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                SyntaxFactory.Identifier("RegisterAutofac"))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+            .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
             .WithBody(body);
     }
 
