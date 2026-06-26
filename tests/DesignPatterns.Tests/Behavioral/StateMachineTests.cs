@@ -107,7 +107,7 @@ public sealed class StateMachineTests
     }
 
     [Fact]
-    public void CurrentState_CanBeSetManually()
+    public void CurrentState_CanBeSetInternally()
     {
         var machine = new StateMachine<LightState, LightTrigger>(CreateLightTable())
         {

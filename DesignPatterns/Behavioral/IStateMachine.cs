@@ -8,6 +8,11 @@ namespace DesignPatterns.Behavioral;
 /// Stateful wrapper around an <see cref="ITransitionTable{TState,TTrigger}"/> that
 /// automatically tracks <see cref="CurrentState"/> and fires entry/exit actions on
 /// each transition.
+/// <para>
+/// <b>Thread safety</b>: implementations are <b>not</b> thread-safe. They are
+/// designed for single-thread use. For multi-threaded scenarios, synchronize
+/// access externally or use a separate instance per thread.
+/// </para>
 /// </summary>
 /// <typeparam name="TState">State enum type.</typeparam>
 /// <typeparam name="TTrigger">Trigger enum type.</typeparam>
@@ -18,8 +23,13 @@ public interface IStateMachine<TState, TTrigger>
     /// <summary>
     /// Current state of the machine. Set to <see cref="ITransitionTable{TState,TTrigger}.InitialState"/>
     /// on construction; updated automatically after each successful transition.
+    /// <para>
+    /// State should only change via <see cref="TryTransition"/> or
+    /// <see cref="TryTransitionAsync"/>. Direct mutation of this property
+    /// bypasses transition validation and entry/exit actions.
+    /// </para>
     /// </summary>
-    TState CurrentState { get; set; }
+    TState CurrentState { get; }
 
     /// <summary>
     /// The underlying transition table.

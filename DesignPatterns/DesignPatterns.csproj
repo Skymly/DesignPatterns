@@ -15,4 +15,8 @@
     <PackageReference Include="Polyfill" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DesignPatterns.Tests" />
+  </ItemGroup>
+
 </Project>

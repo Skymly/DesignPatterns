@@ -121,7 +121,7 @@ public sealed class StateTransitionIntegrationTests
     }
 
     [Fact]
-    public void GeneratedStateMachine_CurrentStateCanBeSetManually()
+    public void GeneratedStateMachine_CurrentStateCanBeSetInternally()
     {
         var machine = new IntegrationOrderStatusStateMachine
         {
