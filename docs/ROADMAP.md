@@ -20,7 +20,7 @@
 | Event Aggregator | `{Event}EventHandlerRegistry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP047**（DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP053**（DP050–DP052 为 Handler guard 签名校验，DP047–DP049 为 Strategy guard 签名校验，DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
 
 诊断 ID 预分配（F2+ 增强项，登记后不提前占用，实现时按序领取）：
 
@@ -30,9 +30,9 @@
 | DP040–DP041 | Composite DI + visitor 覆盖校验 | SourceGenerators / Analyzers |
 | DP042–DP043 | Decorator DI + async 签名校验 | SourceGenerators |
 | DP044–DP046 | EventAggregator 未注册 handler + 重复事件类型 + 契约不匹配 | Analyzers / Generators |
-| DP047–DP049 | Strategy/Chain guard 签名校验 | SourceGenerators |
-| DP050–DP051 | Factory async + 池化校验 | SourceGenerators |
-| DP052+ | 保留（长期探索项按需领取） | — |
+| DP047–DP049 | Strategy guard 签名校验（已发布） | SourceGenerators |
+| DP050–DP052 | Handler guard 签名校验（已发布） | SourceGenerators |
+| DP053+ | 保留（长期探索项按需领取） | — |
 
 ---
 
@@ -75,8 +75,8 @@
 
 | 项 | 说明 | 涉及诊断 | 状态 |
 |----|------|----------|------|
-| Strategy/Chain guard 谓词 | Strategy：`Register(key, strategy, Func<TInput,bool>? guard)` + `TryGetWithGuard`；Chain：`[HandlerOrder<TContext>(order, Guard=nameof(Method))]`，trace 增加 `Skipped` 状态；生成器复用 State guard 签名校验 | DP047–DP049 | [ ] |
-| Factory async + 池化 | `IAsyncFactoryRegistry<TKey,TProduct>` + `CreateAsync(key, ct)`；可选 `PoolSize` 参数生成 `ArrayPool<T>` 支持的池化 registry；生成器双模式 sync+async | DP050–DP051 | [ ] |
+| Strategy/Chain guard 谓词 | Strategy：`Register(key, strategy, Func<TKey,bool>? guard)` + `TryGetWithGuard`；Chain：`[HandlerOrder<TContext>(order, Guard=nameof(Method))]`，trace 增加 `Skipped` 状态；生成器复用 State guard 签名校验 | DP047–DP052 | [x] |
+| Factory async + 池化 | `IAsyncFactoryRegistry<TKey,TProduct>` + `CreateAsync(key, ct)`；可选 `PoolSize` 参数生成 `ArrayPool<T>` 支持的池化 registry；生成器双模式 sync+async | DP053+ | [ ] |
 | State Autofac 支持 | `StateTransitionSyntaxFactory` 加 `EnableAutofac` 分支，与 MSDI 对称（~30 行，快速补齐） | — | [ ] |
 | 生成代码质量提升 | 所有生成器输出加 `#nullable enable` + `[GeneratedCode]` + `/// <summary>` XML 文档；增量管线加 `WithTrackingName` 优化缓存 | — | [ ] |
 
