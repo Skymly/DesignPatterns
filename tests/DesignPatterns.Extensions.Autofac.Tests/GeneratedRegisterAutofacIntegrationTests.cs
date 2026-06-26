@@ -4,6 +4,7 @@ using DesignPatterns.Creational;
 using DesignPatterns.Extensions.Autofac;
 using DesignPatterns.Extensions.Autofac.Tests.Factories;
 using DesignPatterns.Extensions.Autofac.Tests.Handlers;
+using DesignPatterns.Extensions.Autofac.Tests.StateMachines;
 using DesignPatterns.Extensions.Autofac.Tests.Strategies;
 
 namespace DesignPatterns.Extensions.Autofac.Tests;
@@ -114,5 +115,75 @@ public sealed class GeneratedRegisterAutofacIntegrationTests
 
         Assert.True(registry.TryGet(PaymentStrategyKeys.Alipay, out var alipay));
         Assert.Equal("Alipay:1", alipay!.Pay(1m));
+    }
+
+    [Fact]
+    public void OrderStateMachine_RegisterAutofac_ResolvesTableAndMachine()
+    {
+        var builder = new ContainerBuilder();
+        OrderStatusStateMachine.RegisterAutofac(builder);
+
+        using var container = builder.Build();
+        var table = container.Resolve<ITransitionTable<OrderStatus, OrderTrigger>>();
+        var machine = container.Resolve<IStateMachine<OrderStatus, OrderTrigger>>();
+
+        Assert.Equal(OrderStatus.Draft, table.InitialState);
+        Assert.Equal(OrderStatus.Draft, machine.CurrentState);
+        Assert.True(machine.TryTransition(OrderTrigger.Submit, out _));
+        Assert.Equal(OrderStatus.Submitted, machine.CurrentState);
+    }
+
+    [Fact]
+    public void OrderStateMachine_RegisterAutofac_NoneSharing_ReturnsNewMachinePerResolve()
+    {
+        var builder = new ContainerBuilder();
+        OrderStatusStateMachine.RegisterAutofac(builder, InstanceSharing.None);
+
+        using var container = builder.Build();
+        var first = container.Resolve<IStateMachine<OrderStatus, OrderTrigger>>();
+        var second = container.Resolve<IStateMachine<OrderStatus, OrderTrigger>>();
+
+        Assert.NotSame(first, second);
+    }
+
+    [Fact]
+    public void OrderStateMachine_RegisterAutofac_SharedSharing_ReturnsSameMachine()
+    {
+        var builder = new ContainerBuilder();
+        OrderStatusStateMachine.RegisterAutofac(builder, InstanceSharing.Shared);
+
+        using var container = builder.Build();
+        var first = container.Resolve<IStateMachine<OrderStatus, OrderTrigger>>();
+        var second = container.Resolve<IStateMachine<OrderStatus, OrderTrigger>>();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void RegisterTransitionTable_ManualRegistration_ResolvesTable()
+    {
+        var builder = new ContainerBuilder();
+        var table = OrderStatusTransitionTable.Instance;
+        builder.RegisterTransitionTable(table);
+
+        using var container = builder.Build();
+        var resolved = container.Resolve<ITransitionTable<OrderStatus, OrderTrigger>>();
+
+        Assert.Same(table.GetAllowedTriggers(OrderStatus.Draft), resolved.GetAllowedTriggers(OrderStatus.Draft));
+    }
+
+    [Fact]
+    public void RegisterStateMachine_ManualRegistration_ResolvesMachineFromTable()
+    {
+        var builder = new ContainerBuilder();
+        builder.RegisterTransitionTable(OrderStatusTransitionTable.Instance);
+        builder.RegisterStateMachine<OrderStatus, OrderTrigger>(InstanceSharing.None);
+
+        using var container = builder.Build();
+        var machine = container.Resolve<IStateMachine<OrderStatus, OrderTrigger>>();
+
+        Assert.Equal(OrderStatus.Draft, machine.CurrentState);
+        Assert.True(machine.TryTransition(OrderTrigger.Submit, out _));
+        Assert.Equal(OrderStatus.Submitted, machine.CurrentState);
     }
 }
