@@ -1,5 +1,7 @@
 # DesignPatterns
 
+[![CI](https://github.com/Skymly/DesignPatterns/actions/workflows/ci.yml/badge.svg)](https://github.com/Skymly/DesignPatterns/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/Skymly.DesignPatterns?label=NuGet)](https://www.nuget.org/packages/Skymly.DesignPatterns)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 面向 .NET 的**设计模式工具库**：提供可组合的运行时 primitives，并通过 Roslyn 源生成器在编译期减少样板代码、发现误用。
