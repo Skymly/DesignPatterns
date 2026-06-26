@@ -11,9 +11,9 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
 
     <PackageId>Skymly.DesignPatterns</PackageId>
-    <Title>Skymly.DesignPatterns</Title>
-    <Description>Design patterns toolkit for .NET with compile-time source generators. Early preview — APIs not stable.</Description>
-    <PackageTags>design-patterns;roslyn;source-generator</PackageTags>
+    <Title>Skymly.DesignPatterns — .NET Design Patterns Toolkit</Title>
+    <Description>.NET design patterns toolkit with Roslyn source generators and diagnostics. Includes Singleton, Factory Registry, Strategy, Chain of Responsibility, Composite, Decorator, Event Aggregator, and State Machine patterns. Features compile-time code generation, guard predicates, execution tracing, and MSDI + Autofac DI integration. Early preview — APIs not stable.</Description>
+    <PackageTags>design-patterns;csharp;dotnet;roslyn;source-generator;code-generator;gof;singleton;factory;strategy;chain-of-responsibility;composite;decorator;event-aggregator;state-machine;dependency-injection</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/Skymly/DesignPatterns</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Skymly/DesignPatterns.git</RepositoryUrl>
