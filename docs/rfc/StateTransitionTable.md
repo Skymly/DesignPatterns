@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| **状态** | Accepted / Implemented（v1 已于 0.1.0-preview4 发布；v2 guard/DI/DP036 已实现） |
+| **状态** | Accepted / Implemented（v1 已于 0.1.0-preview4 发布；v2 guard/DI/DP036/entry-exit actions/IStateMachine 已实现） |
 | **作者** | 维护者 / 贡献者 |
 | **创建** | 2026-06-14 |
 | **关联** | [ROADMAP.md](../ROADMAP.md) F3、`DP026` 起新诊断区段 |
@@ -41,7 +41,7 @@
 
 - 层次 / 并发 / 历史状态（UML 状态机超集）
 - 持久化快照、分布式状态、超时转换
-- Entry / exit / internal transition 动作（consumer 在 `TryTransition` 成功后自行副作用）
+- ~~Entry / exit / internal transition 动作~~（v1 非目标；**v2 已实现** entry/exit action 委托 + `[Transition(OnEnter/OnExit)]` 源生成，见 [StateTransitionTable.md](../StateTransitionTable.md)）
 - Guard 的编译期表达式求值（v1 无 guard；v2 仅运行时委托）
 - `string` / `int` 状态键（v1 仅 **enum**；与 DP025 字面量键校验正交，后续再评）
 - 反射扫描或 AppDomain 自动发现转换
