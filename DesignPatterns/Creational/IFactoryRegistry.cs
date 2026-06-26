@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DesignPatterns.Creational;
 
@@ -17,7 +18,7 @@ public interface IFactoryRegistry<TKey, TProduct> : IReadOnlyRegistry<TKey, TPro
     /// <param name="key">The factory key.</param>
     /// <param name="product">The created product when the key is registered.</param>
     /// <returns><see langword="true"/> when the key is registered; otherwise <see langword="false"/>.</returns>
-    bool TryCreate(TKey key, out TProduct product);
+    bool TryCreate(TKey key, [MaybeNullWhen(false)] out TProduct product);
 
     /// <summary>
     /// Creates a product for the given key.

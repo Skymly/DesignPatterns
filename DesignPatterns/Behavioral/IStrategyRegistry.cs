@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DesignPatterns.Behavioral;
 
@@ -24,5 +25,5 @@ public interface IStrategyRegistry<TKey, TStrategy> : IReadOnlyRegistry<TKey, TS
     /// <param name="key">The strategy key.</param>
     /// <param name="strategy">The resolved strategy, or <c>default</c> when not found or guard failed.</param>
     /// <returns><see langword="true"/> when the strategy is available and its guard passes.</returns>
-    bool TryGetWithGuard(TKey key, out TStrategy strategy);
+    bool TryGetWithGuard(TKey key, [MaybeNullWhen(false)] out TStrategy strategy);
 }
