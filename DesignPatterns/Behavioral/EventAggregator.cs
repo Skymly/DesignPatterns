@@ -58,6 +58,13 @@ public sealed class EventAggregator : IEventAggregator
 
     /// <inheritdoc />
     public ValueTask PublishAsync<TEvent>(TEvent evt, CancellationToken cancellationToken = default)
+        => PublishAsync(evt, EventPublishErrorHandling.StopOnError, cancellationToken);
+
+    /// <inheritdoc />
+    public ValueTask PublishAsync<TEvent>(
+        TEvent evt,
+        EventPublishErrorHandling errorHandling,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -73,10 +80,17 @@ public sealed class EventAggregator : IEventAggregator
             snapshot = new List<object>(list);
         }
 
-        return InvokeHandlersAsync(snapshot, evt, cancellationToken);
+        return errorHandling switch
+        {
+            EventPublishErrorHandling.StopOnError => InvokeStopOnErrorAsync(snapshot, evt, cancellationToken),
+            EventPublishErrorHandling.ContinueOnError => InvokeContinueOnErrorAsync(snapshot, evt, cancellationToken),
+            EventPublishErrorHandling.AggregateErrors => InvokeAggregateErrorsAsync(snapshot, evt, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(errorHandling), errorHandling,
+                $"Unknown {nameof(EventPublishErrorHandling)} value."),
+        };
     }
 
-    private static async ValueTask InvokeHandlersAsync<TEvent>(
+    private static async ValueTask InvokeStopOnErrorAsync<TEvent>(
         List<object> snapshot,
         TEvent evt,
         CancellationToken cancellationToken)
@@ -87,6 +101,63 @@ public sealed class EventAggregator : IEventAggregator
 
             var handler = (IEventHandler<TEvent>)handlerObj;
             await handler.HandleAsync(evt, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private static async ValueTask InvokeContinueOnErrorAsync<TEvent>(
+        List<object> snapshot,
+        TEvent evt,
+        CancellationToken cancellationToken)
+    {
+        foreach (var handlerObj in snapshot)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var handler = (IEventHandler<TEvent>)handlerObj;
+            try
+            {
+                await handler.HandleAsync(evt, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // Silently swallow — continue to next handler
+            }
+        }
+    }
+
+    private static async ValueTask InvokeAggregateErrorsAsync<TEvent>(
+        List<object> snapshot,
+        TEvent evt,
+        CancellationToken cancellationToken)
+    {
+        List<Exception>? exceptions = null;
+
+        foreach (var handlerObj in snapshot)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var handler = (IEventHandler<TEvent>)handlerObj;
+            try
+            {
+                await handler.HandleAsync(evt, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                (exceptions ??= new List<Exception>()).Add(ex);
+            }
+        }
+
+        if (exceptions is not null)
+        {
+            throw new AggregateException(exceptions);
         }
     }
 }
