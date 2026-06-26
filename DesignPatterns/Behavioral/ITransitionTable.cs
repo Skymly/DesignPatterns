@@ -39,6 +39,81 @@ public readonly struct TransitionResult<TState>
 }
 
 /// <summary>
+/// Detailed trace of a traced async transition attempt, including partial
+/// execution progress when entry/exit actions are involved. Returned by
+/// <see cref="ITransitionTable{TState,TTrigger}.TryTransitionTracedAsync"/>.
+/// <para>
+/// When an action throws, <see cref="Exception"/> is set and
+/// <see cref="Succeeded"/> is <see langword="false"/>. The caller can inspect
+/// <see cref="OnExitCompleted"/> and <see cref="OnEnterCompleted"/> to determine
+/// which actions already executed and perform compensation if needed.
+/// </para>
+/// </summary>
+/// <typeparam name="TState">State enum type.</typeparam>
+public readonly struct TransitionTrace<TState>
+    where TState : struct, Enum
+{
+    internal TransitionTrace(
+        bool succeeded,
+        TState nextState,
+        bool onExitCompleted,
+        bool onEnterCompleted,
+        Exception? exception)
+    {
+        Succeeded = succeeded;
+        NextState = nextState;
+        OnExitCompleted = onExitCompleted;
+        OnEnterCompleted = onEnterCompleted;
+        Exception = exception;
+    }
+
+    /// <summary>
+    /// <see langword="true"/> when the transition succeeded without exception.
+    /// </summary>
+    public bool Succeeded { get; }
+
+    /// <summary>
+    /// The target state when <see cref="Succeeded"/> is <see langword="true"/>; otherwise <c>default</c>.
+    /// </summary>
+    public TState NextState { get; }
+
+    /// <summary>
+    /// <see langword="true"/> when the OnExit action(s) completed without throwing.
+    /// When the edge has no OnExit action, this is <see langword="true"/>.
+    /// </summary>
+    public bool OnExitCompleted { get; }
+
+    /// <summary>
+    /// <see langword="true"/> when the OnEnter action(s) completed without throwing.
+    /// When the edge has no OnEnter action, this is <see langword="true"/>.
+    /// </summary>
+    public bool OnEnterCompleted { get; }
+
+    /// <summary>
+    /// The exception thrown by an action or guard, if any; otherwise <see langword="null"/>.
+    /// When non-null, <see cref="Succeeded"/> is <see langword="false"/>.
+    /// </summary>
+    public Exception? Exception { get; }
+
+    /// <summary>
+    /// Deconstructs the trace into its components.
+    /// </summary>
+    public void Deconstruct(
+        out bool succeeded,
+        out TState nextState,
+        out bool onExitCompleted,
+        out bool onEnterCompleted,
+        out Exception? exception)
+    {
+        succeeded = Succeeded;
+        nextState = NextState;
+        onExitCompleted = OnExitCompleted;
+        onEnterCompleted = OnEnterCompleted;
+        exception = Exception;
+    }
+}
+
+/// <summary>
 /// Immutable transition table for enum state and trigger types.
 /// </summary>
 /// <typeparam name="TState">State enum type.</typeparam>
@@ -69,6 +144,27 @@ public interface ITransitionTable<TState, TTrigger>
     /// <param name="cancellationToken">Token to cancel async actions.</param>
     /// <returns>A <see cref="TransitionResult{TState}"/> indicating success and the target state.</returns>
     ValueTask<TransitionResult<TState>> TryTransitionAsync(
+        TState current,
+        TTrigger trigger,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Async variant that invokes entry/exit actions (if any) and returns a
+    /// <see cref="TransitionTrace{TState}"/> with detailed execution progress.
+    /// Unlike <see cref="TryTransitionAsync"/>, action exceptions are caught
+    /// and recorded in the trace instead of propagating. This allows callers
+    /// to inspect which actions completed and perform compensation.
+    /// <para>
+    /// When no edge matches or the guard returns <see langword="false"/>, the
+    /// trace has <see cref="TransitionTrace{TState}.Succeeded"/> = <see langword="false"/>
+    /// and <see cref="TransitionTrace{TState}.Exception"/> = <see langword="null"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="current">Current state.</param>
+    /// <param name="trigger">Trigger that fires the transition.</param>
+    /// <param name="cancellationToken">Token to cancel async actions.</param>
+    /// <returns>A <see cref="TransitionTrace{TState}"/> with success, next state, and execution progress.</returns>
+    ValueTask<TransitionTrace<TState>> TryTransitionTracedAsync(
         TState current,
         TTrigger trigger,
         CancellationToken cancellationToken);

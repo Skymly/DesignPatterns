@@ -94,6 +94,75 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
     }
 
     /// <inheritdoc />
+    public async ValueTask<TransitionTrace<TState>> TryTransitionTracedAsync(
+        TState current,
+        TTrigger trigger,
+        CancellationToken cancellationToken)
+    {
+        if (!_edges.TryGetValue((current, trigger), out var edge))
+        {
+            return new TransitionTrace<TState>(false, default, true, true, null);
+        }
+
+        // Guard evaluation
+        try
+        {
+            if (edge.Guard is not null && !edge.Guard(current, trigger))
+            {
+                return new TransitionTrace<TState>(false, default, true, true, null);
+            }
+        }
+        catch (Exception ex)
+        {
+            return new TransitionTrace<TState>(false, default, false, false, ex);
+        }
+
+        var onExitCompleted = true;
+        var onEnterCompleted = true;
+
+        try
+        {
+            // OnExit (sync first, then async)
+            if (edge.OnExitSync is not null)
+            {
+                edge.OnExitSync(current, edge.To, trigger);
+            }
+
+            if (edge.OnExitAsync is not null)
+            {
+                await edge.OnExitAsync(current, edge.To, trigger, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            onExitCompleted = false;
+            onEnterCompleted = false;
+            return new TransitionTrace<TState>(false, edge.To, onExitCompleted, onEnterCompleted, ex);
+        }
+
+        try
+        {
+            // OnEnter (sync first, then async)
+            if (edge.OnEnterSync is not null)
+            {
+                edge.OnEnterSync(current, edge.To, trigger);
+            }
+
+            if (edge.OnEnterAsync is not null)
+            {
+                await edge.OnEnterAsync(current, edge.To, trigger, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            onEnterCompleted = false;
+            return new TransitionTrace<TState>(false, edge.To, onExitCompleted, onEnterCompleted, ex);
+        }
+
+        return new TransitionTrace<TState>(true, edge.To, onExitCompleted, onEnterCompleted, null);
+    }
+
+    /// <inheritdoc />
     public IReadOnlyList<TTrigger> GetAllowedTriggers(TState current) =>
         _triggersByState.TryGetValue(current, out var triggers)
             ? triggers
