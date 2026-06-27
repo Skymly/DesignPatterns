@@ -3,10 +3,10 @@
 using System;
 using DesignPatterns.Behavioral;
 
-[global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
 /// <summary>
 /// Provides an event handler registry for global::GlobalEvent.
 /// </summary>
+[global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
 public static partial class GlobalEventHandlerRegistry
 {
     /// <summary>

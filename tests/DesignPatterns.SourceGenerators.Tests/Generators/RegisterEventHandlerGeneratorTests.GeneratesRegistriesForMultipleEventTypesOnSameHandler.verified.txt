@@ -5,10 +5,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides an event handler registry for global::TestAssembly.OrderCancelledEvent.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class OrderCancelledEventHandlerRegistry
     {
         /// <summary>
@@ -31,10 +31,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides an event handler registry for global::TestAssembly.OrderPlacedEvent.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class OrderPlacedEventHandlerRegistry
     {
         /// <summary>

@@ -4,10 +4,10 @@ using System;
 
 namespace Catalog
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides registry keys for the factory contract.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class ProductFactoryKeys
     {
         /// <summary>
@@ -27,10 +27,10 @@ using DesignPatterns.Creational;
 
 namespace Catalog
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a registry for global::Catalog.IProductFactory.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class ProductFactoryRegistry
     {
         /// <summary>
@@ -48,10 +48,10 @@ using System;
 
 namespace Fulfillment
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides registry keys for the factory contract.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class ProductFactoryKeys
     {
         /// <summary>
@@ -71,10 +71,10 @@ using DesignPatterns.Creational;
 
 namespace Fulfillment
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a registry for global::Fulfillment.IProductFactory.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class ProductFactoryRegistry
     {
         /// <summary>

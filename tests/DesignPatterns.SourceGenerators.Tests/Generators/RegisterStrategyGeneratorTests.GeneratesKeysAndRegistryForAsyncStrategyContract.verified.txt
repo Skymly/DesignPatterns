@@ -4,10 +4,10 @@ using System;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides registry keys for the strategy contract.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class ProcessorKeys
     {
         /// <summary>
@@ -31,10 +31,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a registry for global::TestAssembly.IProcessor.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class ProcessorRegistry
     {
         private static readonly IStrategyRegistry<string, global::TestAssembly.IProcessor> _instance = new StrategyRegistry<string, global::TestAssembly.IProcessor>(new Dictionary<string, global::TestAssembly.IProcessor> { ["fast"] = new global::TestAssembly.FastProcessor(), ["slow"] = new global::TestAssembly.SlowProcessor() });

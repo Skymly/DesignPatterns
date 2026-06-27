@@ -7,10 +7,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides static accessors for the global::TestAssembly.OrderStatus state machine.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class OrderStatusMachine
     {
         /// <summary>
@@ -42,10 +42,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a state machine for global::TestAssembly.OrderStatus.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public sealed class OrderStatusStateMachine : StateMachine<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger>
     {
         /// <summary>
@@ -77,10 +77,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a transition table for global::TestAssembly.OrderStatus.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public sealed class OrderStatusTransitionTable : ITransitionTable<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger>
     {
         private static readonly ITransitionTable<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger> Table = new TransitionTableBuilder<global::TestAssembly.OrderStatus, global::TestAssembly.OrderTrigger>().WithInitial(global::TestAssembly.OrderStatus.Draft).Add(global::TestAssembly.OrderStatus.Draft, global::TestAssembly.OrderTrigger.Submit, global::TestAssembly.OrderStatus.Submitted, guard: global::TestAssembly.OrderStatusMachine.CanSubmit).Add(global::TestAssembly.OrderStatus.Draft, global::TestAssembly.OrderTrigger.Cancel, global::TestAssembly.OrderStatus.Cancelled).Add(global::TestAssembly.OrderStatus.Submitted, global::TestAssembly.OrderTrigger.Cancel, global::TestAssembly.OrderStatus.Cancelled).Build();

@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Defines a visitor for global::TestAssembly.IMenuNode composite nodes.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public partial interface IMenuNodeNodeVisitor
     {
         /// <summary>
@@ -25,10 +25,10 @@ namespace TestAssembly
         public void Visit(global::TestAssembly.SettingsMenu node);
     }
 
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Defines an asynchronous visitor for global::TestAssembly.IMenuNode composite nodes.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public partial interface IMenuNodeNodeAsyncVisitor
     {
         /// <summary>
@@ -45,10 +45,10 @@ namespace TestAssembly
         public global::System.Threading.Tasks.ValueTask VisitAsync(global::TestAssembly.SettingsMenu node, global::System.Threading.CancellationToken cancellationToken);
     }
 
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Defines a generic visitor for global::TestAssembly.IMenuNode composite nodes.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public partial interface IMenuNodeNodeVisitor<TResult>
     {
         /// <summary>
@@ -65,10 +65,10 @@ namespace TestAssembly
         public TResult Visit(global::TestAssembly.SettingsMenu node);
     }
 
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides visitor dispatch extensions for global::TestAssembly.IMenuNode.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class MenuNodeNodeVisitorExtensions
     {
         /// <summary>
@@ -140,10 +140,10 @@ using DesignPatterns.Structural;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a composite catalog for global::TestAssembly.IMenuNode.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class MenuNodeCompositeCatalog
     {
         private static readonly IReadOnlyList<CompositeCatalogEntry<global::TestAssembly.IMenuNode>> _entries = new CompositeCatalogEntry<global::TestAssembly.IMenuNode>[]
@@ -178,10 +178,10 @@ using System;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides registry keys for the composite contract.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class MenuNodeCompositeKeys
     {
         /// <summary>
