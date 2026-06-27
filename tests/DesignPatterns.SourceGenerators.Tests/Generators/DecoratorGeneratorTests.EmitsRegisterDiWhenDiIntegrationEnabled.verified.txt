@@ -4,10 +4,10 @@ using System;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides decorator order constants for the decorator stack.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class PaymentServiceDecoratorOrder
     {
         /// <summary>
@@ -28,10 +28,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a decorator stack for global::TestAssembly.IPaymentService.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class PaymentServiceDecoratorStack
     {
         /// <summary>

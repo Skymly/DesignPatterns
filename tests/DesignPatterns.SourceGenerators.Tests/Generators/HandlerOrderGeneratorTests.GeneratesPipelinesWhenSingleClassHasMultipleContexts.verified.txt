@@ -5,10 +5,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a handler pipeline for global::TestAssembly.AuditContext.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class AuditContextHandlerPipeline
     {
         private static readonly HandlerPipeline<global::TestAssembly.AuditContext> _instance = new HandlerPipelineBuilder<global::TestAssembly.AuditContext>().Use(new global::TestAssembly.SharedLoggingHandler()).Build();
@@ -34,10 +34,10 @@ using DesignPatterns.Behavioral;
 
 namespace TestAssembly
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a handler pipeline for global::TestAssembly.RequestContext.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class RequestContextHandlerPipeline
     {
         private static readonly HandlerPipeline<global::TestAssembly.RequestContext> _instance = new HandlerPipelineBuilder<global::TestAssembly.RequestContext>().Use(new global::TestAssembly.SharedLoggingHandler()).Build();

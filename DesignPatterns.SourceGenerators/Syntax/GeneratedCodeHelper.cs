@@ -73,9 +73,19 @@ internal static class GeneratedCodeHelper
     /// <summary>
     /// Adds <c>[GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]</c> attribute to a type declaration.
     /// Uses the fully-qualified name to avoid requiring a using directive.
+    /// Preserves existing leading trivia (e.g., XML doc comments) so that it
+    /// appears before the attribute, not after.
     /// </summary>
     internal static T AddGeneratedCodeAttribute<T>(T typeDeclaration) where T : TypeDeclarationSyntax
     {
+        var existingLeadingTrivia = typeDeclaration.GetLeadingTrivia();
+
+        // Strip existing leading trivia before adding the attribute so it
+        // doesn't end up sandwiched between the attribute and the declaration.
+        var stripped = existingLeadingTrivia.Count > 0
+            ? typeDeclaration.WithoutLeadingTrivia()
+            : typeDeclaration;
+
         var generatedCodeAttribute = SyntaxFactory.Attribute(
             SyntaxFactory.ParseName("global::System.CodeDom.Compiler.GeneratedCode"))
             .WithArgumentList(
@@ -96,7 +106,17 @@ internal static class GeneratedCodeHelper
         var attributeList = SyntaxFactory.AttributeList(
             SyntaxFactory.SingletonSeparatedList(generatedCodeAttribute));
 
-        return (T)typeDeclaration.AddAttributeLists(attributeList);
+        var result = (T)stripped.AddAttributeLists(attributeList);
+
+        // Re-attach existing leading trivia (e.g., /// <summary> XML doc) so
+        // it appears before the [GeneratedCode] attribute, matching idiomatic
+        // C# ordering: XML doc → attributes → declaration.
+        if (existingLeadingTrivia.Count > 0)
+        {
+            result = result.WithLeadingTrivia(existingLeadingTrivia);
+        }
+
+        return result;
     }
 
     /// <summary>

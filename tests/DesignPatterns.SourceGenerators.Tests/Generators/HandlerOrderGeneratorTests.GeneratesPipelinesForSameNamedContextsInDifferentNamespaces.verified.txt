@@ -5,10 +5,10 @@ using DesignPatterns.Behavioral;
 
 namespace AdminApi
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a handler pipeline for global::AdminApi.RequestContext.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class RequestContextHandlerPipeline
     {
         private static readonly HandlerPipeline<global::AdminApi.RequestContext> _instance = new HandlerPipelineBuilder<global::AdminApi.RequestContext>().Use(new global::AdminApi.AdminHandler()).Build();
@@ -34,10 +34,10 @@ using DesignPatterns.Behavioral;
 
 namespace PublicApi
 {
-    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     /// <summary>
     /// Provides a handler pipeline for global::PublicApi.RequestContext.
     /// </summary>
+    [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     public static partial class RequestContextHandlerPipeline
     {
         private static readonly HandlerPipeline<global::PublicApi.RequestContext> _instance = new HandlerPipelineBuilder<global::PublicApi.RequestContext>().Use(new global::PublicApi.PublicHandler()).Build();
