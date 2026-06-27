@@ -5,6 +5,9 @@ using System.Threading;
 
 namespace TestAssembly
 {
+    /// <summary>
+    /// Provides the singleton instance for AppSettings.
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     partial class AppSettings
     {
@@ -12,6 +15,9 @@ namespace TestAssembly
         {
             return new AppSettings();
         }, LazyThreadSafetyMode.ExecutionAndPublication);
+        /// <summary>
+        /// Gets the singleton instance.
+        /// </summary>
         public static AppSettings Instance
         {
             get

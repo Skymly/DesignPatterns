@@ -65,23 +65,29 @@ internal static class StateTransitionSyntaxFactory
                         SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
                         SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                         SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword))),
-            SyntaxFactory.PropertyDeclaration(
-                    SyntaxFactory.ParseTypeName(tableClassName),
-                    SyntaxFactory.Identifier("Instance"))
-                .WithModifiers(
-                    SyntaxFactory.TokenList(
-                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-                .WithAccessorList(
-                    SyntaxFactory.AccessorList(
-                        SyntaxFactory.SingletonList(
-                            SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                .WithExpressionBody(
-                                    SyntaxFactory.ArrowExpressionClause(
-                                        SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(tableClassName))
-                                            .WithArgumentList(SyntaxFactory.ArgumentList())))
-                                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))))),
-            CreateForwardingProperty("InitialState", stateTypeName, "Table.InitialState"),
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.PropertyDeclaration(
+                        SyntaxFactory.ParseTypeName(tableClassName),
+                        SyntaxFactory.Identifier("Instance"))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                    .WithAccessorList(
+                        SyntaxFactory.AccessorList(
+                            SyntaxFactory.SingletonList(
+                                SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                    .WithExpressionBody(
+                                        SyntaxFactory.ArrowExpressionClause(
+                                            SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(tableClassName))
+                                                .WithArgumentList(SyntaxFactory.ArgumentList())))
+                                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))))),
+                "Gets the singleton transition table instance."),
+            CreateForwardingProperty(
+                "InitialState",
+                stateTypeName,
+                "Table.InitialState",
+                summary: "Gets the initial state of the state machine."),
             CreateForwardingMethod(
                 "TryTransition",
                 SyntaxFactory.ParseTypeName("bool"),
@@ -91,7 +97,8 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel(triggerTypeName, "trigger"),
                     new ParameterModel(stateTypeName, "next", isOut: true),
                 },
-                "Table.TryTransition(current, trigger, out next)"),
+                "Table.TryTransition(current, trigger, out next)",
+                summary: "Attempts a state transition from the current state with the specified trigger."),
             CreateForwardingMethod(
                 "TryTransitionAsync",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
@@ -109,7 +116,8 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel(triggerTypeName, "trigger"),
                     new ParameterModel("CancellationToken", "cancellationToken"),
                 },
-                "Table.TryTransitionAsync(current, trigger, cancellationToken)"),
+                "Table.TryTransitionAsync(current, trigger, cancellationToken)",
+                summary: "Attempts an asynchronous state transition."),
             CreateForwardingMethod(
                 "TryTransitionTracedAsync",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
@@ -127,7 +135,8 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel(triggerTypeName, "trigger"),
                     new ParameterModel("CancellationToken", "cancellationToken"),
                 },
-                "Table.TryTransitionTracedAsync(current, trigger, cancellationToken)"),
+                "Table.TryTransitionTracedAsync(current, trigger, cancellationToken)",
+                summary: "Attempts an asynchronous state transition with execution tracing."),
             CreateForwardingMethod(
                 "GetAllowedTriggers",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("IReadOnlyList"))
@@ -136,12 +145,14 @@ internal static class StateTransitionSyntaxFactory
                             SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
                                 SyntaxFactory.ParseTypeName(triggerTypeName)))),
                 new[] { new ParameterModel(stateTypeName, "current") },
-                "Table.GetAllowedTriggers(current)"),
+                "Table.GetAllowedTriggers(current)",
+                summary: "Gets the triggers allowed from the specified state."),
             CreateForwardingMethod(
                 "CanTransitionFrom",
                 SyntaxFactory.ParseTypeName("bool"),
                 new[] { new ParameterModel(stateTypeName, "current") },
-                "Table.CanTransitionFrom(current)"),
+                "Table.CanTransitionFrom(current)",
+                summary: "Determines whether any transition is possible from the specified state."),
         };
 
         if (integrationOptions.EnableDi)
@@ -154,23 +165,25 @@ internal static class StateTransitionSyntaxFactory
             members.Add(CreateTableRegisterAutofacMethod(stateTypeName, triggerTypeName));
         }
 
-        var tableClass = SyntaxFactory.ClassDeclaration(tableClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.SealedKeyword)))
-            .AddBaseListTypes(
-                SyntaxFactory.SimpleBaseType(
-                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("ITransitionTable"))
-                        .WithTypeArgumentList(
-                            SyntaxFactory.TypeArgumentList(
-                                SyntaxFactory.SeparatedList<TypeSyntax>(
-                                    new TypeSyntax[]
-                                    {
-                                        SyntaxFactory.ParseTypeName(stateTypeName),
-                                        SyntaxFactory.ParseTypeName(triggerTypeName),
-                                    })))))
-            .AddMembers(members.ToArray());
+        var tableClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(tableClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.SealedKeyword)))
+                .AddBaseListTypes(
+                    SyntaxFactory.SimpleBaseType(
+                        SyntaxFactory.GenericName(SyntaxFactory.Identifier("ITransitionTable"))
+                            .WithTypeArgumentList(
+                                SyntaxFactory.TypeArgumentList(
+                                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                                        new TypeSyntax[]
+                                        {
+                                            SyntaxFactory.ParseTypeName(stateTypeName),
+                                            SyntaxFactory.ParseTypeName(triggerTypeName),
+                                        })))))
+                .AddMembers(members.ToArray()),
+            $"Provides a transition table for {stateTypeName}.");
 
         var usings = new List<string> { "System", "System.Collections.Generic", "System.Threading", "System.Threading.Tasks", "DesignPatterns.Behavioral" };
         if (integrationOptions.EnableDi)
@@ -200,7 +213,8 @@ internal static class StateTransitionSyntaxFactory
                 "InitialState",
                 stateTypeName,
                 $"{tableClassName}.Instance.InitialState",
-                isStatic: true),
+                isStatic: true,
+                summary: "Gets the initial state of the state machine."),
             CreateForwardingMethod(
                 "TryTransition",
                 SyntaxFactory.ParseTypeName("bool"),
@@ -211,7 +225,8 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel(stateTypeName, "next", isOut: true),
                 },
                 $"{tableClassName}.Instance.TryTransition(current, trigger, out next)",
-                isStatic: true),
+                isStatic: true,
+                summary: "Attempts a state transition from the current state with the specified trigger."),
             CreateForwardingMethod(
                 "TryTransitionAsync",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
@@ -230,7 +245,8 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel("CancellationToken", "cancellationToken"),
                 },
                 $"{tableClassName}.Instance.TryTransitionAsync(current, trigger, cancellationToken)",
-                isStatic: true),
+                isStatic: true,
+                summary: "Attempts an asynchronous state transition."),
             CreateForwardingMethod(
                 "TryTransitionTracedAsync",
                 SyntaxFactory.GenericName(SyntaxFactory.Identifier("ValueTask"))
@@ -249,16 +265,19 @@ internal static class StateTransitionSyntaxFactory
                     new ParameterModel("CancellationToken", "cancellationToken"),
                 },
                 $"{tableClassName}.Instance.TryTransitionTracedAsync(current, trigger, cancellationToken)",
-                isStatic: true),
+                isStatic: true,
+                summary: "Attempts an asynchronous state transition with execution tracing."),
         };
 
-        var holderClass = SyntaxFactory.ClassDeclaration(holderClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members);
+        var holderClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(holderClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members),
+            $"Provides static accessors for the {stateTypeName} state machine.");
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, holderClass, "StateTransitionGenerator", "System.Threading", "System.Threading.Tasks", "DesignPatterns.Behavioral");
     }
@@ -272,36 +291,40 @@ internal static class StateTransitionSyntaxFactory
         GeneratorIntegrationOptions integrationOptions)
     {
         // Parameterless constructor: calls base(tableClassName.Instance)
-        var parameterlessConstructor = SyntaxFactory.ConstructorDeclaration(SyntaxFactory.Identifier(stateMachineClassName))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-            .WithInitializer(
-                SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
-                    .WithArgumentList(
-                        SyntaxFactory.ArgumentList(
-                            SyntaxFactory.SingletonSeparatedList(
-                                SyntaxFactory.Argument(
-                                    SyntaxFactory.MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        SyntaxFactory.IdentifierName(tableClassName),
-                                        SyntaxFactory.IdentifierName("Instance")))))))
-            .WithBody(SyntaxFactory.Block());
+        var parameterlessConstructor = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ConstructorDeclaration(SyntaxFactory.Identifier(stateMachineClassName))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                .WithInitializer(
+                    SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
+                        .WithArgumentList(
+                            SyntaxFactory.ArgumentList(
+                                SyntaxFactory.SingletonSeparatedList(
+                                    SyntaxFactory.Argument(
+                                        SyntaxFactory.MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            SyntaxFactory.IdentifierName(tableClassName),
+                                            SyntaxFactory.IdentifierName("Instance")))))))
+                .WithBody(SyntaxFactory.Block()),
+            $"Initializes a new instance of the {stateMachineClassName} class.");
 
         // DI constructor: accepts ITransitionTable<TState, TTrigger>
         var tableInterfaceType = $"ITransitionTable<{stateTypeName}, {triggerTypeName}>";
-        var diConstructor = SyntaxFactory.ConstructorDeclaration(SyntaxFactory.Identifier(stateMachineClassName))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("table"))
-                            .WithType(SyntaxFactory.ParseTypeName(tableInterfaceType)))))
-            .WithInitializer(
-                SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
-                    .WithArgumentList(
-                        SyntaxFactory.ArgumentList(
-                            SyntaxFactory.SingletonSeparatedList(
-                                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("table"))))))
-            .WithBody(SyntaxFactory.Block());
+        var diConstructor = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ConstructorDeclaration(SyntaxFactory.Identifier(stateMachineClassName))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("table"))
+                                .WithType(SyntaxFactory.ParseTypeName(tableInterfaceType)))))
+                .WithInitializer(
+                    SyntaxFactory.ConstructorInitializer(SyntaxKind.BaseConstructorInitializer)
+                        .WithArgumentList(
+                            SyntaxFactory.ArgumentList(
+                                SyntaxFactory.SingletonSeparatedList(
+                                    SyntaxFactory.Argument(SyntaxFactory.IdentifierName("table"))))))
+                .WithBody(SyntaxFactory.Block()),
+            $"Initializes a new instance of the {stateMachineClassName} class with the specified transition table.");
 
         var members = new List<MemberDeclarationSyntax> { parameterlessConstructor, diConstructor };
 
@@ -315,23 +338,25 @@ internal static class StateTransitionSyntaxFactory
             members.Add(CreateStateMachineRegisterAutofacMethod(stateTypeName, triggerTypeName, tableClassName, stateMachineClassName));
         }
 
-        var stateMachineClass = SyntaxFactory.ClassDeclaration(stateMachineClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.SealedKeyword)))
-            .AddBaseListTypes(
-                SyntaxFactory.SimpleBaseType(
-                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("StateMachine"))
-                        .WithTypeArgumentList(
-                            SyntaxFactory.TypeArgumentList(
-                                SyntaxFactory.SeparatedList<TypeSyntax>(
-                                    new TypeSyntax[]
-                                    {
-                                        SyntaxFactory.ParseTypeName(stateTypeName),
-                                        SyntaxFactory.ParseTypeName(triggerTypeName),
-                                    })))))
-            .AddMembers(members.ToArray());
+        var stateMachineClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(stateMachineClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.SealedKeyword)))
+                .AddBaseListTypes(
+                    SyntaxFactory.SimpleBaseType(
+                        SyntaxFactory.GenericName(SyntaxFactory.Identifier("StateMachine"))
+                            .WithTypeArgumentList(
+                                SyntaxFactory.TypeArgumentList(
+                                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                                        new TypeSyntax[]
+                                        {
+                                            SyntaxFactory.ParseTypeName(stateTypeName),
+                                            SyntaxFactory.ParseTypeName(triggerTypeName),
+                                        })))))
+                .AddMembers(members.ToArray()),
+            $"Provides a state machine for {stateTypeName}.");
 
         var usings = new List<string> { "DesignPatterns.Behavioral" };
         if (integrationOptions.EnableDi)
@@ -438,13 +463,14 @@ internal static class StateTransitionSyntaxFactory
         string name,
         string propertyTypeName,
         string expression,
-        bool isStatic = false)
+        bool isStatic = false,
+        string? summary = null)
     {
         var modifiers = isStatic
             ? new[] { SyntaxKind.PublicKeyword, SyntaxKind.StaticKeyword }
             : new[] { SyntaxKind.PublicKeyword };
 
-        return SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName(propertyTypeName), SyntaxFactory.Identifier(name))
+        var property = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName(propertyTypeName), SyntaxFactory.Identifier(name))
             .WithModifiers(SyntaxFactory.TokenList(modifiers.Select(SyntaxFactory.Token)))
             .WithAccessorList(
                 SyntaxFactory.AccessorList(
@@ -452,6 +478,8 @@ internal static class StateTransitionSyntaxFactory
                         SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
                             .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.ParseExpression(expression)))
                             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)))));
+
+        return summary is null ? property : GeneratedCodeHelper.WithXmlDoc(property, summary);
     }
 
     private static MethodDeclarationSyntax CreateForwardingMethod(
@@ -459,13 +487,14 @@ internal static class StateTransitionSyntaxFactory
         TypeSyntax returnType,
         IReadOnlyList<ParameterModel> parameters,
         string expression,
-        bool isStatic = false)
+        bool isStatic = false,
+        string? summary = null)
     {
         var modifiers = isStatic
             ? new[] { SyntaxKind.PublicKeyword, SyntaxKind.StaticKeyword }
             : new[] { SyntaxKind.PublicKeyword };
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier(name))
+        var method = SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier(name))
             .WithModifiers(SyntaxFactory.TokenList(modifiers.Select(SyntaxFactory.Token)))
             .WithParameterList(
                 SyntaxFactory.ParameterList(
@@ -486,6 +515,8 @@ internal static class StateTransitionSyntaxFactory
                         }))))
             .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(SyntaxFactory.ParseExpression(expression)))
             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+
+        return summary is null ? method : GeneratedCodeHelper.WithXmlDoc(method, summary);
     }
 
     private static MethodDeclarationSyntax CreateStateMachineRegisterDiMethod(
@@ -515,15 +546,17 @@ internal static class StateTransitionSyntaxFactory
                 $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({interfaceType}), sp => new {stateMachineClassName}((ITransitionTable<{stateTypeName}, {triggerTypeName}>)sp.GetRequiredService(typeof(ITransitionTable<{stateTypeName}, {triggerTypeName}>))), lifetime));"),
             SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
-                SyntaxFactory.Identifier("RegisterDi"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(servicesParam, lifetimeParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                    SyntaxFactory.Identifier("RegisterDi"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(servicesParam, lifetimeParam)
+                .WithBody(body),
+            "Registers the registry and all implementations in the DI container.");
     }
 
     private static MethodDeclarationSyntax CreateRegisterDiMethod(
@@ -549,15 +582,17 @@ internal static class StateTransitionSyntaxFactory
                 $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({interfaceType}), _ => Instance, lifetime));"),
             SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
-                SyntaxFactory.Identifier("RegisterDi"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(servicesParam, lifetimeParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                    SyntaxFactory.Identifier("RegisterDi"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(servicesParam, lifetimeParam)
+                .WithBody(body),
+            "Registers the registry and all implementations in the DI container.");
     }
 
     private static MethodDeclarationSyntax CreateTableRegisterAutofacMethod(
@@ -590,15 +625,17 @@ internal static class StateTransitionSyntaxFactory
             SyntaxFactory.ParseStatement(
                 $"if (serviceKey is not null) {{ builder.Register(_ => Instance).Keyed<{interfaceType}>(serviceKey).SingleInstance(); }}"));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                SyntaxFactory.Identifier("RegisterAutofac"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    SyntaxFactory.Identifier("RegisterAutofac"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
+                .WithBody(body),
+            "Registers the registry and all implementations with Autofac.");
     }
 
     private static MethodDeclarationSyntax CreateStateMachineRegisterAutofacMethod(
@@ -649,15 +686,17 @@ internal static class StateTransitionSyntaxFactory
                 SyntaxFactory.Block(sharedRegistration),
                 SyntaxFactory.ElseClause(SyntaxFactory.Block(transientRegistration))));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                SyntaxFactory.Identifier("RegisterAutofac"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    SyntaxFactory.Identifier("RegisterAutofac"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
+                .WithBody(body),
+            "Registers the registry and all implementations with Autofac.");
     }
 
     private readonly struct ParameterModel

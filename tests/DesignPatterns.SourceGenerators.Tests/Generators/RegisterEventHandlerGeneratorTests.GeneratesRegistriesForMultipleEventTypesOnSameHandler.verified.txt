@@ -6,8 +6,14 @@ using DesignPatterns.Behavioral;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides an event handler registry for global::TestAssembly.OrderCancelledEvent.
+    /// </summary>
     public static partial class OrderCancelledEventHandlerRegistry
     {
+        /// <summary>
+        /// Subscribes all registered handlers to the event aggregator.
+        /// </summary>
         public static global::DesignPatterns.Behavioral.IEventAggregator SubscribeAll(global::DesignPatterns.Behavioral.IEventAggregator aggregator)
         {
             aggregator.Subscribe<global::TestAssembly.OrderCancelledEvent>(new global::TestAssembly.OrderHandler());
@@ -26,8 +32,14 @@ using DesignPatterns.Behavioral;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides an event handler registry for global::TestAssembly.OrderPlacedEvent.
+    /// </summary>
     public static partial class OrderPlacedEventHandlerRegistry
     {
+        /// <summary>
+        /// Subscribes all registered handlers to the event aggregator.
+        /// </summary>
         public static global::DesignPatterns.Behavioral.IEventAggregator SubscribeAll(global::DesignPatterns.Behavioral.IEventAggregator aggregator)
         {
             aggregator.Subscribe<global::TestAssembly.OrderPlacedEvent>(new global::TestAssembly.OrderHandler());

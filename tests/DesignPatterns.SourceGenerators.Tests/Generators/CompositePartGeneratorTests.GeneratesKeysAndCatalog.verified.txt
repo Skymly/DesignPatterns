@@ -6,32 +6,74 @@ using System.Threading.Tasks;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Defines a visitor for global::TestAssembly.IMenuNode composite nodes.
+    /// </summary>
     public partial interface IMenuNodeNodeVisitor
     {
+        /// <summary>
+        /// Visits a ProfileMenu node.
+        /// </summary>
         public void Visit(global::TestAssembly.ProfileMenu node);
+        /// <summary>
+        /// Visits a HomeMenu node.
+        /// </summary>
         public void Visit(global::TestAssembly.HomeMenu node);
+        /// <summary>
+        /// Visits a SettingsMenu node.
+        /// </summary>
         public void Visit(global::TestAssembly.SettingsMenu node);
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Defines an asynchronous visitor for global::TestAssembly.IMenuNode composite nodes.
+    /// </summary>
     public partial interface IMenuNodeNodeAsyncVisitor
     {
+        /// <summary>
+        /// Visits a ProfileMenu node asynchronously.
+        /// </summary>
         public global::System.Threading.Tasks.ValueTask VisitAsync(global::TestAssembly.ProfileMenu node, global::System.Threading.CancellationToken cancellationToken);
+        /// <summary>
+        /// Visits a HomeMenu node asynchronously.
+        /// </summary>
         public global::System.Threading.Tasks.ValueTask VisitAsync(global::TestAssembly.HomeMenu node, global::System.Threading.CancellationToken cancellationToken);
+        /// <summary>
+        /// Visits a SettingsMenu node asynchronously.
+        /// </summary>
         public global::System.Threading.Tasks.ValueTask VisitAsync(global::TestAssembly.SettingsMenu node, global::System.Threading.CancellationToken cancellationToken);
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Defines a generic visitor for global::TestAssembly.IMenuNode composite nodes.
+    /// </summary>
     public partial interface IMenuNodeNodeVisitor<TResult>
     {
+        /// <summary>
+        /// Visits a ProfileMenu node and returns a result.
+        /// </summary>
         public TResult Visit(global::TestAssembly.ProfileMenu node);
+        /// <summary>
+        /// Visits a HomeMenu node and returns a result.
+        /// </summary>
         public TResult Visit(global::TestAssembly.HomeMenu node);
+        /// <summary>
+        /// Visits a SettingsMenu node and returns a result.
+        /// </summary>
         public TResult Visit(global::TestAssembly.SettingsMenu node);
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides visitor dispatch extensions for global::TestAssembly.IMenuNode.
+    /// </summary>
     public static partial class MenuNodeNodeVisitorExtensions
     {
+        /// <summary>
+        /// Dispatches a global::TestAssembly.IMenuNode node to the matching visitor overload.
+        /// </summary>
         public static void AcceptVisitor(this global::TestAssembly.IMenuNode node, IMenuNodeNodeVisitor visitor)
         {
             switch (node)
@@ -50,6 +92,9 @@ namespace TestAssembly
             }
         }
 
+        /// <summary>
+        /// Asynchronously dispatches a global::TestAssembly.IMenuNode node to the matching visitor overload.
+        /// </summary>
         public static global::System.Threading.Tasks.ValueTask AcceptVisitorAsync(this global::TestAssembly.IMenuNode node, IMenuNodeNodeAsyncVisitor visitor, global::System.Threading.CancellationToken cancellationToken)
         {
             switch (node)
@@ -65,6 +110,9 @@ namespace TestAssembly
             }
         }
 
+        /// <summary>
+        /// Dispatches a global::TestAssembly.IMenuNode node to the matching visitor overload and returns a result.
+        /// </summary>
         public static TResult AcceptVisitor<TResult>(this global::TestAssembly.IMenuNode node, IMenuNodeNodeVisitor<TResult> visitor)
         {
             switch (node)
@@ -93,6 +141,9 @@ using DesignPatterns.Structural;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides a composite catalog for global::TestAssembly.IMenuNode.
+    /// </summary>
     public static partial class MenuNodeCompositeCatalog
     {
         private static readonly IReadOnlyList<CompositeCatalogEntry<global::TestAssembly.IMenuNode>> _entries = new CompositeCatalogEntry<global::TestAssembly.IMenuNode>[]
@@ -101,11 +152,17 @@ namespace TestAssembly
             new CompositeCatalogEntry<global::TestAssembly.IMenuNode>("root", null, 0, typeof(global::TestAssembly.HomeMenu)),
             new CompositeCatalogEntry<global::TestAssembly.IMenuNode>("settings", "root", 10, typeof(global::TestAssembly.SettingsMenu))
         };
+        /// <summary>
+        /// Builds the composite tree root.
+        /// </summary>
         public static global::TestAssembly.IMenuNode BuildRoot()
         {
             return CompositeCatalogAssembler.Assemble(_entries);
         }
 
+        /// <summary>
+        /// Builds all composite tree roots (forest).
+        /// </summary>
         public static IReadOnlyList<global::TestAssembly.IMenuNode> BuildForest()
         {
             return CompositeCatalogAssembler.AssembleForest(_entries);
@@ -122,10 +179,22 @@ using System;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides registry keys for the composite contract.
+    /// </summary>
     public static partial class MenuNodeCompositeKeys
     {
+        /// <summary>
+        /// The key for the profile composite part.
+        /// </summary>
         public const string Profile = "profile";
+        /// <summary>
+        /// The key for the root composite part.
+        /// </summary>
         public const string Root = "root";
+        /// <summary>
+        /// The key for the settings composite part.
+        /// </summary>
         public const string Settings = "settings";
     }
 }// <auto-generated />

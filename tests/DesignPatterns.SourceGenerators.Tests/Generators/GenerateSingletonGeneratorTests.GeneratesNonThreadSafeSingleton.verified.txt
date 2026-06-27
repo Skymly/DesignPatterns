@@ -5,6 +5,9 @@ using System.Threading;
 
 namespace TestAssembly
 {
+    /// <summary>
+    /// Provides the singleton instance for FastCache.
+    /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
     partial class FastCache
     {
@@ -12,6 +15,9 @@ namespace TestAssembly
         {
             return new FastCache();
         }, LazyThreadSafetyMode.None);
+        /// <summary>
+        /// Gets the singleton instance.
+        /// </summary>
         public static FastCache Instance
         {
             get

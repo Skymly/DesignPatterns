@@ -6,9 +6,15 @@ using DesignPatterns.Behavioral;
 namespace AdminApi
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides a handler pipeline for global::AdminApi.RequestContext.
+    /// </summary>
     public static partial class RequestContextHandlerPipeline
     {
         private static readonly HandlerPipeline<global::AdminApi.RequestContext> _instance = new HandlerPipelineBuilder<global::AdminApi.RequestContext>().Use(new global::AdminApi.AdminHandler()).Build();
+        /// <summary>
+        /// Gets the singleton registry instance.
+        /// </summary>
         public static HandlerPipeline<global::AdminApi.RequestContext> Instance
         {
             get
@@ -29,9 +35,15 @@ using DesignPatterns.Behavioral;
 namespace PublicApi
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides a handler pipeline for global::PublicApi.RequestContext.
+    /// </summary>
     public static partial class RequestContextHandlerPipeline
     {
         private static readonly HandlerPipeline<global::PublicApi.RequestContext> _instance = new HandlerPipelineBuilder<global::PublicApi.RequestContext>().Use(new global::PublicApi.PublicHandler()).Build();
+        /// <summary>
+        /// Gets the singleton registry instance.
+        /// </summary>
         public static HandlerPipeline<global::PublicApi.RequestContext> Instance
         {
             get
