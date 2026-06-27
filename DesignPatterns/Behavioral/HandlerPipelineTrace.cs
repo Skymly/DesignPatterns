@@ -55,4 +55,44 @@ public sealed class HandlerPipelineTrace
             return false;
         }
     }
+
+    /// <summary>
+    /// The zero-based index of the handler that threw an exception, or <c>-1</c>
+    /// when no handler failed.
+    /// </summary>
+    public int FailedHandlerIndex
+    {
+        get
+        {
+            for (var i = 0; i < Steps.Count; i++)
+            {
+                if (Steps[i].Status == HandlerPipelineStepStatus.Failed)
+                {
+                    return Steps[i].Index;
+                }
+            }
+
+            return -1;
+        }
+    }
+
+    /// <summary>
+    /// The exception thrown by the failing handler, or <see langword="null"/>
+    /// when no handler failed.
+    /// </summary>
+    public Exception? Exception
+    {
+        get
+        {
+            for (var i = 0; i < Steps.Count; i++)
+            {
+                if (Steps[i].Status == HandlerPipelineStepStatus.Failed)
+                {
+                    return Steps[i].Exception;
+                }
+            }
+
+            return null;
+        }
+    }
 }

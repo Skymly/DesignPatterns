@@ -1,3 +1,5 @@
+using System;
+
 namespace DesignPatterns.Behavioral;
 
 /// <summary>
@@ -6,10 +8,16 @@ namespace DesignPatterns.Behavioral;
 public readonly struct HandlerPipelineStep
 {
     public HandlerPipelineStep(int index, string name, HandlerPipelineStepStatus status)
+        : this(index, name, status, null)
+    {
+    }
+
+    public HandlerPipelineStep(int index, string name, HandlerPipelineStepStatus status, Exception? exception)
     {
         Index = index;
         Name = name;
         Status = status;
+        Exception = exception;
     }
 
     /// <summary>
@@ -26,4 +34,10 @@ public readonly struct HandlerPipelineStep
     /// Whether the handler completed, short-circuited, or was not reached.
     /// </summary>
     public HandlerPipelineStepStatus Status { get; }
+
+    /// <summary>
+    /// The exception thrown by the handler when <see cref="Status"/> is
+    /// <see cref="HandlerPipelineStepStatus.Failed"/>; otherwise <see langword="null"/>.
+    /// </summary>
+    public Exception? Exception { get; }
 }

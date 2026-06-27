@@ -25,4 +25,10 @@ public enum HandlerPipelineStepStatus
     /// The pipeline continued to the next handler.
     /// </summary>
     Skipped = 3,
+
+    /// <summary>
+    /// The handler threw an exception. The exception is captured in the trace
+    /// and re-thrown after the trace is built.
+    /// </summary>
+    Failed = 4,
 }

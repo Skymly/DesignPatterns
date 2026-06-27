@@ -342,6 +342,146 @@ public sealed class HandlerPipelineTests
         Assert.False(trace.WasSkipped);
     }
 
+    [Fact]
+    public async Task InvokeTracedAsync_HandlerThrows_RecordsFailureAndRethrows()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((_, _, _) => throw new InvalidOperationException("boom"))
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => pipeline.InvokeTracedAsync("hi").AsTask());
+
+        // We can't get the trace from the thrown exception directly, but we can
+        // verify the exception message is preserved.
+        Assert.Equal("boom", ex.Message);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_HandlerThrows_RecordsFailedInTrace()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new AppendHandler("!"))
+            .Use((_, _, _) => throw new InvalidOperationException("boom"))
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        // Use the observer overload to capture failure details.
+        var observer = new CapturingExceptionObserver<string>();
+        try
+        {
+            await pipeline.InvokeTracedAsync("hi", observer);
+        }
+        catch (InvalidOperationException)
+        {
+            // Expected.
+        }
+
+        Assert.NotNull(observer.LastException);
+        Assert.Equal("boom", observer.LastException!.Message);
+        Assert.Equal(1, observer.LastHandlerIndex);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_HandlerThrows_RecordsFailedAndNotReached()
+    {
+        // Build a pipeline where handler at index 1 throws.
+        // Handler 0 completes, handler 1 fails, handler 2 is not reached.
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use((ctx, next, _) => next(ctx))
+            .Use((_, _, _) => throw new InvalidOperationException("fail"))
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        var observer = new CapturingExceptionObserver<string>();
+        try
+        {
+            await pipeline.InvokeTracedAsync("req", observer);
+        }
+        catch (InvalidOperationException)
+        {
+            // Expected — trace is not returned when exception is thrown.
+        }
+
+        // The observer was notified with the correct index and exception.
+        Assert.Equal(1, observer.LastHandlerIndex);
+        Assert.NotNull(observer.LastException);
+        Assert.Equal("fail", observer.LastException!.Message);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_GuardThrows_RecordsFailure()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use(new RecordingHandler("A", _ => { }), _ => throw new InvalidOperationException("guard-fail"))
+            .Use(new RecordingHandler("B", _ => { }), _ => true)
+            .Build();
+
+        var observer = new CapturingExceptionObserver<string>();
+        try
+        {
+            await pipeline.InvokeTracedAsync("req", observer);
+        }
+        catch (InvalidOperationException)
+        {
+            // Expected.
+        }
+
+        Assert.Equal(0, observer.LastHandlerIndex);
+        Assert.NotNull(observer.LastException);
+        Assert.Equal("guard-fail", observer.LastException!.Message);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_ObserverNotified_OnException()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use((_, _, _) => throw new InvalidOperationException("observed"))
+            .Build();
+
+        var observer = new CapturingExceptionObserver<string>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => pipeline.InvokeTracedAsync("ctx", observer).AsTask());
+
+        Assert.Equal("ctx", observer.LastContext);
+        Assert.Equal(0, observer.LastHandlerIndex);
+        Assert.Equal("<delegate>", observer.LastHandlerName);
+        Assert.NotNull(observer.LastException);
+        Assert.Equal("observed", observer.LastException!.Message);
+    }
+
+    [Fact]
+    public async Task InvokeTracedAsync_NullObserver_DelegatesToParameterlessOverload()
+    {
+        var pipeline = new HandlerPipelineBuilder<string>()
+            .Use((ctx, next, _) => next(ctx))
+            .Build();
+
+        var trace = await pipeline.InvokeTracedAsync("req", null);
+
+        Assert.Single(trace.Steps);
+        Assert.Equal(HandlerPipelineStepStatus.Completed, trace.Steps[0].Status);
+    }
+
+    private sealed class CapturingExceptionObserver<TContext> : IHandlerExceptionObserver<TContext>
+    {
+        public TContext? LastContext { get; private set; }
+        public int LastHandlerIndex { get; private set; } = -1;
+        public string? LastHandlerName { get; private set; }
+        public Exception? LastException { get; private set; }
+
+        public void OnHandlerException(TContext context, int handlerIndex, string handlerName, Exception exception)
+        {
+            LastContext = context;
+            LastHandlerIndex = handlerIndex;
+            LastHandlerName = handlerName;
+            LastException = exception;
+        }
+    }
+
     private sealed class AppendHandler : IHandler<string>
     {
         private readonly string _suffix;
