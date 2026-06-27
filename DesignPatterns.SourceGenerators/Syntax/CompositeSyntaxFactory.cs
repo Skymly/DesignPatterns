@@ -50,28 +50,32 @@ internal static class CompositeSyntaxFactory
         IReadOnlyList<(string ConstantName, string KeyValue)> keys)
     {
         var members = keys.Select(k =>
-            SyntaxFactory.FieldDeclaration(
-                    SyntaxFactory.VariableDeclaration(
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
-                        .AddVariables(
-                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
-                                .WithInitializer(
-                                    SyntaxFactory.EqualsValueClause(
-                                        SyntaxFactory.LiteralExpression(
-                                            SyntaxKind.StringLiteralExpression,
-                                            SyntaxFactory.Literal(k.KeyValue))))))
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(
+                                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
+                            .AddVariables(
+                                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
+                                    .WithInitializer(
+                                        SyntaxFactory.EqualsValueClause(
+                                            SyntaxFactory.LiteralExpression(
+                                                SyntaxKind.StringLiteralExpression,
+                                                SyntaxFactory.Literal(k.KeyValue))))))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.ConstKeyword))),
+                $"The key for the {k.KeyValue} composite part."));
+
+        var keysClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(keysClassName)
                 .WithModifiers(
                     SyntaxFactory.TokenList(
                         SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.ConstKeyword))));
-
-        var keysClass = SyntaxFactory.ClassDeclaration(keysClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            "Provides registry keys for the composite contract.");
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, keysClass, "CompositePartGenerator");
     }
@@ -153,15 +157,17 @@ internal static class CompositeSyntaxFactory
                     SyntaxFactory.SingletonSeparatedList(
                         SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_entries")))));
 
-        var buildRootMethod = SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName(contractTypeName),
-                SyntaxFactory.Identifier("BuildRoot"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithBody(
-                SyntaxFactory.Block(
-                    SyntaxFactory.SingletonList<StatementSyntax>(
-                        SyntaxFactory.ReturnStatement(assembleInvocation))));
+        var buildRootMethod = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName(contractTypeName),
+                    SyntaxFactory.Identifier("BuildRoot"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithBody(
+                    SyntaxFactory.Block(
+                        SyntaxFactory.SingletonList<StatementSyntax>(
+                            SyntaxFactory.ReturnStatement(assembleInvocation)))),
+            "Builds the composite tree root.");
 
         var assembleForestInvocation = SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
@@ -179,23 +185,27 @@ internal static class CompositeSyntaxFactory
                     SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
                         SyntaxFactory.ParseTypeName(contractTypeName))));
 
-        var buildForestMethod = SyntaxFactory.MethodDeclaration(
-                forestReturnType,
-                SyntaxFactory.Identifier("BuildForest"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithBody(
-                SyntaxFactory.Block(
-                    SyntaxFactory.SingletonList<StatementSyntax>(
-                        SyntaxFactory.ReturnStatement(assembleForestInvocation))));
+        var buildForestMethod = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    forestReturnType,
+                    SyntaxFactory.Identifier("BuildForest"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithBody(
+                    SyntaxFactory.Block(
+                        SyntaxFactory.SingletonList<StatementSyntax>(
+                            SyntaxFactory.ReturnStatement(assembleForestInvocation)))),
+            "Builds all composite tree roots (forest).");
 
-        var catalogClass = SyntaxFactory.ClassDeclaration(catalogClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(entriesField, buildRootMethod, buildForestMethod);
+        var catalogClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(catalogClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(entriesField, buildRootMethod, buildForestMethod),
+            $"Provides a composite catalog for {contractTypeName}.");
 
         if (integrationOptions.EnableDi)
         {
@@ -254,13 +264,15 @@ internal static class CompositeSyntaxFactory
                                     SyntaxFactory.Argument(SyntaxFactory.IdentifierName("serviceProvider")),
                                 }))))));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName(contractTypeName),
-                SyntaxFactory.Identifier("BuildRoot"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(spParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName(contractTypeName),
+                    SyntaxFactory.Identifier("BuildRoot"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(spParam)
+                .WithBody(body),
+            "Builds the composite tree root from the service provider.");
     }
 
     private static MethodDeclarationSyntax CreateBuildForestFromServicesMethod(string contractTypeName)
@@ -294,13 +306,15 @@ internal static class CompositeSyntaxFactory
                                     SyntaxFactory.Argument(SyntaxFactory.IdentifierName("serviceProvider")),
                                 }))))));
 
-        return SyntaxFactory.MethodDeclaration(
-                forestReturnType,
-                SyntaxFactory.Identifier("BuildForest"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(spParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    forestReturnType,
+                    SyntaxFactory.Identifier("BuildForest"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(spParam)
+                .WithBody(body),
+            "Builds all composite tree roots (forest) from the service provider.");
     }
 
     private static MethodDeclarationSyntax CreateRegisterDiMethod(
@@ -336,15 +350,17 @@ internal static class CompositeSyntaxFactory
 
         var body = SyntaxFactory.Block(statements);
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
-                SyntaxFactory.Identifier("RegisterDi"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(servicesParam, lifetimeParam)
-            .WithBody(body);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                    SyntaxFactory.Identifier("RegisterDi"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(servicesParam, lifetimeParam)
+                .WithBody(body),
+            "Registers the registry and all implementations in the DI container.");
     }
 
     public static CompilationUnitSyntax CreateVisitorInterfaceCompilationUnit(
@@ -355,63 +371,75 @@ internal static class CompositeSyntaxFactory
     {
         // void Visit(TImpl node) methods
         var voidVisitMethods = implementations.Select(impl =>
-            SyntaxFactory.MethodDeclaration(
-                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                    SyntaxFactory.Identifier("Visit"))
-                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                .WithParameterList(
-                    SyntaxFactory.ParameterList(
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
-                                .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)))))
-                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))).ToArray();
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.MethodDeclaration(
+                        SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                        SyntaxFactory.Identifier("Visit"))
+                    .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                    .WithParameterList(
+                        SyntaxFactory.ParameterList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                    .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)))))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                $"Visits a {impl.ImplementationName} node.")).ToArray();
 
-        var voidVisitor = SyntaxFactory.InterfaceDeclaration(visitorInterfaceName)
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(voidVisitMethods);
+        var voidVisitor = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.InterfaceDeclaration(visitorInterfaceName)
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(voidVisitMethods),
+            $"Defines a visitor for {contractTypeName} composite nodes.");
 
         // async: ValueTask VisitAsync(TImpl node, CancellationToken ct)
         var asyncVisitorName = GetAsyncVisitorInterfaceNameFromVisitor(visitorInterfaceName);
         var asyncVisitMethods = implementations.Select(impl =>
-            SyntaxFactory.MethodDeclaration(
-                    SyntaxFactory.ParseTypeName("global::System.Threading.Tasks.ValueTask"),
-                    SyntaxFactory.Identifier("VisitAsync"))
-                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                .WithParameterList(
-                    SyntaxFactory.ParameterList(
-                        SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
-                        {
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
-                                .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)),
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
-                                .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")),
-                        })))
-                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))).ToArray();
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.MethodDeclaration(
+                        SyntaxFactory.ParseTypeName("global::System.Threading.Tasks.ValueTask"),
+                        SyntaxFactory.Identifier("VisitAsync"))
+                    .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                    .WithParameterList(
+                        SyntaxFactory.ParameterList(
+                            SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                            {
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                    .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)),
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                                    .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")),
+                            })))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                $"Visits a {impl.ImplementationName} node asynchronously.")).ToArray();
 
-        var asyncVisitor = SyntaxFactory.InterfaceDeclaration(asyncVisitorName)
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(asyncVisitMethods);
+        var asyncVisitor = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.InterfaceDeclaration(asyncVisitorName)
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(asyncVisitMethods),
+            $"Defines an asynchronous visitor for {contractTypeName} composite nodes.");
 
         // generic TResult: TResult Visit<TResult>(TImpl node)
         var genericVisitMethods = implementations.Select(impl =>
-            SyntaxFactory.MethodDeclaration(
-                    SyntaxFactory.IdentifierName("TResult"),
-                    SyntaxFactory.Identifier("Visit"))
-                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                .WithParameterList(
-                    SyntaxFactory.ParameterList(
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
-                                .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)))))
-                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))).ToArray();
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.MethodDeclaration(
+                        SyntaxFactory.IdentifierName("TResult"),
+                        SyntaxFactory.Identifier("Visit"))
+                    .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                    .WithParameterList(
+                        SyntaxFactory.ParameterList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                    .WithType(SyntaxFactory.ParseTypeName(impl.ImplementationFullyQualifiedDisplayString)))))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                $"Visits a {impl.ImplementationName} node and returns a result.")).ToArray();
 
-        var genericVisitor = SyntaxFactory.InterfaceDeclaration(visitorInterfaceName)
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .WithTypeParameterList(
-                SyntaxFactory.TypeParameterList(
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.TypeParameter(SyntaxFactory.Identifier("TResult")))))
-            .AddMembers(genericVisitMethods);
+        var genericVisitor = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.InterfaceDeclaration(visitorInterfaceName)
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .WithTypeParameterList(
+                    SyntaxFactory.TypeParameterList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.TypeParameter(SyntaxFactory.Identifier("TResult")))))
+                .AddMembers(genericVisitMethods),
+            $"Defines a generic visitor for {contractTypeName} composite nodes.");
 
         // Dispatch extension class — runtime type dispatch via pattern matching
         var dispatchClass = CreateDispatchExtensionsClass(
@@ -460,73 +488,81 @@ internal static class CompositeSyntaxFactory
         IReadOnlyList<(string ImplementationName, string? ImplementationNamespace, string ImplementationFullyQualifiedDisplayString)> implementations)
     {
         // void AcceptVisitor(this TContract node, IVisitor visitor) — runtime dispatch
-        var voidDispatch = SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                SyntaxFactory.Identifier("AcceptVisitor"))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
-                    {
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
-                            .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
-                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
-                            .WithType(SyntaxFactory.ParseTypeName(visitorInterfaceName)),
-                    })))
-            .WithBody(CreateVoidDispatchBody(implementations));
+        var voidDispatch = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    SyntaxFactory.Identifier("AcceptVisitor"))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                        {
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
+                                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
+                                .WithType(SyntaxFactory.ParseTypeName(visitorInterfaceName)),
+                        })))
+                .WithBody(CreateVoidDispatchBody(implementations)),
+            $"Dispatches a {contractTypeName} node to the matching visitor overload.");
 
         // ValueTask AcceptVisitorAsync(this TContract node, IAsyncVisitor visitor, CancellationToken ct)
-        var asyncDispatch = SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::System.Threading.Tasks.ValueTask"),
-                SyntaxFactory.Identifier("AcceptVisitorAsync"))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
-                    {
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
-                            .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
-                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
-                            .WithType(SyntaxFactory.ParseTypeName(asyncVisitorInterfaceName)),
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
-                            .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")),
-                    })))
-            .WithBody(CreateAsyncDispatchBody(implementations));
+        var asyncDispatch = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::System.Threading.Tasks.ValueTask"),
+                    SyntaxFactory.Identifier("AcceptVisitorAsync"))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                        {
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
+                                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
+                                .WithType(SyntaxFactory.ParseTypeName(asyncVisitorInterfaceName)),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                                .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")),
+                        })))
+                .WithBody(CreateAsyncDispatchBody(implementations)),
+            $"Asynchronously dispatches a {contractTypeName} node to the matching visitor overload.");
 
         // TResult AcceptVisitor<TResult>(this TContract node, IVisitor<TResult> visitor)
-        var genericDispatch = SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.IdentifierName("TResult"),
-                SyntaxFactory.Identifier("AcceptVisitor"))
-            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithTypeParameterList(
-                SyntaxFactory.TypeParameterList(
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.TypeParameter(SyntaxFactory.Identifier("TResult")))))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
-                    {
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
-                            .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
-                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
-                            .WithType(SyntaxFactory.ParseTypeName($"{visitorInterfaceName}<TResult>")),
-                    })))
-            .WithBody(CreateGenericDispatchBody(implementations));
+        var genericDispatch = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.IdentifierName("TResult"),
+                    SyntaxFactory.Identifier("AcceptVisitor"))
+                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithTypeParameterList(
+                    SyntaxFactory.TypeParameterList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.TypeParameter(SyntaxFactory.Identifier("TResult")))))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList<ParameterSyntax>(new[]
+                        {
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("node"))
+                                .WithType(SyntaxFactory.ParseTypeName(contractTypeName))
+                                .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.ThisKeyword))),
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("visitor"))
+                                .WithType(SyntaxFactory.ParseTypeName($"{visitorInterfaceName}<TResult>")),
+                        })))
+                .WithBody(CreateGenericDispatchBody(implementations)),
+            $"Dispatches a {contractTypeName} node to the matching visitor overload and returns a result.");
 
         var baseName = visitorInterfaceName.StartsWith("I", StringComparison.Ordinal) && visitorInterfaceName.Length > 1
             ? visitorInterfaceName.Substring(1)
             : visitorInterfaceName;
 
-        return SyntaxFactory.ClassDeclaration(baseName + "Extensions")
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(voidDispatch, asyncDispatch, genericDispatch);
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(baseName + "Extensions")
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(voidDispatch, asyncDispatch, genericDispatch),
+            $"Provides visitor dispatch extensions for {contractTypeName}.");
     }
 
     private static BlockSyntax CreateVoidDispatchBody(

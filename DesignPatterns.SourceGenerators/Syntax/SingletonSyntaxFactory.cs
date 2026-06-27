@@ -22,6 +22,7 @@ internal static class SingletonSyntaxFactory
             .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
             .AddMembers(member.field, member.instanceProperty);
         partialClass = GeneratedCodeHelper.AddGeneratedCodeAttribute(partialClass);
+        partialClass = GeneratedCodeHelper.WithXmlDoc(partialClass, $"Provides the singleton instance for {className}.");
 
         MemberDeclarationSyntax namespaceMember = partialClass;
         if (!string.IsNullOrEmpty(namespaceName))
@@ -83,21 +84,23 @@ internal static class SingletonSyntaxFactory
                             .WithInitializer(SyntaxFactory.EqualsValueClause(lazyCreation))))
             .WithModifiers(PrivateStaticReadonlyModifiers);
 
-        var instanceProperty = SyntaxFactory.PropertyDeclaration(typeSyntax, SyntaxFactory.Identifier("Instance"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddAccessorListAccessors(
-                SyntaxFactory.AccessorDeclaration(
-                    SyntaxKind.GetAccessorDeclaration,
-                    SyntaxFactory.Block(
-                        SyntaxFactory.SingletonList<StatementSyntax>(
-                            SyntaxFactory.ReturnStatement(
-                                SyntaxFactory.MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    SyntaxFactory.IdentifierName("_instance"),
-                                    SyntaxFactory.IdentifierName("Value")))))));
+        var instanceProperty = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.PropertyDeclaration(typeSyntax, SyntaxFactory.Identifier("Instance"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(
+                        SyntaxKind.GetAccessorDeclaration,
+                        SyntaxFactory.Block(
+                            SyntaxFactory.SingletonList<StatementSyntax>(
+                                SyntaxFactory.ReturnStatement(
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        SyntaxFactory.IdentifierName("_instance"),
+                                        SyntaxFactory.IdentifierName("Value"))))))),
+            "Gets the singleton instance.");
 
         return (field, instanceProperty);
     }

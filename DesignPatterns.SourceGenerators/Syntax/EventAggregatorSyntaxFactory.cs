@@ -47,13 +47,15 @@ internal static class EventAggregatorSyntaxFactory
             members.Add(CreateSubscribeAllFromLifetimeScopeMethod(eventTypeName, diHandlerTypeNames));
         }
 
-        var registryClass = SyntaxFactory.ClassDeclaration(registryClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+        var registryClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(registryClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            $"Provides an event handler registry for {eventTypeName}.");
 
         var additionalUsings = new List<string> { "DesignPatterns.Behavioral" };
         if (integrationOptions.EnableDi)
@@ -116,15 +118,17 @@ internal static class EventAggregatorSyntaxFactory
 
         statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("aggregator")));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.IEventAggregator"),
-                SyntaxFactory.Identifier("SubscribeAll"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(aggregatorParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.IEventAggregator"),
+                    SyntaxFactory.Identifier("SubscribeAll"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(aggregatorParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Subscribes all registered handlers to the event aggregator.");
     }
 
     private static MethodDeclarationSyntax CreateSubscribeAllFromServiceProviderMethod(
@@ -169,15 +173,17 @@ internal static class EventAggregatorSyntaxFactory
 
         statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("aggregator")));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.IEventAggregator"),
-                SyntaxFactory.Identifier("SubscribeAll"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(aggregatorParam, serviceProviderParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.IEventAggregator"),
+                    SyntaxFactory.Identifier("SubscribeAll"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(aggregatorParam, serviceProviderParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Subscribes all registered handlers to the event aggregator.");
     }
 
     private static MethodDeclarationSyntax CreateRegisterDiMethod(
@@ -205,15 +211,17 @@ internal static class EventAggregatorSyntaxFactory
                         SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
                         SyntaxFactory.IdentifierName("Transient"))));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
-                SyntaxFactory.Identifier("RegisterDi"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(servicesParam, implementationLifetimeParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                    SyntaxFactory.Identifier("RegisterDi"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(servicesParam, implementationLifetimeParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Registers the registry and all implementations in the DI container.");
     }
 
     private static StatementSyntax CreateTryAddImplementationStatement(string implementationTypeName)
@@ -267,15 +275,17 @@ internal static class EventAggregatorSyntaxFactory
         var builderParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("builder"))
             .WithType(SyntaxFactory.ParseTypeName("global::Autofac.ContainerBuilder"));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                SyntaxFactory.Identifier("RegisterAutofac"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(builderParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    SyntaxFactory.Identifier("RegisterAutofac"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(builderParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Registers the registry and all implementations with Autofac.");
     }
 
     private static MethodDeclarationSyntax CreateSubscribeAllFromLifetimeScopeMethod(
@@ -320,15 +330,17 @@ internal static class EventAggregatorSyntaxFactory
 
         statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("aggregator")));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.IEventAggregator"),
-                SyntaxFactory.Identifier("SubscribeAll"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(aggregatorParam, lifetimeScopeParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.IEventAggregator"),
+                    SyntaxFactory.Identifier("SubscribeAll"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(aggregatorParam, lifetimeScopeParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Subscribes all registered handlers to the event aggregator.");
     }
 
 }

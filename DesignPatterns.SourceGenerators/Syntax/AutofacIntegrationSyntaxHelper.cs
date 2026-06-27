@@ -36,13 +36,15 @@ internal static class AutofacIntegrationSyntaxHelper
                                 SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_diEntries")),
                             }))));
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(lifetimeScopeParam)
-            .WithBody(SyntaxFactory.Block(body));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(lifetimeScopeParam)
+                .WithBody(SyntaxFactory.Block(body)),
+            "Creates a registry from the Autofac component context.");
     }
 
     internal static MethodDeclarationSyntax CreateFactoryCreateFromComponentContextMethod(
@@ -58,14 +60,16 @@ internal static class AutofacIntegrationSyntaxHelper
             entries,
             RegistrationResolveTarget.ComponentContext);
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(lifetimeScopeParam)
-            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
-            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(lifetimeScopeParam)
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            "Creates a registry from the Autofac component context.");
     }
 
     internal static MethodDeclarationSyntax CreateHandlerCreateFromComponentContextMethod(
@@ -86,14 +90,16 @@ internal static class AutofacIntegrationSyntaxHelper
             handlers,
             RegistrationResolveTarget.ComponentContext);
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(lifetimeScopeParam)
-            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
-            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(lifetimeScopeParam)
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            "Creates a handler pipeline from the Autofac component context.");
     }
 
     internal static MethodDeclarationSyntax CreateRegisterAutofacMethod(
@@ -126,15 +132,17 @@ internal static class AutofacIntegrationSyntaxHelper
             .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword)))
             .WithDefault(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                SyntaxFactory.Identifier("RegisterAutofac"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                    SyntaxFactory.Identifier("RegisterAutofac"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(builderParam, sharingParam, serviceKeyParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Registers the registry and all implementations with Autofac.");
     }
 
     internal static string[] GetAutofacUsings() =>

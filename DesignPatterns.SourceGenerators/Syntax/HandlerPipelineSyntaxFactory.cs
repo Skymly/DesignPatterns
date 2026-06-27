@@ -48,23 +48,25 @@ internal static class HandlerPipelineSyntaxFactory
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                     SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)));
 
-        var instanceProperty = SyntaxFactory.PropertyDeclaration(
-                SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
-                    .WithTypeArgumentList(
-                        SyntaxFactory.TypeArgumentList(
-                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
-                                SyntaxFactory.ParseTypeName(contextTypeName)))),
-                SyntaxFactory.Identifier("Instance"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddAccessorListAccessors(
-                SyntaxFactory.AccessorDeclaration(
-                    SyntaxKind.GetAccessorDeclaration,
-                    SyntaxFactory.Block(
-                        SyntaxFactory.SingletonList<StatementSyntax>(
-                            SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("_instance"))))));
+        var instanceProperty = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.PropertyDeclaration(
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("HandlerPipeline"))
+                        .WithTypeArgumentList(
+                            SyntaxFactory.TypeArgumentList(
+                                SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                    SyntaxFactory.ParseTypeName(contextTypeName)))),
+                    SyntaxFactory.Identifier("Instance"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(
+                        SyntaxKind.GetAccessorDeclaration,
+                        SyntaxFactory.Block(
+                            SyntaxFactory.SingletonList<StatementSyntax>(
+                                SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("_instance")))))),
+            "Gets the singleton registry instance.");
 
         var members = new List<MemberDeclarationSyntax> { instanceField, instanceProperty };
 
@@ -90,13 +92,15 @@ internal static class HandlerPipelineSyntaxFactory
             members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(handlerTypeNames, pipelineType));
         }
 
-        var pipelineClass = SyntaxFactory.ClassDeclaration(pipelineClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+        var pipelineClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(pipelineClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            $"Provides a handler pipeline for {contextTypeName}.");
 
         var additionalUsings = new List<string> { "DesignPatterns.Behavioral" };
         if (integrationOptions.EnableDi || integrationOptions.EnableAutofac)

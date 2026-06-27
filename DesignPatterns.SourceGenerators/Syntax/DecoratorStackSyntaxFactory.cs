@@ -27,28 +27,32 @@ internal static class DecoratorStackSyntaxFactory
         IReadOnlyList<(string ConstantName, int OrderValue)> orders)
     {
         var members = orders.Select(order =>
-            SyntaxFactory.FieldDeclaration(
-                    SyntaxFactory.VariableDeclaration(
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)))
-                        .AddVariables(
-                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(order.ConstantName))
-                                .WithInitializer(
-                                    SyntaxFactory.EqualsValueClause(
-                                        SyntaxFactory.LiteralExpression(
-                                            SyntaxKind.NumericLiteralExpression,
-                                            SyntaxFactory.Literal(order.OrderValue))))))
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(
+                                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)))
+                            .AddVariables(
+                                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(order.ConstantName))
+                                    .WithInitializer(
+                                        SyntaxFactory.EqualsValueClause(
+                                            SyntaxFactory.LiteralExpression(
+                                                SyntaxKind.NumericLiteralExpression,
+                                                SyntaxFactory.Literal(order.OrderValue))))))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.ConstKeyword))),
+                $"The decorator order for {order.ConstantName}."));
+
+        var orderClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(orderClassName)
                 .WithModifiers(
                     SyntaxFactory.TokenList(
                         SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.ConstKeyword))));
-
-        var orderClass = SyntaxFactory.ClassDeclaration(orderClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            "Provides decorator order constants for the decorator stack.");
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, orderClass, "DecoratorGenerator");
     }
@@ -90,22 +94,24 @@ internal static class DecoratorStackSyntaxFactory
                     SyntaxFactory.SingletonSeparatedList(
                         SyntaxFactory.Argument(SyntaxFactory.IdentifierName("core")))));
 
-        var syncBuildMethod = SyntaxFactory.MethodDeclaration(
-                serviceTypeSyntax,
-                SyntaxFactory.Identifier("Build"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.Parameter(SyntaxFactory.Identifier("core"))
-                            .WithType(serviceTypeSyntax))))
-            .WithBody(
-                SyntaxFactory.Block(
-                    SyntaxFactory.SingletonList<StatementSyntax>(
-                        SyntaxFactory.ReturnStatement(syncBuildInvocation))));
+        var syncBuildMethod = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    serviceTypeSyntax,
+                    SyntaxFactory.Identifier("Build"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("core"))
+                                .WithType(serviceTypeSyntax))))
+                .WithBody(
+                    SyntaxFactory.Block(
+                        SyntaxFactory.SingletonList<StatementSyntax>(
+                            SyntaxFactory.ReturnStatement(syncBuildInvocation)))),
+            "Builds the decorator stack.");
 
         var members = new List<MemberDeclarationSyntax> { syncBuildMethod };
 
@@ -123,13 +129,15 @@ internal static class DecoratorStackSyntaxFactory
             members.Add(CreateRegisterDiMethod(serviceTypeSyntax, decoratorEntries));
         }
 
-        var stackClass = SyntaxFactory.ClassDeclaration(stackClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+        var stackClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(stackClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            $"Provides a decorator stack for {serviceTypeName}.");
 
         var additionalUsings = new List<string> { "DesignPatterns.Structural" };
         if (integrationOptions.EnableDi)
@@ -225,31 +233,33 @@ internal static class DecoratorStackSyntaxFactory
                 SyntaxFactory.TypeArgumentList(
                     SyntaxFactory.SingletonSeparatedList(serviceTypeSyntax)));
 
-        return SyntaxFactory.MethodDeclaration(
-                valueTaskType,
-                SyntaxFactory.Identifier("BuildAsync"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList<ParameterSyntax>(
-                        new ParameterSyntax[]
-                        {
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("core"))
-                                .WithType(serviceTypeSyntax),
-                            SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
-                                .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken"))
-                                .WithDefault(
-                                    SyntaxFactory.EqualsValueClause(
-                                        SyntaxFactory.DefaultExpression(
-                                            SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")))),
-                        })))
-            .WithBody(
-                SyntaxFactory.Block(
-                    SyntaxFactory.SingletonList<StatementSyntax>(
-                        SyntaxFactory.ReturnStatement(buildAsyncInvocation))));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    valueTaskType,
+                    SyntaxFactory.Identifier("BuildAsync"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList<ParameterSyntax>(
+                            new ParameterSyntax[]
+                            {
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("core"))
+                                    .WithType(serviceTypeSyntax),
+                                SyntaxFactory.Parameter(SyntaxFactory.Identifier("cancellationToken"))
+                                    .WithType(SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken"))
+                                    .WithDefault(
+                                        SyntaxFactory.EqualsValueClause(
+                                            SyntaxFactory.DefaultExpression(
+                                                SyntaxFactory.ParseTypeName("global::System.Threading.CancellationToken")))),
+                            })))
+                .WithBody(
+                    SyntaxFactory.Block(
+                        SyntaxFactory.SingletonList<StatementSyntax>(
+                            SyntaxFactory.ReturnStatement(buildAsyncInvocation)))),
+            "Builds the decorator stack asynchronously.");
     }
 
     private static MethodDeclarationSyntax CreateBuildFromServiceProviderMethod(
@@ -342,39 +352,43 @@ internal static class DecoratorStackSyntaxFactory
                     SyntaxFactory.TypeArgumentList(
                         SyntaxFactory.SingletonSeparatedList(serviceTypeSyntax)));
 
-            return SyntaxFactory.MethodDeclaration(
-                    valueTaskType,
-                    SyntaxFactory.Identifier("BuildAsync"))
+            return GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.MethodDeclaration(
+                        valueTaskType,
+                        SyntaxFactory.Identifier("BuildAsync"))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                            SyntaxFactory.Token(SyntaxKind.AsyncKeyword)))
+                    .WithParameterList(
+                        SyntaxFactory.ParameterList(
+                            SyntaxFactory.SeparatedList<ParameterSyntax>(
+                                new ParameterSyntax[] { serviceProviderParam, coreParam, ctParam })))
+                    .WithBody(
+                        SyntaxFactory.Block(
+                            SyntaxFactory.SingletonList<StatementSyntax>(
+                                SyntaxFactory.ReturnStatement(buildInvocation)))),
+                "Builds the decorator stack asynchronously from the service provider.");
+        }
+
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    serviceTypeSyntax,
+                    SyntaxFactory.Identifier("Build"))
                 .WithModifiers(
                     SyntaxFactory.TokenList(
                         SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                        SyntaxFactory.Token(SyntaxKind.AsyncKeyword)))
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
                 .WithParameterList(
                     SyntaxFactory.ParameterList(
                         SyntaxFactory.SeparatedList<ParameterSyntax>(
-                            new ParameterSyntax[] { serviceProviderParam, coreParam, ctParam })))
+                            new ParameterSyntax[] { serviceProviderParam, coreParam })))
                 .WithBody(
                     SyntaxFactory.Block(
                         SyntaxFactory.SingletonList<StatementSyntax>(
-                            SyntaxFactory.ReturnStatement(buildInvocation))));
-        }
-
-        return SyntaxFactory.MethodDeclaration(
-                serviceTypeSyntax,
-                SyntaxFactory.Identifier("Build"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList<ParameterSyntax>(
-                        new ParameterSyntax[] { serviceProviderParam, coreParam })))
-            .WithBody(
-                SyntaxFactory.Block(
-                    SyntaxFactory.SingletonList<StatementSyntax>(
-                        SyntaxFactory.ReturnStatement(buildInvocation))));
+                            SyntaxFactory.ReturnStatement(buildInvocation)))),
+            "Builds the decorator stack from the service provider.");
     }
 
     private static MethodDeclarationSyntax CreateRegisterDiMethod(
@@ -403,18 +417,20 @@ internal static class DecoratorStackSyntaxFactory
                         SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
                         SyntaxFactory.IdentifierName("Singleton"))));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
-                SyntaxFactory.Identifier("RegisterDi"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .WithParameterList(
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList<ParameterSyntax>(
-                        new ParameterSyntax[] { servicesParam, lifetimeParam })))
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                    SyntaxFactory.Identifier("RegisterDi"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .WithParameterList(
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList<ParameterSyntax>(
+                            new ParameterSyntax[] { servicesParam, lifetimeParam })))
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Registers the registry and all implementations in the DI container.");
     }
 
     public static string GetBaseName(string name)

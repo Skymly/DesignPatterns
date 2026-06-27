@@ -4,8 +4,14 @@ using System;
 using DesignPatterns.Behavioral;
 
 [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+/// <summary>
+/// Provides an event handler registry for global::GlobalEvent.
+/// </summary>
 public static partial class GlobalEventHandlerRegistry
 {
+    /// <summary>
+    /// Subscribes all registered handlers to the event aggregator.
+    /// </summary>
     public static global::DesignPatterns.Behavioral.IEventAggregator SubscribeAll(global::DesignPatterns.Behavioral.IEventAggregator aggregator)
     {
         aggregator.Subscribe<global::GlobalEvent>(new global::GlobalHandler());

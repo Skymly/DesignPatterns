@@ -76,13 +76,15 @@ internal static class DiIntegrationSyntaxHelper
                                 SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_diEntries")),
                             }))));
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(serviceProviderParam)
-            .WithBody(SyntaxFactory.Block(body));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(serviceProviderParam)
+                .WithBody(SyntaxFactory.Block(body)),
+            "Creates a registry from the service provider.");
     }
 
     internal static MethodDeclarationSyntax CreateRegisterDiMethod(
@@ -121,15 +123,17 @@ internal static class DiIntegrationSyntaxHelper
                         SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
                         SyntaxFactory.IdentifierName("Singleton"))));
 
-        return SyntaxFactory.MethodDeclaration(
-                SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
-                SyntaxFactory.Identifier("RegisterDi"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(servicesParam, implementationLifetimeParam, registryLifetimeParam)
-            .WithBody(SyntaxFactory.Block(statements));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(
+                    SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"),
+                    SyntaxFactory.Identifier("RegisterDi"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(servicesParam, implementationLifetimeParam, registryLifetimeParam)
+                .WithBody(SyntaxFactory.Block(statements)),
+            "Registers the registry and all implementations in the DI container.");
     }
 
     internal static MethodDeclarationSyntax CreateFactoryCreateFromServiceProviderMethod(
@@ -145,14 +149,16 @@ internal static class DiIntegrationSyntaxHelper
             entries,
             RegistrationResolveTarget.ServiceProvider);
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(serviceProviderParam)
-            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
-            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(serviceProviderParam)
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            "Creates a registry from the service provider.");
     }
 
     internal static MethodDeclarationSyntax CreateHandlerCreateFromServiceProviderMethod(
@@ -173,14 +179,16 @@ internal static class DiIntegrationSyntaxHelper
             handlers,
             RegistrationResolveTarget.ServiceProvider);
 
-        return SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddParameterListParameters(serviceProviderParam)
-            .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
-            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(serviceProviderParam)
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            "Creates a handler pipeline from the service provider.");
     }
 
     internal static ExpressionSyntax CreateFactoryRegistryBuilderExpression(

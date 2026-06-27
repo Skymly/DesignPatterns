@@ -98,4 +98,22 @@ internal static class GeneratedCodeHelper
 
         return (T)typeDeclaration.AddAttributeLists(attributeList);
     }
+
+    /// <summary>
+    /// Creates a <c>/// &lt;summary&gt;</c> XML documentation comment
+    /// suitable for attaching as leading trivia to a member or type declaration.
+    /// </summary>
+    internal static SyntaxTriviaList CreateXmlDoc(string summary)
+    {
+        var escaped = summary.Replace("<", "&lt;").Replace(">", "&gt;");
+        var text = $"/// <summary>\n/// {escaped}\n/// </summary>\n";
+        return SyntaxFactory.ParseLeadingTrivia(text);
+    }
+
+    /// <summary>
+    /// Attaches a <c>/// &lt;summary&gt;</c> XML documentation comment
+    /// to a member declaration as leading trivia.
+    /// </summary>
+    internal static T WithXmlDoc<T>(T member, string summary) where T : MemberDeclarationSyntax
+        => member.WithLeadingTrivia(CreateXmlDoc(summary));
 }

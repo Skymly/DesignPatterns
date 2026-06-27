@@ -16,28 +16,32 @@ internal static class FactorySyntaxFactory
         IReadOnlyList<(string ConstantName, string KeyValue)> keys)
     {
         var members = keys.Select(k =>
-            SyntaxFactory.FieldDeclaration(
-                    SyntaxFactory.VariableDeclaration(
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
-                        .AddVariables(
-                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
-                                .WithInitializer(
-                                    SyntaxFactory.EqualsValueClause(
-                                        SyntaxFactory.LiteralExpression(
-                                            SyntaxKind.StringLiteralExpression,
-                                            SyntaxFactory.Literal(k.KeyValue))))))
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(
+                                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
+                            .AddVariables(
+                                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
+                                    .WithInitializer(
+                                        SyntaxFactory.EqualsValueClause(
+                                            SyntaxFactory.LiteralExpression(
+                                                SyntaxKind.StringLiteralExpression,
+                                                SyntaxFactory.Literal(k.KeyValue))))))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.ConstKeyword))),
+                $"The key for the {k.KeyValue} factory."));
+
+        var keysClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(keysClassName)
                 .WithModifiers(
                     SyntaxFactory.TokenList(
                         SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.ConstKeyword))));
-
-        var keysClass = SyntaxFactory.ClassDeclaration(keysClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            "Provides registry keys for the factory contract.");
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, keysClass, "RegisterFactoryGenerator");
     }
@@ -61,13 +65,15 @@ internal static class FactorySyntaxFactory
 
         var members = new List<MemberDeclarationSyntax>
         {
-            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
-                .WithModifiers(
-                    SyntaxFactory.TokenList(
-                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
-                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                    .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                "Creates a new registry instance."),
         };
 
         if (integrationOptions.EnableDi)
@@ -86,13 +92,15 @@ internal static class FactorySyntaxFactory
                 returnType));
         }
 
-        var registryClass = SyntaxFactory.ClassDeclaration(registryClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+        var registryClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(registryClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            $"Provides a registry for {contractTypeName}.");
 
         var additionalUsings = new List<string> { "System", "DesignPatterns.Creational" };
         if (integrationOptions.EnableDi)

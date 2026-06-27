@@ -10,20 +10,32 @@ using DesignPatterns.Extensions.DependencyInjection;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides an event handler registry for global::TestAssembly.InvoicePaidEvent.
+    /// </summary>
     public static partial class InvoicePaidEventHandlerRegistry
     {
+        /// <summary>
+        /// Subscribes all registered handlers to the event aggregator.
+        /// </summary>
         public static global::DesignPatterns.Behavioral.IEventAggregator SubscribeAll(global::DesignPatterns.Behavioral.IEventAggregator aggregator)
         {
             aggregator.Subscribe<global::TestAssembly.InvoicePaidEvent>(new global::TestAssembly.AuditInvoiceHandler());
             return aggregator;
         }
 
+        /// <summary>
+        /// Registers the registry and all implementations in the DI container.
+        /// </summary>
         public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Transient)
         {
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(global::TestAssembly.AuditInvoiceHandler), typeof(global::TestAssembly.AuditInvoiceHandler), implementationLifetime));
             return services;
         }
 
+        /// <summary>
+        /// Subscribes all registered handlers to the event aggregator.
+        /// </summary>
         public static global::DesignPatterns.Behavioral.IEventAggregator SubscribeAll(global::DesignPatterns.Behavioral.IEventAggregator aggregator, global::System.IServiceProvider serviceProvider)
         {
             aggregator.Subscribe<global::TestAssembly.InvoicePaidEvent>(serviceProvider.GetRequiredService<global::TestAssembly.AuditInvoiceHandler>());

@@ -16,28 +16,32 @@ internal static class StrategySyntaxFactory
         IReadOnlyList<(string ConstantName, string KeyValue)> keys)
     {
         var members = keys.Select(k =>
-            SyntaxFactory.FieldDeclaration(
-                    SyntaxFactory.VariableDeclaration(
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
-                        .AddVariables(
-                            SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
-                                .WithInitializer(
-                                    SyntaxFactory.EqualsValueClause(
-                                        SyntaxFactory.LiteralExpression(
-                                            SyntaxKind.StringLiteralExpression,
-                                            SyntaxFactory.Literal(k.KeyValue))))))
+            GeneratedCodeHelper.WithXmlDoc(
+                SyntaxFactory.FieldDeclaration(
+                        SyntaxFactory.VariableDeclaration(
+                                SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)))
+                            .AddVariables(
+                                SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(k.ConstantName))
+                                    .WithInitializer(
+                                        SyntaxFactory.EqualsValueClause(
+                                            SyntaxFactory.LiteralExpression(
+                                                SyntaxKind.StringLiteralExpression,
+                                                SyntaxFactory.Literal(k.KeyValue))))))
+                    .WithModifiers(
+                        SyntaxFactory.TokenList(
+                            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                            SyntaxFactory.Token(SyntaxKind.ConstKeyword))),
+                $"The key for the {k.KeyValue} strategy."));
+
+        var keysClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(keysClassName)
                 .WithModifiers(
                     SyntaxFactory.TokenList(
                         SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                        SyntaxFactory.Token(SyntaxKind.ConstKeyword))));
-
-        var keysClass = SyntaxFactory.ClassDeclaration(keysClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            "Provides registry keys for the strategy contract.");
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, keysClass, "RegisterStrategyGenerator");
     }
@@ -165,27 +169,29 @@ internal static class StrategySyntaxFactory
                     SyntaxFactory.Token(SyntaxKind.StaticKeyword),
                     SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)));
 
-        var instanceProperty = SyntaxFactory.PropertyDeclaration(
-                SyntaxFactory.GenericName(SyntaxFactory.Identifier("IStrategyRegistry"))
-                    .WithTypeArgumentList(
-                        SyntaxFactory.TypeArgumentList(
-                            SyntaxFactory.SeparatedList<TypeSyntax>(
-                                new TypeSyntax[]
-                                {
-                                    SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                                    SyntaxFactory.ParseTypeName(contractTypeName),
-                                }))),
-                SyntaxFactory.Identifier("Instance"))
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
-            .AddAccessorListAccessors(
-                SyntaxFactory.AccessorDeclaration(
-                    SyntaxKind.GetAccessorDeclaration,
-                    SyntaxFactory.Block(
-                        SyntaxFactory.SingletonList<StatementSyntax>(
-                            SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("_instance"))))));
+        var instanceProperty = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.PropertyDeclaration(
+                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("IStrategyRegistry"))
+                        .WithTypeArgumentList(
+                            SyntaxFactory.TypeArgumentList(
+                                SyntaxFactory.SeparatedList<TypeSyntax>(
+                                    new TypeSyntax[]
+                                    {
+                                        SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
+                                        SyntaxFactory.ParseTypeName(contractTypeName),
+                                    }))),
+                    SyntaxFactory.Identifier("Instance"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(
+                        SyntaxKind.GetAccessorDeclaration,
+                        SyntaxFactory.Block(
+                            SyntaxFactory.SingletonList<StatementSyntax>(
+                                SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("_instance")))))),
+            "Gets the singleton registry instance.");
 
         var members = new List<MemberDeclarationSyntax> { registryField, instanceProperty };
 
@@ -215,13 +221,15 @@ internal static class StrategySyntaxFactory
                 CreateStrategyRegistryInterfaceType(contractTypeName)));
         }
 
-        var registryClass = SyntaxFactory.ClassDeclaration(registryClassName)
-            .WithModifiers(
-                SyntaxFactory.TokenList(
-                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                    SyntaxFactory.Token(SyntaxKind.StaticKeyword),
-                    SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
-            .AddMembers(members.ToArray());
+        var registryClass = GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.ClassDeclaration(registryClassName)
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                .AddMembers(members.ToArray()),
+            $"Provides a registry for {contractTypeName}.");
 
         var additionalUsings = new List<string> { "System.Collections.Generic", "DesignPatterns.Behavioral" };
         if (integrationOptions.EnableDi)

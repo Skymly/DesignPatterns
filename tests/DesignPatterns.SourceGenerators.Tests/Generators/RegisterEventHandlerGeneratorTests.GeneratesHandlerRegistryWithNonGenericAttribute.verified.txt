@@ -6,8 +6,14 @@ using DesignPatterns.Behavioral;
 namespace TestAssembly
 {
     [global::System.CodeDom.Compiler.GeneratedCode("DesignPatterns.SourceGenerators", "1.0")]
+    /// <summary>
+    /// Provides an event handler registry for global::TestAssembly.UserCreatedEvent.
+    /// </summary>
     public static partial class UserCreatedEventHandlerRegistry
     {
+        /// <summary>
+        /// Subscribes all registered handlers to the event aggregator.
+        /// </summary>
         public static global::DesignPatterns.Behavioral.IEventAggregator SubscribeAll(global::DesignPatterns.Behavioral.IEventAggregator aggregator)
         {
             aggregator.Subscribe<global::TestAssembly.UserCreatedEvent>(new global::TestAssembly.WelcomeEmailHandler());
