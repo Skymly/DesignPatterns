@@ -45,6 +45,7 @@ public static class DiagnosticIds
     public const string StateTransitionActionMethodNotStatic = "DP038";
     public const string StateTransitionActionMethodWrongSignature = "DP039";
     public const string CompositePartDiNodeNotRegistered = "DP040";
+    public const string CompositePartVisitorCoverageIncomplete = "DP041";
     public const string DecoratorAsyncSignatureMismatch = "DP042";
     public const string DecoratorDiNotResolvable = "DP043";
     public const string EventHandlerUnregisteredImplementation = "DP044";
