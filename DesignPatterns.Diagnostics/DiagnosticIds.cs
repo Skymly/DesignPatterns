@@ -60,4 +60,8 @@ public static class DiagnosticIds
     public const string FactoryAsyncSignatureMismatch = "DP053";
     public const string FactoryPoolSizeInvalid = "DP054";
     public const string FactoryPoolSizeTooLarge = "DP055";
+    public const string StateHierarchyCycle = "DP056";
+    public const string StateParentInvalidMember = "DP057";
+    public const string StateParentSelfReference = "DP058";
+    public const string StateParentOrphanParent = "DP059";
 }

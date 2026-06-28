@@ -1,0 +1,18 @@
+﻿[
+  {
+    Id: DP056,
+    Message: State hierarchy cycle detected: A -> B -> C -> A. Remove the circular [StateParent] declaration that creates this cycle.
+  },
+  {
+    Id: DP031,
+    Message: State 'A' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP031,
+    Message: State 'B' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP031,
+    Message: State 'C' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  }
+]

@@ -57,3 +57,7 @@ DP052    | DesignPatterns.Generators | Error    | Handler guard method has wrong
 DP053    | DesignPatterns.Generators | Error    | Factory async signature mismatch
 DP054    | DesignPatterns.Generators | Error    | Factory pool size is invalid
 DP055    | DesignPatterns.Generators | Warning  | Factory pool size is unusually large
+DP056    | DesignPatterns.Generators | Error    | State hierarchy cycle detected
+DP057    | DesignPatterns.Generators | Error    | StateParent references invalid enum member
+DP058    | DesignPatterns.Generators | Error    | StateParent self-reference (child == parent)
+DP059    | DesignPatterns.Generators | Info     | StateParent parent has no children or outgoing edges

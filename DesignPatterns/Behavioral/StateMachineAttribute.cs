@@ -33,4 +33,11 @@ public sealed class StateMachineAttribute : Attribute
     /// Initial state enum member.
     /// </summary>
     public object Initial { get; set; } = null!;
+
+    /// <summary>
+    /// When <see langword="true"/>, enables hierarchical state machine mode.
+    /// The generator collects <c>[StateParent]</c> attributes and flattens
+    /// inherited transitions at compile time. Defaults to <see langword="false"/>.
+    /// </summary>
+    public bool Hierarchical { get; set; }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using DesignPatterns.SourceGenerators.Generators;
@@ -119,6 +120,15 @@ internal sealed record TransitionModel(
     ActionResolution OnExit);
 
 /// <summary>
+/// A raw parent-child relationship extracted from a <c>[StateParent]</c>
+/// attribute, before validation.
+/// </summary>
+internal sealed record StateParentModel(
+    TransitionArg Child,
+    TransitionArg Parent,
+    Location Location);
+
+/// <summary>
 /// The full state machine model extracted from a class marked with
 /// <c>[StateMachine]</c>.
 /// </summary>
@@ -128,8 +138,19 @@ internal sealed record StateMachineModel(
     EnumTypeInfo? TriggerType,
     InitialStateInfo Initial,
     EquatableArray<TransitionModel> Transitions,
+    EquatableArray<StateParentModel> StateParents,
+    bool IsHierarchical,
     Location Location,
     bool IsValidHolder);
+
+/// <summary>
+/// Result of validating a <see cref="StateMachineModel"/>: the resolved
+/// transitions (flattened if hierarchical) and the optional parent map
+/// (child member name → parent member name) for hierarchy emission.
+/// </summary>
+internal sealed record StateMachineValidationResult(
+    List<ResolvedTransition> Transitions,
+    Dictionary<string, string>? ParentMap);
 
 /// <summary>
 /// A transition that passed all per-edge validation and is ready for
@@ -189,4 +210,25 @@ internal sealed class ResolvedTransition
     public string? OnEnterAsyncReference { get; }
 
     public string? OnExitAsyncReference { get; }
+
+    /// <summary>
+    /// Creates a copy of this transition with a different source state.
+    /// Used by <see cref="HierarchyFlattener"/> to inherit parent-level edges.
+    /// </summary>
+    public ResolvedTransition WithFrom(
+        string fromMember,
+        string fromExpression)
+        => new(
+            fromMember,
+            TriggerMember,
+            ToMember,
+            Location,
+            fromExpression,
+            TriggerExpression,
+            ToExpression,
+            GuardMethodReference,
+            OnEnterSyncReference,
+            OnExitSyncReference,
+            OnEnterAsyncReference,
+            OnExitAsyncReference);
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using DesignPatterns.SourceGenerators.Generators;
 using DesignPatterns.SourceGenerators.Syntax;
@@ -16,12 +17,13 @@ internal static class StateTransitionEmitter
     /// <summary>
     /// Emits the transition table and holder partial for
     /// <paramref name="model"/> using the validated
-    /// <paramref name="transitions"/>.
+    /// <paramref name="transitions"/> and optional <paramref name="parentMap"/>.
     /// </summary>
     public static void Emit(
         SourceProductionContext context,
         StateMachineModel model,
         List<ResolvedTransition> transitions,
+        Dictionary<string, string>? parentMap,
         GeneratorIntegrationOptions integrationOptions)
     {
         var stateType = model.StateType!.Value;
@@ -41,6 +43,17 @@ internal static class StateTransitionEmitter
                 transition.OnEnterAsyncReference,
                 transition.OnExitAsyncReference));
 
+        // Build parent expressions for hierarchical mode.
+        List<(string ChildExpression, string ParentExpression)>? stateParentExpressions = null;
+        if (parentMap is not null && parentMap.Count > 0)
+        {
+            stateParentExpressions = parentMap
+                .Select(kvp => (
+                    StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, kvp.Key),
+                    StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, kvp.Value)))
+                .ToList();
+        }
+
         // Generated sources go into the holder's namespace (not the state enum's namespace)
         // so the holder partial merges with the user-written partial declaration.
         var namespaceName = model.Holder.Namespace;
@@ -52,6 +65,7 @@ internal static class StateTransitionEmitter
             triggerType.FullyQualifiedDisplayString,
             initialExpression,
             transitionExpressions,
+            stateParentExpressions,
             integrationOptions);
 
         var holderUnit = StateTransitionSyntaxFactory.CreateHolderPartialCompilationUnit(

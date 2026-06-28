@@ -53,11 +53,17 @@ internal static class StateTransitionTransform
         }
 
         TypedConstant? initial = null;
+        var isHierarchical = false;
         foreach (var namedArgument in stateMachineAttribute.NamedArguments)
         {
             if (namedArgument.Key == "Initial")
             {
                 initial = namedArgument.Value;
+            }
+            else if (namedArgument.Key == "Hierarchical"
+                && namedArgument.Value.Value is bool hierarchicalValue)
+            {
+                isHierarchical = hierarchicalValue;
             }
         }
 
@@ -143,12 +149,42 @@ internal static class StateTransitionTransform
             transitions.Add(new TransitionModel(from, trigger, to, transitionLocation, guard, onEnter, onExit));
         }
 
+        // Collect [StateParent] attributes for hierarchical mode.
+        var stateParents = new List<StateParentModel>();
+        if (isHierarchical)
+        {
+            foreach (var attribute in holderType.GetAttributes())
+            {
+                if (attribute.AttributeClass is null
+                    || !string.Equals(attribute.AttributeClass.Name, "StateParentAttribute", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (attribute.ConstructorArguments.Length < 2)
+                {
+                    continue;
+                }
+
+                var parentLocation = attribute.ApplicationSyntaxReference is { } syntaxRef
+                    ? syntaxRef.SyntaxTree!.GetLocation(syntaxRef.Span)
+                    : location;
+
+                var child = ResolveTransitionArg(attribute.ConstructorArguments[0], stateType, stateTypeInfo);
+                var parent = ResolveTransitionArg(attribute.ConstructorArguments[1], stateType, stateTypeInfo);
+
+                stateParents.Add(new StateParentModel(child, parent, parentLocation));
+            }
+        }
+
         return Result<StateMachineModel>.Success(new StateMachineModel(
             holderInfo,
             stateTypeInfo,
             triggerTypeInfo,
             initialState,
             new EquatableArray<TransitionModel>(transitions.ToArray()),
+            new EquatableArray<StateParentModel>(stateParents.ToArray()),
+            isHierarchical,
             location,
             isValidHolder));
     }
