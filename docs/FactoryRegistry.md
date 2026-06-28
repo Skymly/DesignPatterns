@@ -137,11 +137,19 @@ ProductFactoryRegistry.RegisterDi(services); // TryAdd 各实现 + IFactoryRegis
 services.AddFactoryRegistry<string, IProduct>(builder => { ... }); // 手动 Builder
 ```
 
-`Create(IServiceProvider sp)` 使用 `() => sp.GetRequiredService<TImpl>()` 注册工厂委托；**每次** `registry.Create(key)` 调用委托。实现类型为 Singleton 时，多次 `Create` 返回同一实例；需要新产品实例时对实现使用 `ServiceLifetime.Transient`：
+`Create(IServiceProvider sp)` 使用 `() => sp.GetRequiredService<TImpl>()` 注册工厂委托；**每次** `registry.Create(key)` 调用委托。
+
+**默认 `implementationLifetime = Transient`**：工厂模式的语义是每次 `Create`/`CreateAsync` 返回新产品实例，因此实现类型默认注册为 `Transient`。如需共享同一实现实例（如内部缓存状态），可显式传 `Singleton`：
 
 ```csharp
-ProductFactoryRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+// 默认：Transient（每次 Create 返回新产品）
+ProductFactoryRegistry.RegisterDi(services);
+
+// 显式 Singleton（多次 Create 返回同一实现实例）
+ProductFactoryRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Singleton);
 ```
+
+> **注意**：此默认值与 Strategy/Chain 等模式不同（后者默认 Singleton），因为工厂的语义是"创建新实例"而非"解析同一实例"。EventAggregator 也使用 Transient 默认值（handler 通常无状态）。
 
 无 DI 包时仍可使用静态 `Create()`（`new Impl()`）。
 
