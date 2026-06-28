@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP053,
+    Message: Factory 'BrokenFactory' is marked with IsAsync=true but does not implement IAsyncFactory<TestAssembly.IProductFactory>. Implement IAsyncFactory<TestAssembly.IProductFactory> or set IsAsync=false.
+  }
+]

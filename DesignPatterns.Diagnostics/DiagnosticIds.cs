@@ -56,4 +56,7 @@ public static class DiagnosticIds
     public const string HandlerOrderGuardMethodNotFound = "DP050";
     public const string HandlerOrderGuardMethodNotStatic = "DP051";
     public const string HandlerOrderGuardMethodWrongSignature = "DP052";
+    public const string FactoryAsyncSignatureMismatch = "DP053";
+    public const string FactoryPoolSizeInvalid = "DP054";
+    public const string FactoryPoolSizeTooLarge = "DP055";
 }

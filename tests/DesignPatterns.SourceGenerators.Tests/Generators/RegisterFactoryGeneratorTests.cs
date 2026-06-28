@@ -190,4 +190,232 @@ public sealed class RegisterFactoryGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task GeneratesAsyncRegistryWhenFactoryImplementsIAsyncFactory()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard")]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+
+            [RegisterFactory<IProductFactory>("premium")]
+            public sealed class PremiumProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Premium";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new PremiumProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesPooledRegistryWhenPoolSizeIsSet()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard", PoolSize = 8)]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesMixedSyncAndAsyncRegistries()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard")]
+            public sealed class StandardProductFactory : IProductFactory
+            {
+                public string Create() => "Standard";
+            }
+
+            [RegisterFactory<IProductFactory>("premium", IsAsync = true)]
+            public sealed class PremiumProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Premium";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new PremiumProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesAsyncRegistryWithNonGenericAttribute()
+    {
+        const string source = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory("standard", typeof(IProductFactory))]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp053AsyncSignatureMismatch()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("broken", IsAsync = true)]
+            public sealed class BrokenFactory : IProductFactory
+            {
+                public string Create() => "Broken";
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp054PoolSizeInvalid()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("broken", PoolSize = -1)]
+            public sealed class BrokenFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Broken";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new BrokenFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp055PoolSizeTooLarge()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("big", PoolSize = 2048)]
+            public sealed class BigPoolFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Big";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new BigPoolFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
 }

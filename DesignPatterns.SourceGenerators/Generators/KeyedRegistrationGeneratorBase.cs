@@ -32,9 +32,28 @@ public interface IKeyedRegistrationSyntaxFactory
         IReadOnlyList<(string Key, string ImplementationTypeName, string? GuardMethodReference)> entries,
         GeneratorIntegrationOptions integrationOptions = default);
 
+    CompilationUnitSyntax? CreateAsyncRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
+        GeneratorIntegrationOptions integrationOptions = default);
+
+    CompilationUnitSyntax? CreatePooledRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        int poolSize,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
+        GeneratorIntegrationOptions integrationOptions = default);
+
     string GetKeysClassName(string contractName);
 
     string GetRegistryClassName(string contractName);
+
+    string GetAsyncRegistryClassName(string contractName);
+
+    string GetPooledRegistryClassName(string contractName);
 
     string ToConstantName(string key);
 }
@@ -154,6 +173,56 @@ public abstract class KeyedRegistrationGeneratorBase : IIncrementalGenerator
         context.AddSource(
             $"{hintPrefix}.{registryClassName}.g.cs",
             SourceText.From(registryUnit.ToFullString(), Encoding.UTF8));
+
+        // Emit async registry when any registration is async (IsAsync=true or implements IAsyncFactory<T>).
+        var asyncEntries = registrations
+            .Where(static r => r.IsAsync || r.ImplementsAsyncFactory)
+            .Select(static r => (r.Key, r.ImplementationFullyQualifiedDisplayString, r.ImplementsAsyncFactory))
+            .ToList();
+
+        if (asyncEntries.Count > 0)
+        {
+            var asyncRegistryClassName = syntaxFactory.GetAsyncRegistryClassName(contract.Name);
+            var asyncRegistryUnit = syntaxFactory.CreateAsyncRegistryCompilationUnit(
+                contract.Namespace,
+                asyncRegistryClassName,
+                contract.FullyQualifiedDisplayString,
+                asyncEntries,
+                integrationOptions);
+
+            if (asyncRegistryUnit is not null)
+            {
+                context.AddSource(
+                    $"{hintPrefix}.{asyncRegistryClassName}.g.cs",
+                    SourceText.From(asyncRegistryUnit.ToFullString(), Encoding.UTF8));
+            }
+        }
+
+        // Emit pooled registry when any registration has PoolSize > 0.
+        var pooledEntries = registrations
+            .Where(static r => r.PoolSize > 0 && (r.IsAsync || r.ImplementsAsyncFactory))
+            .Select(static r => (r.Key, r.ImplementationFullyQualifiedDisplayString, r.ImplementsAsyncFactory))
+            .ToList();
+
+        if (pooledEntries.Count > 0)
+        {
+            var maxPoolSize = registrations.Where(static r => r.PoolSize > 0).Max(static r => r.PoolSize);
+            var pooledRegistryClassName = syntaxFactory.GetPooledRegistryClassName(contract.Name);
+            var pooledRegistryUnit = syntaxFactory.CreatePooledRegistryCompilationUnit(
+                contract.Namespace,
+                pooledRegistryClassName,
+                contract.FullyQualifiedDisplayString,
+                maxPoolSize,
+                pooledEntries,
+                integrationOptions);
+
+            if (pooledRegistryUnit is not null)
+            {
+                context.AddSource(
+                    $"{hintPrefix}.{pooledRegistryClassName}.g.cs",
+                    SourceText.From(pooledRegistryUnit.ToFullString(), Encoding.UTF8));
+            }
+        }
     }
 }
 
@@ -178,11 +247,36 @@ public sealed class FactorySyntaxFactoryAdapter : IKeyedRegistrationSyntaxFactor
         FactorySyntaxFactory.CreateRegistryCompilationUnit(
             namespaceName, registryClassName, contractTypeName, entries, integrationOptions);
 
+    public CompilationUnitSyntax? CreateAsyncRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
+        GeneratorIntegrationOptions integrationOptions = default) =>
+        FactorySyntaxFactory.CreateAsyncRegistryCompilationUnit(
+            namespaceName, registryClassName, contractTypeName, entries, integrationOptions);
+
+    public CompilationUnitSyntax? CreatePooledRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        int poolSize,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
+        GeneratorIntegrationOptions integrationOptions = default) =>
+        FactorySyntaxFactory.CreatePooledRegistryCompilationUnit(
+            namespaceName, registryClassName, contractTypeName, poolSize, entries, integrationOptions);
+
     public string GetKeysClassName(string contractName) =>
         FactorySyntaxFactory.GetKeysClassName(contractName);
 
     public string GetRegistryClassName(string contractName) =>
         FactorySyntaxFactory.GetRegistryClassName(contractName);
+
+    public string GetAsyncRegistryClassName(string contractName) =>
+        FactorySyntaxFactory.GetAsyncRegistryClassName(contractName);
+
+    public string GetPooledRegistryClassName(string contractName) =>
+        FactorySyntaxFactory.GetPooledRegistryClassName(contractName);
 
     public string ToConstantName(string key) =>
         FactorySyntaxFactory.ToConstantName(key);
@@ -213,6 +307,29 @@ public sealed class StrategySyntaxFactoryAdapter : IKeyedRegistrationSyntaxFacto
         StrategySyntaxFactory.GetKeysClassName(contractName);
 
     public string GetRegistryClassName(string contractName) =>
+        StrategySyntaxFactory.GetRegistryClassName(contractName);
+
+    public CompilationUnitSyntax? CreateAsyncRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
+        GeneratorIntegrationOptions integrationOptions = default) =>
+        null;
+
+    public CompilationUnitSyntax? CreatePooledRegistryCompilationUnit(
+        string? namespaceName,
+        string registryClassName,
+        string contractTypeName,
+        int poolSize,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
+        GeneratorIntegrationOptions integrationOptions = default) =>
+        null;
+
+    public string GetAsyncRegistryClassName(string contractName) =>
+        StrategySyntaxFactory.GetRegistryClassName(contractName);
+
+    public string GetPooledRegistryClassName(string contractName) =>
         StrategySyntaxFactory.GetRegistryClassName(contractName);
 
     public string ToConstantName(string key) =>
