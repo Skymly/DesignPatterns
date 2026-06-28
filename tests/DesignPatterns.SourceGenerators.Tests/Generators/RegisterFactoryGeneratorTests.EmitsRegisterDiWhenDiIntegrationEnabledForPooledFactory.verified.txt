@@ -26,9 +26,9 @@ namespace TestAssembly
         /// </summary>
         public static IAsyncFactoryRegistry<string, global::TestAssembly.IProductFactory> Create(global::System.IServiceProvider serviceProvider) => new AsyncFactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().Register("standard", (CancellationToken ct) => serviceProvider.GetRequiredService<global::TestAssembly.StandardProductFactory>().CreateAsync(ct)).Build();
         /// <summary>
-        /// Registers the registry and all implementations in the DI container.
+        /// Registers the factory registry and all implementations in the DI container. Implementations default to Transient so each Create/CreateAsync call resolves a new instance.
         /// </summary>
-        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime registryLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Transient, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime registryLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
         {
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(global::TestAssembly.StandardProductFactory), typeof(global::TestAssembly.StandardProductFactory), implementationLifetime));
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(IAsyncFactoryRegistry<string, global::TestAssembly.IProductFactory>), (global::System.IServiceProvider sp) => Create(sp), registryLifetime));
@@ -88,9 +88,9 @@ namespace TestAssembly
         /// </summary>
         public static IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory> Create(global::System.IServiceProvider serviceProvider) => (IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory>)new AsyncFactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().WithPooling(8).Register("standard", (CancellationToken ct) => serviceProvider.GetRequiredService<global::TestAssembly.StandardProductFactory>().CreateAsync(ct)).Build();
         /// <summary>
-        /// Registers the registry and all implementations in the DI container.
+        /// Registers the factory registry and all implementations in the DI container. Implementations default to Transient so each Create/CreateAsync call resolves a new instance.
         /// </summary>
-        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime registryLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Transient, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime registryLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
         {
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(global::TestAssembly.StandardProductFactory), typeof(global::TestAssembly.StandardProductFactory), implementationLifetime));
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory>), (global::System.IServiceProvider sp) => Create(sp), registryLifetime));
@@ -128,9 +128,9 @@ namespace TestAssembly
         /// </summary>
         public static IFactoryRegistry<string, global::TestAssembly.IProductFactory> Create(global::System.IServiceProvider serviceProvider) => new FactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().Register("standard", () => (global::TestAssembly.IProductFactory)serviceProvider.GetRequiredService<global::TestAssembly.StandardProductFactory>()).Build();
         /// <summary>
-        /// Registers the registry and all implementations in the DI container.
+        /// Registers the factory registry and all implementations in the DI container. Implementations default to Transient so each Create/CreateAsync call resolves a new instance.
         /// </summary>
-        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime registryLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
+        public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection RegisterDi(global::Microsoft.Extensions.DependencyInjection.IServiceCollection services, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime implementationLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Transient, global::Microsoft.Extensions.DependencyInjection.ServiceLifetime registryLifetime = global::Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton)
         {
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(global::TestAssembly.StandardProductFactory), typeof(global::TestAssembly.StandardProductFactory), implementationLifetime));
             services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof(IFactoryRegistry<string, global::TestAssembly.IProductFactory>), (global::System.IServiceProvider sp) => Create(sp), registryLifetime));

@@ -79,7 +79,7 @@ internal static class FactorySyntaxFactory
         if (integrationOptions.EnableDi)
         {
             members.Add(DiIntegrationSyntaxHelper.CreateFactoryCreateFromServiceProviderMethod(contractTypeName, entriesWithoutGuard));
-            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethodForFactory(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 returnType));
         }
@@ -151,7 +151,7 @@ internal static class FactorySyntaxFactory
         {
             members.Add(DiIntegrationSyntaxHelper.CreateAsyncFactoryCreateFromServiceProviderMethod(
                 contractTypeName, entries));
-            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethodForFactory(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 returnType));
         }
@@ -226,7 +226,7 @@ internal static class FactorySyntaxFactory
         {
             members.Add(DiIntegrationSyntaxHelper.CreatePooledFactoryCreateFromServiceProviderMethod(
                 contractTypeName, poolSize, entries));
-            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethodForFactory(
                 entries.Select(e => e.ImplementationTypeName).ToList(),
                 returnType));
         }

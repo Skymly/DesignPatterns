@@ -90,7 +90,37 @@ internal static class DiIntegrationSyntaxHelper
     internal static MethodDeclarationSyntax CreateRegisterDiMethod(
         IReadOnlyList<string> implementationTypeNames,
         TypeSyntax registeredServiceType,
-        string createMethodName = "Create")
+        string createMethodName = "Create") =>
+        CreateRegisterDiMethodCore(
+            implementationTypeNames,
+            registeredServiceType,
+            createMethodName,
+            defaultImplementationLifetime: "Singleton",
+            xmlDoc: "Registers the registry and all implementations in the DI container.");
+
+    /// <summary>
+    /// Factory-specific RegisterDi: defaults <c>implementationLifetime</c> to
+    /// <c>Transient</c> because factory implementations should produce
+    /// a new product per <c>Create</c>/<c>CreateAsync</c> call.
+    /// </summary>
+    internal static MethodDeclarationSyntax CreateRegisterDiMethodForFactory(
+        IReadOnlyList<string> implementationTypeNames,
+        TypeSyntax registeredServiceType,
+        string createMethodName = "Create") =>
+        CreateRegisterDiMethodCore(
+            implementationTypeNames,
+            registeredServiceType,
+            createMethodName,
+            defaultImplementationLifetime: "Transient",
+            xmlDoc: "Registers the factory registry and all implementations in the DI container. " +
+                    "Implementations default to Transient so each Create/CreateAsync call resolves a new instance.");
+
+    private static MethodDeclarationSyntax CreateRegisterDiMethodCore(
+        IReadOnlyList<string> implementationTypeNames,
+        TypeSyntax registeredServiceType,
+        string createMethodName,
+        string defaultImplementationLifetime,
+        string xmlDoc)
     {
         var statements = new List<StatementSyntax>();
 
@@ -112,7 +142,7 @@ internal static class DiIntegrationSyntaxHelper
                     SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"),
-                        SyntaxFactory.IdentifierName("Singleton"))));
+                        SyntaxFactory.IdentifierName(defaultImplementationLifetime))));
 
         var registryLifetimeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("registryLifetime"))
             .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.ServiceLifetime"))
@@ -133,7 +163,7 @@ internal static class DiIntegrationSyntaxHelper
                         SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
                 .AddParameterListParameters(servicesParam, implementationLifetimeParam, registryLifetimeParam)
                 .WithBody(SyntaxFactory.Block(statements)),
-            "Registers the registry and all implementations in the DI container.");
+            xmlDoc);
     }
 
     internal static MethodDeclarationSyntax CreateFactoryCreateFromServiceProviderMethod(

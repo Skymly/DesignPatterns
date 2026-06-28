@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- **Factory `RegisterDi` default `implementationLifetime` changed from `Singleton` to `Transient`**: factory registries (sync/async/pooled) now default to `Transient` for implementation types, matching factory semantics ("each `Create`/`CreateAsync` returns a new product instance"). Previously the default was `Singleton`, which caused `Create(key)` to return the same implementation instance on every call for sync factories — violating the factory pattern contract. Strategy/Chain/Decorator/Composite/State registries are unaffected (they still default to `Singleton`). Users who relied on the old default can explicitly pass `implementationLifetime: ServiceLifetime.Singleton`.
+
 ## [0.2.0-preview2] - 2026-06-28
 
 ### Added

@@ -91,6 +91,22 @@ public sealed class GeneratedRegisterDiIntegrationTests
     }
 
     [Fact]
+    public void ProductFactoryRegistry_RegisterDi_DefaultImplementationLifetime_IsTransient()
+    {
+        var services = new ServiceCollection();
+        ProductFactoryRegistry.RegisterDi(services);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IFactoryRegistry<string, IProductFactory>>();
+
+        // Default Transient: each Create call resolves a new implementation instance.
+        var first = registry.Create(ProductFactoryKeys.Standard);
+        var second = registry.Create(ProductFactoryKeys.Standard);
+
+        Assert.NotSame(first, second);
+    }
+
+    [Fact]
     public async Task RequestContextHandlerPipeline_RegisterDi_ExecutesHandlersInOrder()
     {
         var services = new ServiceCollection();
