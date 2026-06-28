@@ -144,12 +144,13 @@ dotnet test DesignPatterns.slnx -c Release
 | DP047–DP049 | Strategy guard（生成器；guard 方法未找到、非 static、签名错误） |
 | DP050–DP052 | Handler guard（生成器；guard 方法未找到、非 static、签名错误） |
 | DP020–DP022 | RegisterFactory（生成器） |
+| DP053–DP055 | Factory async + pooling（生成器；async 签名不匹配、池大小无效、池大小过大警告） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP053**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP056**；ID 一经发布不复用、不改语义。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
