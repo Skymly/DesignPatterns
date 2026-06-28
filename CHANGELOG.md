@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Factory async + pooling runtime**: `IAsyncFactoryRegistry<TKey, TProduct>` + `CreateAsync(key, CancellationToken)` and `IPooledFactoryRegistry<TKey, TProduct>` backed by `ArrayPool<T>` (PR #187).
+- **Factory async + pooling source generator**: `[RegisterFactory]` dual-mode sync+async generation with optional `PoolSize` parameter. New diagnostics: DP053 (async signature mismatch), DP054 (pool size invalid), DP055 (pool size too large warning) (PR #189).
+- **Factory async/pooled DI + Autofac integration**: generated `RegisterDi` / `RegisterAutofac` for async and pooled factory registries (PR #191); MSDI extension methods `AddAsyncFactoryRegistry` / `AddPooledFactoryRegistry` (PR #193); DI + Autofac integration tests (PR #195).
+
 ### Breaking
 
 - **Factory `RegisterDi` default `implementationLifetime` changed from `Singleton` to `Transient`**: factory registries (sync/async/pooled) now default to `Transient` for implementation types, matching factory semantics ("each `Create`/`CreateAsync` returns a new product instance"). Previously the default was `Singleton`, which caused `Create(key)` to return the same implementation instance on every call for sync factories — violating the factory pattern contract. Strategy/Chain/Decorator/Composite/State registries are unaffected (they still default to `Singleton`). Users who relied on the old default can explicitly pass `implementationLifetime: ServiceLifetime.Singleton`.
