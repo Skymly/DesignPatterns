@@ -72,6 +72,58 @@ internal static class AutofacIntegrationSyntaxHelper
             "Creates a registry from the Autofac component context.");
     }
 
+    internal static MethodDeclarationSyntax CreateAsyncFactoryCreateFromComponentContextMethod(
+        string contractTypeName,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries)
+    {
+        var lifetimeScopeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("lifetimeScope"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Autofac.ILifetimeScope"));
+
+        var returnType = DiIntegrationSyntaxHelper.CreateAsyncFactoryRegistryInterfaceType(contractTypeName);
+        var buildCall = DiIntegrationSyntaxHelper.CreateAsyncFactoryRegistryBuilderExpression(
+            contractTypeName,
+            entries,
+            RegistrationResolveTarget.ComponentContext);
+
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(lifetimeScopeParam)
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            "Creates an async registry from the Autofac component context.");
+    }
+
+    internal static MethodDeclarationSyntax CreatePooledFactoryCreateFromComponentContextMethod(
+        string contractTypeName,
+        int poolSize,
+        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries)
+    {
+        var lifetimeScopeParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("lifetimeScope"))
+            .WithType(SyntaxFactory.ParseTypeName("global::Autofac.ILifetimeScope"));
+
+        var returnType = DiIntegrationSyntaxHelper.CreatePooledFactoryRegistryInterfaceType(contractTypeName);
+        var buildCall = DiIntegrationSyntaxHelper.CreatePooledFactoryRegistryBuilderExpression(
+            contractTypeName,
+            entries,
+            poolSize,
+            RegistrationResolveTarget.ComponentContext);
+
+        return GeneratedCodeHelper.WithXmlDoc(
+            SyntaxFactory.MethodDeclaration(returnType, SyntaxFactory.Identifier("Create"))
+                .WithModifiers(
+                    SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
+                .AddParameterListParameters(lifetimeScopeParam)
+                .WithExpressionBody(SyntaxFactory.ArrowExpressionClause(buildCall))
+                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+            "Creates a pooled registry from the Autofac component context.");
+    }
+
     internal static MethodDeclarationSyntax CreateHandlerCreateFromComponentContextMethod(
         string contextTypeName,
         IReadOnlyList<(string HandlerTypeName, string? GuardMethodReference)> handlers)
