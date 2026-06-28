@@ -16,6 +16,7 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
 {
     private readonly Dictionary<(TState From, TTrigger Trigger), TransitionEdge<TState, TTrigger>> _edges = new();
     private readonly Dictionary<TState, List<TTrigger>> _triggersByState = new();
+    private readonly Dictionary<TState, TState> _parents = new();
     private bool _hasInitial;
     private TState _initial;
 
@@ -140,6 +141,43 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
     }
 
     /// <summary>
+    /// Declares a parent-child relationship for hierarchical state machine mode.
+    /// After at least one <see cref="WithParent"/> call, the built table also
+    /// implements <see cref="IStateHierarchy{TState}"/>.
+    /// <para>
+    /// The manual builder does <b>not</b> flatten inherited transitions —
+    /// callers must add all effective edges explicitly. The hierarchy metadata
+    /// is provided for <see cref="IStateHierarchy{TState}.IsInState"/> /
+    /// <see cref="IStateHierarchy{TState}.GetParent"/> queries only.
+    /// </para>
+    /// </summary>
+    /// <param name="child">The child state.</param>
+    /// <param name="parent">The parent state. Must differ from <paramref name="child"/>.</param>
+    /// <exception cref="ArgumentException">
+    /// When <paramref name="parent"/> equals <paramref name="child"/> (self-reference)
+    /// or when <paramref name="child"/> already has a different parent declared.
+    /// </exception>
+    public TransitionTableBuilder<TState, TTrigger> WithParent(TState child, TState parent)
+    {
+        if (child.Equals(parent))
+        {
+            throw new ArgumentException(
+                $"A state cannot be its own parent: '{child}' was declared as child and parent.",
+                nameof(parent));
+        }
+
+        if (_parents.TryGetValue(child, out var existingParent) && !existingParent.Equals(parent))
+        {
+            throw new ArgumentException(
+                $"State '{child}' already has parent '{existingParent}'; multiple inheritance is not supported.",
+                nameof(parent));
+        }
+
+        _parents[child] = parent;
+        return this;
+    }
+
+    /// <summary>
     /// Builds the transition table.
     /// </summary>
     public ITransitionTable<TState, TTrigger> Build()
@@ -156,6 +194,10 @@ public sealed class TransitionTableBuilder<TState, TTrigger>
             triggersByState[pair.Key] = pair.Value.ToArray();
         }
 
-        return new TransitionTable<TState, TTrigger>(_initial, _edges, triggersByState);
+        return new TransitionTable<TState, TTrigger>(
+            _initial,
+            _edges,
+            triggersByState,
+            _parents.Count > 0 ? _parents : null);
     }
 }
