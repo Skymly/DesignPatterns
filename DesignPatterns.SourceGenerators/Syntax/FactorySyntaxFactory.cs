@@ -128,8 +128,11 @@ internal static class FactorySyntaxFactory
             return null;
         }
 
-        var returnType = CreateAsyncFactoryRegistryInterfaceType(contractTypeName);
-        var buildCall = CreateAsyncFactoryRegistryBuilderExpression(contractTypeName, entries);
+        var returnType = DiIntegrationSyntaxHelper.CreateAsyncFactoryRegistryInterfaceType(contractTypeName);
+        var buildCall = DiIntegrationSyntaxHelper.CreateAsyncFactoryRegistryBuilderExpression(
+            contractTypeName,
+            entries,
+            RegistrationResolveTarget.DirectNew);
 
         var members = new List<MemberDeclarationSyntax>
         {
@@ -144,6 +147,24 @@ internal static class FactorySyntaxFactory
                 "Creates a new async registry instance."),
         };
 
+        if (integrationOptions.EnableDi)
+        {
+            members.Add(DiIntegrationSyntaxHelper.CreateAsyncFactoryCreateFromServiceProviderMethod(
+                contractTypeName, entries));
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                returnType));
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(AutofacIntegrationSyntaxHelper.CreateAsyncFactoryCreateFromComponentContextMethod(
+                contractTypeName, entries));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                returnType));
+        }
+
         var registryClass = GeneratedCodeHelper.WithXmlDoc(
             SyntaxFactory.ClassDeclaration(registryClassName)
                 .WithModifiers(
@@ -155,6 +176,15 @@ internal static class FactorySyntaxFactory
             $"Provides an async registry for {contractTypeName}.");
 
         var additionalUsings = new List<string> { "System", "System.Threading", "DesignPatterns.Creational" };
+        if (integrationOptions.EnableDi)
+        {
+            additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            additionalUsings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
+        }
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, registryClass, "RegisterFactoryGenerator", additionalUsings.ToArray());
     }
@@ -172,8 +202,12 @@ internal static class FactorySyntaxFactory
             return null;
         }
 
-        var returnType = CreatePooledFactoryRegistryInterfaceType(contractTypeName);
-        var buildCall = CreatePooledFactoryRegistryBuilderExpression(contractTypeName, entries, poolSize);
+        var returnType = DiIntegrationSyntaxHelper.CreatePooledFactoryRegistryInterfaceType(contractTypeName);
+        var buildCall = DiIntegrationSyntaxHelper.CreatePooledFactoryRegistryBuilderExpression(
+            contractTypeName,
+            entries,
+            poolSize,
+            RegistrationResolveTarget.DirectNew);
 
         var members = new List<MemberDeclarationSyntax>
         {
@@ -188,6 +222,24 @@ internal static class FactorySyntaxFactory
                 "Creates a new pooled registry instance."),
         };
 
+        if (integrationOptions.EnableDi)
+        {
+            members.Add(DiIntegrationSyntaxHelper.CreatePooledFactoryCreateFromServiceProviderMethod(
+                contractTypeName, poolSize, entries));
+            members.Add(DiIntegrationSyntaxHelper.CreateRegisterDiMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                returnType));
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            members.Add(AutofacIntegrationSyntaxHelper.CreatePooledFactoryCreateFromComponentContextMethod(
+                contractTypeName, poolSize, entries));
+            members.Add(AutofacIntegrationSyntaxHelper.CreateRegisterAutofacMethod(
+                entries.Select(e => e.ImplementationTypeName).ToList(),
+                returnType));
+        }
+
         var registryClass = GeneratedCodeHelper.WithXmlDoc(
             SyntaxFactory.ClassDeclaration(registryClassName)
                 .WithModifiers(
@@ -199,211 +251,17 @@ internal static class FactorySyntaxFactory
             $"Provides a pooled registry for {contractTypeName}.");
 
         var additionalUsings = new List<string> { "System", "System.Threading", "DesignPatterns.Creational" };
+        if (integrationOptions.EnableDi)
+        {
+            additionalUsings.AddRange(DiIntegrationSyntaxHelper.GetDiUsings());
+        }
+
+        if (integrationOptions.EnableAutofac)
+        {
+            additionalUsings.AddRange(AutofacIntegrationSyntaxHelper.GetAutofacUsings());
+        }
 
         return GeneratedCodeHelper.WrapInCompilationUnit(namespaceName, registryClass, "RegisterFactoryGenerator", additionalUsings.ToArray());
-    }
-
-    private static GenericNameSyntax CreateAsyncFactoryRegistryInterfaceType(string contractTypeName) =>
-        SyntaxFactory.GenericName(SyntaxFactory.Identifier("IAsyncFactoryRegistry"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SeparatedList<TypeSyntax>(
-                        new TypeSyntax[]
-                        {
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                            SyntaxFactory.ParseTypeName(contractTypeName),
-                        })));
-
-    private static GenericNameSyntax CreatePooledFactoryRegistryInterfaceType(string contractTypeName) =>
-        SyntaxFactory.GenericName(SyntaxFactory.Identifier("IPooledFactoryRegistry"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SeparatedList<TypeSyntax>(
-                        new TypeSyntax[]
-                        {
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                            SyntaxFactory.ParseTypeName(contractTypeName),
-                        })));
-
-    private static ExpressionSyntax CreateAsyncFactoryRegistryBuilderExpression(
-        string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries)
-    {
-        var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("AsyncFactoryRegistryBuilder"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SeparatedList<TypeSyntax>(
-                        new TypeSyntax[]
-                        {
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                            SyntaxFactory.ParseTypeName(contractTypeName),
-                        })));
-
-        ExpressionSyntax builderExpression = SyntaxFactory.ObjectCreationExpression(builderType)
-            .WithArgumentList(SyntaxFactory.ArgumentList());
-
-        foreach (var entry in entries)
-        {
-            // For async factories: ct => new Impl().CreateAsync(ct)
-            // For sync factories wrapped: () => new Impl()  (uses Register(Func<T>) overload)
-            ExpressionSyntax lambda;
-            if (entry.ImplementsAsyncFactory)
-            {
-                var newExpr = SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
-                    .WithArgumentList(SyntaxFactory.ArgumentList());
-                var createAsyncCall = SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        newExpr,
-                        SyntaxFactory.IdentifierName("CreateAsync")),
-                    SyntaxFactory.ArgumentList(
-                        SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                            new ArgumentSyntax[]
-                            {
-                                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("ct")),
-                            })));
-
-                lambda = SyntaxFactory.ParenthesizedLambdaExpression()
-                    .WithParameterList(
-                        SyntaxFactory.ParameterList(
-                            SyntaxFactory.SeparatedList<ParameterSyntax>(
-                                new ParameterSyntax[]
-                                {
-                                    SyntaxFactory.Parameter(SyntaxFactory.Identifier("ct"))
-                                        .WithType(SyntaxFactory.IdentifierName("CancellationToken")),
-                                })))
-                    .WithExpressionBody(createAsyncCall);
-            }
-            else
-            {
-                var newExpr = SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
-                    .WithArgumentList(SyntaxFactory.ArgumentList());
-
-                lambda = SyntaxFactory.ParenthesizedLambdaExpression()
-                    .WithParameterList(SyntaxFactory.ParameterList())
-                    .WithExpressionBody(newExpr);
-            }
-
-            builderExpression = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    builderExpression,
-                    SyntaxFactory.IdentifierName("Register")),
-                SyntaxFactory.ArgumentList(
-                    SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                        new ArgumentSyntax[]
-                        {
-                            SyntaxFactory.Argument(
-                                SyntaxFactory.LiteralExpression(
-                                    SyntaxKind.StringLiteralExpression,
-                                    SyntaxFactory.Literal(entry.Key))),
-                            SyntaxFactory.Argument(lambda),
-                        })));
-        }
-
-        return SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                builderExpression,
-                SyntaxFactory.IdentifierName("Build")));
-    }
-
-    private static ExpressionSyntax CreatePooledFactoryRegistryBuilderExpression(
-        string contractTypeName,
-        IReadOnlyList<(string Key, string ImplementationTypeName, bool ImplementsAsyncFactory)> entries,
-        int poolSize)
-    {
-        var builderType = SyntaxFactory.GenericName(SyntaxFactory.Identifier("AsyncFactoryRegistryBuilder"))
-            .WithTypeArgumentList(
-                SyntaxFactory.TypeArgumentList(
-                    SyntaxFactory.SeparatedList<TypeSyntax>(
-                        new TypeSyntax[]
-                        {
-                            SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.StringKeyword)),
-                            SyntaxFactory.ParseTypeName(contractTypeName),
-                        })));
-
-        ExpressionSyntax builderExpression = SyntaxFactory.ObjectCreationExpression(builderType)
-            .WithArgumentList(SyntaxFactory.ArgumentList());
-
-        // WithPooling(poolSize)
-        builderExpression = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                builderExpression,
-                SyntaxFactory.IdentifierName("WithPooling")),
-            SyntaxFactory.ArgumentList(
-                SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                    new ArgumentSyntax[]
-                    {
-                        SyntaxFactory.Argument(
-                            SyntaxFactory.LiteralExpression(
-                                SyntaxKind.NumericLiteralExpression,
-                                SyntaxFactory.Literal(poolSize))),
-                    })));
-
-        foreach (var entry in entries)
-        {
-            ExpressionSyntax lambda;
-            if (entry.ImplementsAsyncFactory)
-            {
-                var newExpr = SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
-                    .WithArgumentList(SyntaxFactory.ArgumentList());
-                var createAsyncCall = SyntaxFactory.InvocationExpression(
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        newExpr,
-                        SyntaxFactory.IdentifierName("CreateAsync")),
-                    SyntaxFactory.ArgumentList(
-                        SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                            new ArgumentSyntax[]
-                            {
-                                SyntaxFactory.Argument(SyntaxFactory.IdentifierName("ct")),
-                            })));
-
-                lambda = SyntaxFactory.ParenthesizedLambdaExpression()
-                    .WithParameterList(
-                        SyntaxFactory.ParameterList(
-                            SyntaxFactory.SeparatedList<ParameterSyntax>(
-                                new ParameterSyntax[]
-                                {
-                                    SyntaxFactory.Parameter(SyntaxFactory.Identifier("ct"))
-                                        .WithType(SyntaxFactory.IdentifierName("CancellationToken")),
-                                })))
-                    .WithExpressionBody(createAsyncCall);
-            }
-            else
-            {
-                var newExpr = SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(entry.ImplementationTypeName))
-                    .WithArgumentList(SyntaxFactory.ArgumentList());
-
-                lambda = SyntaxFactory.ParenthesizedLambdaExpression()
-                    .WithParameterList(SyntaxFactory.ParameterList())
-                    .WithExpressionBody(newExpr);
-            }
-
-            builderExpression = SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    builderExpression,
-                    SyntaxFactory.IdentifierName("Register")),
-                SyntaxFactory.ArgumentList(
-                    SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                        new ArgumentSyntax[]
-                        {
-                            SyntaxFactory.Argument(
-                                SyntaxFactory.LiteralExpression(
-                                    SyntaxKind.StringLiteralExpression,
-                                    SyntaxFactory.Literal(entry.Key))),
-                            SyntaxFactory.Argument(lambda),
-                        })));
-        }
-
-        return SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                builderExpression,
-                SyntaxFactory.IdentifierName("Build")));
     }
 
     private static GenericNameSyntax CreateFactoryRegistryInterfaceType(string contractTypeName) =>

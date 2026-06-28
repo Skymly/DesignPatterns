@@ -418,4 +418,134 @@ public sealed class RegisterFactoryGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public Task EmitsRegisterDiWhenDiIntegrationEnabledForAsyncFactory()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard")]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            enableDiIntegration: true,
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsRegisterDiWhenDiIntegrationEnabledForPooledFactory()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard", PoolSize = 8)]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            enableDiIntegration: true,
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsRegisterAutofacWhenAutofacIntegrationEnabledForAsyncFactory()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard")]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            enableDiIntegration: false,
+            enableAutofacIntegration: true,
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsRegisterAutofacWhenAutofacIntegrationEnabledForPooledFactory()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public interface IProductFactory
+            {
+                string Create();
+            }
+
+            [RegisterFactory<IProductFactory>("standard", PoolSize = 8)]
+            public sealed class StandardProductFactory : IProductFactory, IAsyncFactory<IProductFactory>
+            {
+                public string Create() => "Standard";
+
+                public ValueTask<IProductFactory> CreateAsync(CancellationToken cancellationToken = default) =>
+                    new ValueTask<IProductFactory>(new StandardProductFactory());
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterFactoryGenerator>(
+            enableDiIntegration: false,
+            enableAutofacIntegration: true,
+            ("Factories.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
 }
