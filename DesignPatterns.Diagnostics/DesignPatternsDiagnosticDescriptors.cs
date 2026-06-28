@@ -239,6 +239,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         AnalyzerCategory);
 
+    // Factory async + pooling (DP053–DP055)
+
+    public static DiagnosticDescriptor FactoryAsyncSignatureMismatch { get; } = Create(
+        DiagnosticIds.FactoryAsyncSignatureMismatch,
+        "Factory async signature mismatch",
+        "Factory '{0}' is marked with IsAsync=true but does not implement IAsyncFactory<{1}>. Implement IAsyncFactory<{1}> or set IsAsync=false.",
+        "Async factories must implement IAsyncFactory<TProduct> to participate in async registries.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor FactoryPoolSizeInvalid { get; } = Create(
+        DiagnosticIds.FactoryPoolSizeInvalid,
+        "Factory pool size is invalid",
+        "Factory '{0}' has PoolSize={1}, which is negative. PoolSize must be >= 0 (0 disables pooling).",
+        "Pool size must be a non-negative integer for pooled factory registries.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor FactoryPoolSizeTooLarge { get; } = Create(
+        DiagnosticIds.FactoryPoolSizeTooLarge,
+        "Factory pool size is unusually large",
+        "Factory '{0}' has PoolSize={1}, which may cause excessive memory usage. Consider a smaller value (recommended: 1-100).",
+        "Large pool sizes can lead to high memory consumption. Most scenarios work well with pool sizes between 1 and 100.",
+        DiagnosticSeverity.Warning,
+        GeneratorCategory);
+
     public static DiagnosticDescriptor RegistryKeyNotRegistered { get; } = Create(
         DiagnosticIds.RegistryKeyNotRegistered,
         "Registry key is not registered",

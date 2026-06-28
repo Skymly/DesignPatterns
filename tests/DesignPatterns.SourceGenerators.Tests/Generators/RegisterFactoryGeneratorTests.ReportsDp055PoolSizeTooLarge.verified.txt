@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP055,
+    Message: Factory 'BigPoolFactory' has PoolSize=2048, which may cause excessive memory usage. Consider a smaller value (recommended: 1-100).
+  }
+]

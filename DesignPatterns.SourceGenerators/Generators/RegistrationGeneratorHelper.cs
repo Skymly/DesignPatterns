@@ -30,6 +30,9 @@ internal sealed record KeyedRegistration(
     bool ImplementsContract,
     bool HasPublicParameterlessConstructor,
     GuardResolution Guard,
+    bool IsAsync,
+    bool ImplementsAsyncFactory,
+    int PoolSize,
     Location Location);
 
 internal static class RegistrationGeneratorHelper
@@ -86,13 +89,24 @@ internal static class RegistrationGeneratorHelper
 
             // Resolve optional Guard property from the attribute.
             string? guardName = null;
+            bool isAsync = false;
+            int poolSize = 0;
             foreach (var namedArg in attribute.NamedArguments)
             {
                 if (string.Equals(namedArg.Key, "Guard", StringComparison.Ordinal)
                     && namedArg.Value.Value is string guardValue)
                 {
                     guardName = guardValue;
-                    break;
+                }
+                else if (string.Equals(namedArg.Key, "IsAsync", StringComparison.Ordinal)
+                    && namedArg.Value.Value is bool isAsyncValue)
+                {
+                    isAsync = isAsyncValue;
+                }
+                else if (string.Equals(namedArg.Key, "PoolSize", StringComparison.Ordinal)
+                    && namedArg.Value.Value is int poolSizeValue)
+                {
+                    poolSize = poolSizeValue;
                 }
             }
 
@@ -104,6 +118,8 @@ internal static class RegistrationGeneratorHelper
                     ImmutableArray.Create<ITypeSymbol>(
                         context.SemanticModel.Compilation.GetSpecialType(SpecialType.System_String)));
 
+            var implementsAsyncFactory = ImplementsAsyncFactory(implementation, contract);
+
             result.Add(new KeyedRegistration(
                 key!,
                 contractInfo,
@@ -112,6 +128,9 @@ internal static class RegistrationGeneratorHelper
                 ImplementsContract(implementation, contract),
                 HasPublicParameterlessConstructor(implementation),
                 guard,
+                isAsync,
+                implementsAsyncFactory,
+                poolSize,
                 location));
         }
 
@@ -153,6 +172,7 @@ internal static class RegistrationGeneratorHelper
             ReportContractMismatches(context, contractRegistrations, diagnostics.ContractMismatch);
             ReportMissingConstructors(context, contractRegistrations, diagnostics.MissingParameterlessConstructor);
             ReportGuardDiagnostics(context, contractRegistrations);
+            ReportFactoryAsyncDiagnostics(context, contractRegistrations);
 
             var valid = contractRegistrations
                 .Where(static r => r.ImplementsContract)
@@ -273,6 +293,46 @@ internal static class RegistrationGeneratorHelper
         }
     }
 
+    private static void ReportFactoryAsyncDiagnostics(
+        SourceProductionContext context,
+        List<KeyedRegistration> registrations)
+    {
+        const int LargePoolSizeThreshold = 1024;
+
+        foreach (var registration in registrations)
+        {
+            // DP053: IsAsync=true but does not implement IAsyncFactory<T>
+            if (registration.IsAsync && !registration.ImplementsAsyncFactory)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.FactoryAsyncSignatureMismatch,
+                    registration.Location,
+                    registration.ImplementationName,
+                    registration.Contract.FullyQualifiedName));
+            }
+
+            // DP054: PoolSize < 0
+            if (registration.PoolSize < 0)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.FactoryPoolSizeInvalid,
+                    registration.Location,
+                    registration.ImplementationName,
+                    registration.PoolSize));
+            }
+
+            // DP055: PoolSize > 1024 (warning)
+            if (registration.PoolSize > LargePoolSizeThreshold)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.FactoryPoolSizeTooLarge,
+                    registration.Location,
+                    registration.ImplementationName,
+                    registration.PoolSize));
+            }
+        }
+    }
+
     internal static bool ImplementsContract(INamedTypeSymbol implementation, INamedTypeSymbol contract)
     {
         if (SymbolEqualityComparer.Default.Equals(implementation, contract))
@@ -302,4 +362,26 @@ internal static class RegistrationGeneratorHelper
     internal static bool HasPublicParameterlessConstructor(INamedTypeSymbol implementation) =>
         implementation.InstanceConstructors.Any(static c =>
             c.Parameters.IsEmpty && c.DeclaredAccessibility == Accessibility.Public);
+
+    /// <summary>
+    /// Checks whether <paramref name="implementation"/> implements <c>IAsyncFactory&lt;T&gt;</c>
+    /// where the type argument matches <paramref name="contract"/>.
+    /// </summary>
+    internal static bool ImplementsAsyncFactory(INamedTypeSymbol implementation, INamedTypeSymbol contract)
+    {
+        foreach (var iface in implementation.AllInterfaces)
+        {
+            if (iface.Name != "IAsyncFactory" || iface.TypeArguments.Length != 1)
+            {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], contract))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

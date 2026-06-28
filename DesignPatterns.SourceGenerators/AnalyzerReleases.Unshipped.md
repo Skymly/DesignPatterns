@@ -53,3 +53,6 @@ DP049    | DesignPatterns.Generators | Error    | Strategy guard method has wron
 DP050    | DesignPatterns.Generators | Error    | Handler guard method not found on handler class
 DP051    | DesignPatterns.Generators | Error    | Handler guard method is not static
 DP052    | DesignPatterns.Generators | Error    | Handler guard method has wrong signature
+DP053    | DesignPatterns.Generators | Error    | Factory async signature mismatch
+DP054    | DesignPatterns.Generators | Error    | Factory pool size is invalid
+DP055    | DesignPatterns.Generators | Warning  | Factory pool size is unusually large

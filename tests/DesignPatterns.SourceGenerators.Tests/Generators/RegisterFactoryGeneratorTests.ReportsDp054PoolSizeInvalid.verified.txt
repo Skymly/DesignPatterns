@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP054,
+    Message: Factory 'BrokenFactory' has PoolSize=-1, which is negative. PoolSize must be >= 0 (0 disables pooling).
+  }
+]
