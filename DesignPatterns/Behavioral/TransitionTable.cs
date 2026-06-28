@@ -15,12 +15,13 @@ namespace DesignPatterns.Behavioral;
 /// </summary>
 /// <typeparam name="TState">State enum type.</typeparam>
 /// <typeparam name="TTrigger">Trigger enum type.</typeparam>
-public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState, TTrigger>
+public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState, TTrigger>, IStateHierarchy<TState>
     where TState : struct, Enum
     where TTrigger : struct, Enum
 {
     private readonly IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionEdge<TState, TTrigger>> _edges;
     private readonly IReadOnlyDictionary<TState, IReadOnlyList<TTrigger>> _triggersByState;
+    private readonly StateHierarchy? _hierarchy;
 
     /// <summary>
     /// Initializes a new instance from builder data.
@@ -29,10 +30,23 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
         TState initialState,
         IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionEdge<TState, TTrigger>> edges,
         IReadOnlyDictionary<TState, IReadOnlyList<TTrigger>> triggersByState)
+        : this(initialState, edges, triggersByState, parents: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance from builder data with optional hierarchy metadata.
+    /// </summary>
+    internal TransitionTable(
+        TState initialState,
+        IReadOnlyDictionary<(TState From, TTrigger Trigger), TransitionEdge<TState, TTrigger>> edges,
+        IReadOnlyDictionary<TState, IReadOnlyList<TTrigger>> triggersByState,
+        IReadOnlyDictionary<TState, TState>? parents)
     {
         _edges = FreezeEdges(edges ?? throw new ArgumentNullException(nameof(edges)));
         _triggersByState = triggersByState ?? throw new ArgumentNullException(nameof(triggersByState));
         InitialState = initialState;
+        _hierarchy = parents is not null && parents.Count > 0 ? new StateHierarchy(parents) : null;
     }
 
     /// <inheritdoc />
@@ -182,5 +196,89 @@ public sealed class TransitionTable<TState, TTrigger> : ITransitionTable<TState,
 #else
         return edges;
 #endif
+    }
+
+    // --- IStateHierarchy<TState> explicit implementation (only when hierarchy metadata is present) ---
+
+    TState? IStateHierarchy<TState>.GetParent(TState state)
+        => _hierarchy?.GetParent(state) ?? null;
+
+    bool IStateHierarchy<TState>.IsInState(TState current, TState ancestor)
+        => _hierarchy?.IsInState(current, ancestor) ?? current.Equals(ancestor);
+
+    IReadOnlyList<TState> IStateHierarchy<TState>.GetAncestors(TState state)
+        => _hierarchy?.GetAncestors(state) ?? Array.Empty<TState>();
+
+    /// <summary>
+    /// Internal hierarchy metadata holder. Pre-computes ancestor chains for O(1) lookup.
+    /// </summary>
+    private sealed class StateHierarchy
+    {
+        private readonly IReadOnlyDictionary<TState, TState> _parents;
+        private readonly Dictionary<TState, IReadOnlyList<TState>> _ancestorCache = new();
+
+        public StateHierarchy(IReadOnlyDictionary<TState, TState> parents)
+        {
+            _parents = parents;
+        }
+
+        public TState? GetParent(TState state)
+            => _parents.TryGetValue(state, out var parent) ? parent : null;
+
+        public bool IsInState(TState current, TState ancestor)
+        {
+            if (current.Equals(ancestor))
+            {
+                return true;
+            }
+
+            var visited = new HashSet<TState>();
+            var node = current;
+            while (_parents.TryGetValue(node, out var parent))
+            {
+                if (!visited.Add(node))
+                {
+                    // Cycle detected — break to prevent infinite loop.
+                    // Cycles should be caught at compile time by DP056;
+                    // this is a defensive runtime guard for manual builders.
+                    break;
+                }
+
+                if (parent.Equals(ancestor))
+                {
+                    return true;
+                }
+
+                node = parent;
+            }
+
+            return false;
+        }
+
+        public IReadOnlyList<TState> GetAncestors(TState state)
+        {
+            if (_ancestorCache.TryGetValue(state, out var cached))
+            {
+                return cached;
+            }
+
+            var ancestors = new List<TState>();
+            var visited = new HashSet<TState>();
+            var node = state;
+            while (_parents.TryGetValue(node, out var parent))
+            {
+                if (!visited.Add(node))
+                {
+                    break;
+                }
+
+                ancestors.Add(parent);
+                node = parent;
+            }
+
+            var result = (IReadOnlyList<TState>)ancestors.ToArray();
+            _ancestorCache[state] = result;
+            return result;
+        }
     }
 }
