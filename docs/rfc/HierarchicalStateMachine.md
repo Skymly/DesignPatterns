@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|-----|
-| **状态** | Draft（待评审） |
+| **状态** | Accepted（5 个开放问题已决策，待实现） |
 | **作者** | 维护者 |
 | **创建** | 2026-06-28 |
 | **关联** | [ROADMAP.md](../ROADMAP.md) F3 长期探索候选、[StateTransitionTable.md](../StateTransitionTable.md) v2、[rfc/StateTransitionTable.md](StateTransitionTable.md) §2.3 |
@@ -441,37 +441,96 @@ function EnterChain(to, lca):
 
 ---
 
-## 11. 开放问题
+## 11. 开放问题（已决策）
 
-### Q1：父状态能否也是活跃状态？
+> 以下 5 个开放问题经 4 位评审委员（运行时性能 / API 设计 / 生成器实现 / 领域建模）并行评审后达成共识，转为最终决策。
+
+### Q1：父状态能否也是活跃状态？→ **决策：允许**
 
 **问题**：`Active` 既是 `Submitted`/`Paid` 的父，能否也是 `TryTransition` 的 `from`（即直接处于 `Active` 状态而非其子状态）？
 
-**倾向**：允许。父状态本身可以是叶子状态。`IsInState(Active, Active)` 返回 `true`。展平时 `(Active, trigger)` 的直接边与子状态继承的边独立存在。
+**决策**：允许。父状态本身可以是叶子状态。`IsInState(Active, Active)` 返回 `true`。展平时 `(Active, trigger)` 的直接边与子状态继承的边独立存在。
 
-### Q2：多重继承？
+**评审共识**（4/4 一致）：
+- 运行时：零开销，无需特殊处理，展平算法统一处理所有状态
+- API 设计：与 enum 模型一致，无需引入「container-only」概念
+- 生成器：最简路径，`StateMachineModel` 结构不变
+- 领域建模：符合 UML 状态图语义，Stateless 同样允许；拒绝则需人造「默认子状态」增加复杂度
+
+### Q2：多重继承？→ **决策：不支持**
 
 **问题**：一个子状态能否有多个父状态？
 
-**倾向**：不支持。单继承（每个状态至多一个 parent）。多重继承引入 LCA 歧义和复杂度，不符合「primitive」定位。需要多重继承的场景用 Stateless。
+**决策**：不支持。单继承（每个状态至多一个 parent）。多重继承引入 LCA 歧义和复杂度，不符合「primitive」定位。需要多重继承的场景用 Stateless。
 
-### Q3：通配转换（wildcard transition）？
+**评审共识**（4/4 一致）：
+- 运行时：单继承 = `Dictionary<TState, TState>` O(depth) 遍历；多继承 = DAG 图遍历 + 菱形歧义
+- API 设计：`GetParent(TState) → TState?` 简洁；多继承需 `GetParents → IReadOnlyList` + 冲突解决规则
+- 生成器：单继承展平算法线性；多继承需拓扑排序 + C3 线性化，生成代码体积爆炸
+- 领域建模：UML 和 Stateless 均用单继承树结构；真实领域模型几乎总是树形
+
+### Q3：通配转换（wildcard transition）？→ **决策：v3 不做**
 
 **问题**：ROADMAP 提及「通配转换」。是否需要一个特殊的「任意状态」枚举值或特性来声明全局 fallback 边？
 
-**倾向**：v3 不做。父级继承边已覆盖大部分「通配」语义（在父状态上声明边即对所有子状态生效）。如果后续有需求，可评估 `[Transition(Any, trigger, to)]` 语法。
+**决策**：v3 不做。父级继承边已覆盖大部分「通配」语义（在父状态上声明边即对所有子状态生效）。如果后续有需求，可评估 `[Transition(Any, trigger, to)]` 语法。
 
-### Q4：`GetAllowedTriggers` 是否包含继承的触发器？
+**评审共识**（4/4 一致）：
+- 运行时：通配需运行时 fallback 逻辑，破坏 O(1) 查找；父级继承通过编译期展平保持 O(1)
+- API 设计：显式优于隐式；父级声明使继承关系清晰可追溯
+- 生成器：通配需特殊语法解析 + 优先级排序 + 歧义诊断，管线复杂度中等
+- 领域建模：UML 无通配转换；Stateless 不支持；父级继承是「Ultimate Hook」模式的正确表达
+
+### Q4：`GetAllowedTriggers` 是否包含继承的触发器？→ **决策：包含**
 
 **问题**：当 `Submitted` 没有直接 `Cancel` 边但 `Active` 有时，`GetAllowedTriggers(Submitted)` 是否返回 `Cancel`？
 
-**倾向**：是。展平后 `Submitted` 的有效边包含继承的 `Cancel`，`GetAllowedTriggers` 返回所有有效触发器。
+**决策**：包含。展平后 `Submitted` 的有效边包含继承的 `Cancel`，`GetAllowedTriggers` 返回所有有效触发器。
 
-### Q5：`TransitionTrace` 如何表示 action 链？
+**评审共识**（4/4 一致）：
+- 运行时：与编译期展平一致，`_triggersByState` 字典预构建，零运行时遍历
+- API 设计：方法名是 `GetAllowedTriggers` 非 `GetDirectlyDeclaredTriggers`；语义正确性要求返回有效触发器
+- 生成器：直接查询展平表，无需额外逻辑——实际上比排除继承触发器更简单
+- 领域建模：UML 状态「is in」所有超态；Stateless `PermittedTriggers` 包含继承触发器；UI 按钮启用/禁用依赖此行为
+
+### Q5：`TransitionTrace` 如何表示 action 链？→ **决策：状态列表 + count + 失败定位**
 
 **问题**：现有 `TransitionTrace` 有 `OnExitCompleted` / `OnEnterCompleted` 两个 bool。层级 action 链可能有多个 exit/enter action。
 
-**倾向**：扩展 `TransitionTrace<TState>` 增加 `IReadOnlyList<string> ExitActionsExecuted` / `EnterActionsExecuted`（方法名列表）。保持 `OnExitCompleted` / `OnEnterCompleted` 作为「全部成功」的聚合 bool。
+**决策**：综合 4 位委员意见，采用状态列表为主 + count 快速路径 + 简化失败定位：
+
+```csharp
+public readonly struct TransitionTrace<TState>
+    where TState : struct, Enum
+{
+    // 现有字段保留（向后兼容）
+    public bool Succeeded { get; }
+    public TState NextState { get; }
+    public bool OnExitCompleted { get; }   // = ExitActions 全部完成
+    public bool OnEnterCompleted { get; }  // = EnterActions 全部完成
+    public Exception? Exception { get; }
+
+    // 新增：性能梯度（bool → count → 状态列表 → 失败定位）
+    public int ExitActionCount { get; }              // 零分配快速路径
+    public int EnterActionCount { get; }
+    public IReadOnlyList<TState> StatesExited { get; }   // 语义清晰：哪些状态被 exit
+    public IReadOnlyList<TState> StatesEntered { get; }  // 语义清晰：哪些状态被 enter
+    public string? FailedActionName { get; }             // 定位失败点（简化版）
+    public TState? FailedActionState { get; }            // 失败发生在哪个状态
+}
+```
+
+**设计理由**：
+- **状态列表（enum 值）而非方法名（string）**：用户关心的是层级路径（哪些状态被 exit/enter），而非内部方法名；enum 值零字符串分配，AOT 友好
+- **Count 字段**：提供零分配快速路径，无需访问列表即可判断是否有 action
+- **失败定位**：`FailedActionName` + `FailedActionState` 精确指出哪个 action 在哪个状态失败，无需完整 `ActionTrace` 结构体的开销
+- **现有 bool 字段保留**：`OnExitCompleted` / `OnEnterCompleted` 作为聚合 bool 保持向后兼容
+
+**评审分歧与综合**：
+- A（运行时）：建议加 count 字段作为零分配路径 → **采纳**
+- B（API 设计）：建议结构化 `ActionTrace`（含 `Completed` + `Exception?`）→ **简化采纳**：用 `FailedActionName` + `FailedActionState` 定位失败点，避免完整结构体开销
+- C（生成器）：建议用状态列表（`TState`）而非方法名（`string`）→ **采纳**：语义更清晰，性能更好
+- D（领域建模）：接受原案（方法名列表）→ **升级**：状态列表比方法名更有语义价值
 
 ---
 
