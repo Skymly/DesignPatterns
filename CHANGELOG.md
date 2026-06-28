@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0-preview3] - 2026-06-28
+
 ### Added
 
 - **Factory async + pooling runtime**: `IAsyncFactoryRegistry<TKey, TProduct>` + `CreateAsync(key, CancellationToken)` and `IPooledFactoryRegistry<TKey, TProduct>` backed by `ArrayPool<T>` (PR #187).

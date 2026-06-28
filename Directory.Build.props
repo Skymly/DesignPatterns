@@ -7,7 +7,7 @@
 
     <!-- Single source of truth for NuGet publish; override via VERSION env or Nuke version parameter at release time. -->
     <VersionPrefix>0.2.0</VersionPrefix>
-    <VersionSuffix>preview2</VersionSuffix>
+    <VersionSuffix>preview3</VersionSuffix>
     <Version>$(VersionPrefix)-$(VersionSuffix)</Version>
     <PackageVersion>$(Version)</PackageVersion>
 
