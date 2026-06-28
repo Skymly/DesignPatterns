@@ -186,4 +186,37 @@ public sealed class GeneratedRegisterAutofacIntegrationTests
         Assert.True(machine.TryTransition(OrderTrigger.Submit, out _));
         Assert.Equal(OrderStatus.Submitted, machine.CurrentState);
     }
+
+    [Fact]
+    public async Task AsyncProductFactoryAsyncRegistry_RegisterAutofac_CreatesProductsFromContainer()
+    {
+        var builder = new ContainerBuilder();
+        AsyncProductFactoryAsyncRegistry.RegisterAutofac(builder, InstanceSharing.None);
+
+        using var container = builder.Build();
+        var registry = container.Resolve<IAsyncFactoryRegistry<string, IAsyncProductFactory>>();
+
+        var standard = await registry.CreateAsync(AsyncProductFactoryKeys.Standard);
+        var premium = await registry.CreateAsync(AsyncProductFactoryKeys.Premium);
+
+        Assert.Equal("Standard", standard.Create());
+        Assert.Equal("Premium", premium.Create());
+    }
+
+    [Fact]
+    public async Task PooledProductFactoryPooledRegistry_RegisterAutofac_RentsAndReturnsFromPool()
+    {
+        var builder = new ContainerBuilder();
+        PooledProductFactoryPooledRegistry.RegisterAutofac(builder, InstanceSharing.None);
+
+        using var container = builder.Build();
+        var registry = container.Resolve<IPooledFactoryRegistry<string, IPooledProductFactory>>();
+
+        var first = await registry.RentAsync(PooledProductFactoryKeys.Standard);
+        registry.Return(PooledProductFactoryKeys.Standard, first);
+
+        var second = await registry.RentAsync(PooledProductFactoryKeys.Standard);
+
+        Assert.Same(first, second);
+    }
 }

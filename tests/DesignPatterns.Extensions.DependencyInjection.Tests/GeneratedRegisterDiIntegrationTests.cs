@@ -120,4 +120,67 @@ public sealed class GeneratedRegisterDiIntegrationTests
 
         Assert.NotSame(first, second);
     }
+
+    [Fact]
+    public async Task AsyncProductFactoryAsyncRegistry_RegisterDi_CreatesProductsFromContainer()
+    {
+        var services = new ServiceCollection();
+        AsyncProductFactoryAsyncRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IAsyncFactoryRegistry<string, IAsyncProductFactory>>();
+
+        var standard = await registry.CreateAsync(AsyncProductFactoryKeys.Standard);
+        var premium = await registry.CreateAsync(AsyncProductFactoryKeys.Premium);
+
+        Assert.Equal("Standard", standard.Create());
+        Assert.Equal("Premium", premium.Create());
+    }
+
+    [Fact]
+    public async Task AsyncProductFactoryAsyncRegistry_RegisterDi_TransientImplementation_ReturnsNewInstance()
+    {
+        var services = new ServiceCollection();
+        AsyncProductFactoryAsyncRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IAsyncFactoryRegistry<string, IAsyncProductFactory>>();
+
+        var first = await registry.CreateAsync(AsyncProductFactoryKeys.Standard);
+        var second = await registry.CreateAsync(AsyncProductFactoryKeys.Standard);
+
+        Assert.NotSame(first, second);
+    }
+
+    [Fact]
+    public async Task PooledProductFactoryPooledRegistry_RegisterDi_RentsAndReturnsFromPool()
+    {
+        var services = new ServiceCollection();
+        PooledProductFactoryPooledRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IPooledFactoryRegistry<string, IPooledProductFactory>>();
+
+        var first = await registry.RentAsync(PooledProductFactoryKeys.Standard);
+        registry.Return(PooledProductFactoryKeys.Standard, first);
+
+        var second = await registry.RentAsync(PooledProductFactoryKeys.Standard);
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public async Task PooledProductFactoryPooledRegistry_RegisterDi_PoolFull_CreatesNewInstance()
+    {
+        var services = new ServiceCollection();
+        PooledProductFactoryPooledRegistry.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IPooledFactoryRegistry<string, IPooledProductFactory>>();
+
+        var first = await registry.RentAsync(PooledProductFactoryKeys.Standard);
+        var second = await registry.RentAsync(PooledProductFactoryKeys.Standard);
+
+        Assert.NotSame(first, second);
+    }
 }
