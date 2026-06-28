@@ -15,7 +15,7 @@
 ## 预览版发版（当前常态）
 
 1. 在 `main` 上完成变更，更新 [`CHANGELOG.md`](../CHANGELOG.md)（`[Unreleased]` → 新版本节，Keep a Changelog 格式，**英语**）。
-2. 更新 [`Directory.Build.props`](../Directory.Build.props)：`VersionPrefix` / `VersionSuffix`（例如 `0.1.0` + `preview4`）。
+2. 更新 [`Directory.Build.props`](../Directory.Build.props)：`VersionPrefix` / `VersionSuffix`（例如 `0.2.0` + `preview2`）。
 3. 本地校验：
 
 ```powershell
@@ -28,8 +28,8 @@
 5. 打 tag 并推送（tag 名 **`v` + 完整 SemVer**，与包版本一致）：
 
 ```powershell
-git tag v0.1.0-preview4
-git push origin v0.1.0-preview4
+git tag v0.2.0-preview2
+git push origin v0.2.0-preview2
 ```
 
 6. [`.github/workflows/release.yml`](../.github/workflows/release.yml) 在 tag `v*` push 时触发，执行 Nuke `Publish`（依赖 `Test` + `PackVerify`）。
@@ -42,7 +42,7 @@ git push origin v0.1.0-preview4
 
 ## 手动触发
 
-workflow 支持 `workflow_dispatch`，输入 `version`（如 `0.1.0-preview4`）。仍须保证该版本与 tag / `Directory.Build.props` 策略一致；推荐以 **tag push** 为唯一发版入口。
+workflow 支持 `workflow_dispatch`，输入 `version`（如 `0.2.0-preview2`）。仍须保证该版本与 tag / `Directory.Build.props` 策略一致；推荐以 **tag push** 为唯一发版入口。
 
 ## 稳定版（未来）
 
