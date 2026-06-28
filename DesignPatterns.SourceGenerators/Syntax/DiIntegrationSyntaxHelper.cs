@@ -351,11 +351,16 @@ internal static class DiIntegrationSyntaxHelper
                         })));
         }
 
-        return SyntaxFactory.InvocationExpression(
+        var buildCall = SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 builderExpression,
                 SyntaxFactory.IdentifierName("Build")));
+
+        // Build() returns IAsyncFactoryRegistry; cast to IPooledFactoryRegistry for pooled registries.
+        return SyntaxFactory.CastExpression(
+            CreatePooledFactoryRegistryInterfaceType(contractTypeName),
+            buildCall);
     }
 
     internal static MethodDeclarationSyntax CreateAsyncFactoryCreateFromServiceProviderMethod(

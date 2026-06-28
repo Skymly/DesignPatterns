@@ -82,11 +82,11 @@ namespace TestAssembly
         /// <summary>
         /// Creates a new pooled registry instance.
         /// </summary>
-        public static IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory> Create() => new AsyncFactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().WithPooling(8).Register("standard", (CancellationToken ct) => new global::TestAssembly.StandardProductFactory().CreateAsync(ct)).Build();
+        public static IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory> Create() => (IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory>)new AsyncFactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().WithPooling(8).Register("standard", (CancellationToken ct) => new global::TestAssembly.StandardProductFactory().CreateAsync(ct)).Build();
         /// <summary>
         /// Creates a pooled registry from the service provider.
         /// </summary>
-        public static IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory> Create(global::System.IServiceProvider serviceProvider) => new AsyncFactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().WithPooling(8).Register("standard", (CancellationToken ct) => serviceProvider.GetRequiredService<global::TestAssembly.StandardProductFactory>().CreateAsync(ct)).Build();
+        public static IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory> Create(global::System.IServiceProvider serviceProvider) => (IPooledFactoryRegistry<string, global::TestAssembly.IProductFactory>)new AsyncFactoryRegistryBuilder<string, global::TestAssembly.IProductFactory>().WithPooling(8).Register("standard", (CancellationToken ct) => serviceProvider.GetRequiredService<global::TestAssembly.StandardProductFactory>().CreateAsync(ct)).Build();
         /// <summary>
         /// Registers the registry and all implementations in the DI container.
         /// </summary>
