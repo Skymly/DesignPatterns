@@ -42,6 +42,7 @@ DP037    | DesignPatterns.Generators | Error    | Action method not found on hol
 DP038    | DesignPatterns.Generators | Error    | Action method is not static
 DP039    | DesignPatterns.Generators | Error    | Action method has wrong signature
 DP040    | DesignPatterns.Generators | Error    | Composite node not registered with DI container
+DP041    | DesignPatterns.Generators | Info     | Composite visitor does not cover all node types (reserved — compiler-enforced via CS0535)
 DP042    | DesignPatterns.Generators | Error    | Async decorator has wrong DecorateAsync signature
 DP043    | DesignPatterns.Generators | Warning  | Decorator not resolvable from DI container
 DP044    | DesignPatterns.Analyzers | Info     | Event handler implementation missing RegisterEventHandler attribute

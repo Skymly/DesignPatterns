@@ -31,7 +31,7 @@
 ```
 DesignPatterns.slnx
 ├── DesignPatterns/                              # 运行时核心（netstandard2.0 + net8.0）
-├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP040）
+├── DesignPatterns.Diagnostics/                  # DiagnosticIds 常量（DP001–DP055）
 ├── DesignPatterns.SourceGenerators/             # 增量源生成器
 ├── DesignPatterns.Analyzers/                    # DP006、DP023、DP024、DP025、DP033、DP036 Analyzer
 ├── DesignPatterns.CodeFixes/                    # CodeFixProvider
@@ -135,6 +135,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP036 | State 转换字面量边校验（Analyzer；`TryTransition` 字面量 (state, trigger) 对未声明） |
 | DP037–DP039 | State 转换 entry/exit action（生成器；action 方法未找到、非 static、签名错误） |
 | DP040 | Composite DI 节点未注册（生成器；BuildRoot(IServiceProvider) 时节点未注册到容器） |
+| DP041 | Composite Visitor 覆盖不全（生成器；保留 ID — C# 编译器通过接口实现 CS0535 自动强制覆盖，诊断不实际触发） |
 | DP010–DP015 | CompositePart（生成器） |
 | DP016–DP019 | Decorator（生成器） |
 | DP042–DP043 | Decorator async 签名校验 + DI 可解析性（生成器） |

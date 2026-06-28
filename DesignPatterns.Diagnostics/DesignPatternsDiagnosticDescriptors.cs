@@ -156,6 +156,14 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    public static DiagnosticDescriptor CompositePartVisitorCoverageIncomplete { get; } = Create(
+        DiagnosticIds.CompositePartVisitorCoverageIncomplete,
+        "Composite visitor does not cover all node types",
+        "Visitor '{0}' does not implement all Visit methods of '{1}'. The C# compiler enforces full coverage via interface implementation (CS0535); this diagnostic is reserved for future use.",
+        "The generated I{Contract}NodeVisitor interface includes a Visit method for every [CompositePart] type. Implement all Visit methods to ensure complete traversal.",
+        DiagnosticSeverity.Info,
+        GeneratorCategory);
+
     // Decorator (DP016–DP019)
 
     public static DiagnosticDescriptor DecoratorDuplicateOrder { get; } = Create(
