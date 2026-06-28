@@ -90,6 +90,117 @@ public sealed class EventAggregator : IEventAggregator
         };
     }
 
+    /// <inheritdoc />
+    public ValueTask<EventPublicationTrace> PublishTracedAsync<TEvent>(
+        TEvent evt,
+        CancellationToken cancellationToken = default)
+        => PublishTracedAsync(evt, EventPublishErrorHandling.StopOnError, null, cancellationToken);
+
+    /// <inheritdoc />
+    public ValueTask<EventPublicationTrace> PublishTracedAsync<TEvent>(
+        TEvent evt,
+        EventPublishErrorHandling errorHandling,
+        CancellationToken cancellationToken = default)
+        => PublishTracedAsync(evt, errorHandling, null, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask<EventPublicationTrace> PublishTracedAsync<TEvent>(
+        TEvent evt,
+        EventPublishErrorHandling errorHandling,
+        IEventPublicationObserver<TEvent>? observer,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        List<object> snapshot;
+
+        lock (_lock)
+        {
+            if (!_handlers.TryGetValue(typeof(TEvent), out var list) || list.Count == 0)
+            {
+                return new EventPublicationTrace(Array.Empty<EventPublicationStep>());
+            }
+
+            snapshot = new List<object>(list);
+        }
+
+        var names = new string[snapshot.Count];
+        var statuses = new EventPublicationStepStatus[snapshot.Count];
+        var exceptions = new Exception?[snapshot.Count];
+
+        for (var i = 0; i < snapshot.Count; i++)
+        {
+            names[i] = snapshot[i].GetType().Name;
+            statuses[i] = EventPublicationStepStatus.NotReached;
+        }
+
+        List<Exception>? aggregateExceptions = null;
+
+        for (var i = 0; i < snapshot.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var handler = (IEventHandler<TEvent>)snapshot[i];
+
+            try
+            {
+                await handler.HandleAsync(evt, cancellationToken).ConfigureAwait(false);
+                statuses[i] = EventPublicationStepStatus.Completed;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                statuses[i] = EventPublicationStepStatus.Failed;
+                exceptions[i] = ex;
+                observer?.OnHandlerException(evt, i, names[i], ex);
+
+                switch (errorHandling)
+                {
+                    case EventPublishErrorHandling.StopOnError:
+                        // Mark remaining as NotReached (already set) and re-throw.
+                        throw;
+
+                    case EventPublishErrorHandling.ContinueOnError:
+                        // Record and continue — don't throw.
+                        break;
+
+                    case EventPublishErrorHandling.AggregateErrors:
+                        (aggregateExceptions ??= new List<Exception>()).Add(ex);
+                        break;
+
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(errorHandling), errorHandling,
+                            $"Unknown {nameof(EventPublishErrorHandling)} value.");
+                }
+            }
+        }
+
+        if (aggregateExceptions is not null)
+        {
+            throw new AggregateException(aggregateExceptions);
+        }
+
+        return BuildTrace(names, statuses, exceptions);
+    }
+
+    private static EventPublicationTrace BuildTrace(
+        string[] names,
+        EventPublicationStepStatus[] statuses,
+        Exception?[] exceptions)
+    {
+        var steps = new EventPublicationStep[names.Length];
+
+        for (var i = 0; i < names.Length; i++)
+        {
+            steps[i] = new EventPublicationStep(i, names[i], statuses[i], exceptions[i]);
+        }
+
+        return new EventPublicationTrace(steps);
+    }
+
     private static async ValueTask InvokeStopOnErrorAsync<TEvent>(
         List<object> snapshot,
         TEvent evt,
