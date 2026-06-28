@@ -53,10 +53,15 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
     {
         foreach (var model in ResultExtensions.ReportAndCollect(context, models))
         {
-            var transitions = StateTransitionValidator.Validate(context, model);
-            if (transitions is not null)
+            var validationResult = StateTransitionValidator.Validate(context, model);
+            if (validationResult is not null)
             {
-                StateTransitionEmitter.Emit(context, model, transitions, integrationOptions);
+                StateTransitionEmitter.Emit(
+                    context,
+                    model,
+                    validationResult.Transitions,
+                    validationResult.ParentMap,
+                    integrationOptions);
             }
         }
     }

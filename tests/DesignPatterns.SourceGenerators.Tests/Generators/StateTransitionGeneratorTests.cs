@@ -461,4 +461,140 @@ public sealed class StateTransitionGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    // --- Hierarchical state machine tests (v3.2) ---
+
+    [Fact]
+    public Task EmitsHierarchicalTableWithStateParentAndFlattening()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus
+            {
+                Draft,
+                Active,
+                Submitted,
+                Paid,
+                Cancelled,
+            }
+
+            public enum OrderTrigger
+            {
+                Submit,
+                Pay,
+                Cancel,
+            }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+            [StateParent(OrderStatus.Paid, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Pay, OrderStatus.Paid)]
+            [Transition(OrderStatus.Active, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp056HierarchyCycle()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, A, B, C }
+            public enum OrderTrigger { Go }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.A, OrderStatus.B)]
+            [StateParent(OrderStatus.B, OrderStatus.C)]
+            [StateParent(OrderStatus.C, OrderStatus.A)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Go, OrderStatus.A)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp057StateParentInvalidMember()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted, Active }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent((OrderStatus)99, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp058StateParentSelfReference()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Active }
+            public enum OrderTrigger { Go }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.Active, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Go, OrderStatus.Active)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp059OrphanParent()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Active, Submitted, Cancelled }
+            public enum OrderTrigger { Submit, Cancel }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
 }

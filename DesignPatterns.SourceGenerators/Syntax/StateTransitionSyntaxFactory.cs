@@ -34,13 +34,15 @@ internal static class StateTransitionSyntaxFactory
             string? OnExitSyncReference,
             string? OnEnterAsyncReference,
             string? OnExitAsyncReference)> transitions,
+        IReadOnlyList<(string ChildExpression, string ParentExpression)>? stateParents,
         GeneratorIntegrationOptions integrationOptions)
     {
         var tableExpression = BuildTransitionTableExpression(
             stateTypeName,
             triggerTypeName,
             initialStateExpression,
-            transitions);
+            transitions,
+            stateParents);
 
         var members = new List<MemberDeclarationSyntax>
         {
@@ -155,6 +157,38 @@ internal static class StateTransitionSyntaxFactory
                 summary: "Determines whether any transition is possible from the specified state."),
         };
 
+        // Add IStateHierarchy forwarding methods when hierarchical.
+        var isHierarchical = stateParents is not null && stateParents.Count > 0;
+        if (isHierarchical)
+        {
+            members.Add(CreateForwardingMethod(
+                "GetParent",
+                SyntaxFactory.NullableType(SyntaxFactory.ParseTypeName(stateTypeName)),
+                new[] { new ParameterModel(stateTypeName, "state") },
+                "((IStateHierarchy<" + stateTypeName + ">)Table).GetParent(state)",
+                summary: "Gets the parent state of the specified state, or null if it is a root."));
+            members.Add(CreateForwardingMethod(
+                "IsInState",
+                SyntaxFactory.ParseTypeName("bool"),
+                new[]
+                {
+                    new ParameterModel(stateTypeName, "current"),
+                    new ParameterModel(stateTypeName, "ancestor"),
+                },
+                "((IStateHierarchy<" + stateTypeName + ">)Table).IsInState(current, ancestor)",
+                summary: "Determines whether the current state is or is a descendant of the specified ancestor."));
+            members.Add(CreateForwardingMethod(
+                "GetAncestors",
+                SyntaxFactory.GenericName(SyntaxFactory.Identifier("IReadOnlyList"))
+                    .WithTypeArgumentList(
+                        SyntaxFactory.TypeArgumentList(
+                            SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                SyntaxFactory.ParseTypeName(stateTypeName)))),
+                new[] { new ParameterModel(stateTypeName, "state") },
+                "((IStateHierarchy<" + stateTypeName + ">)Table).GetAncestors(state)",
+                summary: "Gets the ancestor chain of the specified state, nearest first."));
+        }
+
         if (integrationOptions.EnableDi)
         {
             members.Add(CreateRegisterDiMethod(stateTypeName, triggerTypeName));
@@ -182,6 +216,41 @@ internal static class StateTransitionSyntaxFactory
                                             SyntaxFactory.ParseTypeName(stateTypeName),
                                             SyntaxFactory.ParseTypeName(triggerTypeName),
                                         })))))
+                .WithBaseList(
+                    isHierarchical
+                        ? SyntaxFactory.BaseList(
+                            SyntaxFactory.SeparatedList<BaseTypeSyntax>(
+                                new BaseTypeSyntax[]
+                                {
+                                    SyntaxFactory.SimpleBaseType(
+                                        SyntaxFactory.GenericName(SyntaxFactory.Identifier("ITransitionTable"))
+                                            .WithTypeArgumentList(
+                                                SyntaxFactory.TypeArgumentList(
+                                                    SyntaxFactory.SeparatedList<TypeSyntax>(
+                                                        new TypeSyntax[]
+                                                        {
+                                                            SyntaxFactory.ParseTypeName(stateTypeName),
+                                                            SyntaxFactory.ParseTypeName(triggerTypeName),
+                                                        })))),
+                                    SyntaxFactory.SimpleBaseType(
+                                        SyntaxFactory.GenericName(SyntaxFactory.Identifier("IStateHierarchy"))
+                                            .WithTypeArgumentList(
+                                                SyntaxFactory.TypeArgumentList(
+                                                    SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                                                        SyntaxFactory.ParseTypeName(stateTypeName))))),
+                                }))
+                        : SyntaxFactory.BaseList(
+                            SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(
+                                SyntaxFactory.SimpleBaseType(
+                                    SyntaxFactory.GenericName(SyntaxFactory.Identifier("ITransitionTable"))
+                                        .WithTypeArgumentList(
+                                            SyntaxFactory.TypeArgumentList(
+                                                SyntaxFactory.SeparatedList<TypeSyntax>(
+                                                    new TypeSyntax[]
+                                                    {
+                                                        SyntaxFactory.ParseTypeName(stateTypeName),
+                                                        SyntaxFactory.ParseTypeName(triggerTypeName),
+                                                    })))))))
                 .AddMembers(members.ToArray()),
             $"Provides a transition table for {stateTypeName}.");
 
@@ -391,7 +460,8 @@ internal static class StateTransitionSyntaxFactory
             string? OnEnterSyncReference,
             string? OnExitSyncReference,
             string? OnEnterAsyncReference,
-            string? OnExitAsyncReference)> transitions)
+            string? OnExitAsyncReference)> transitions,
+        IReadOnlyList<(string ChildExpression, string ParentExpression)>? stateParents)
     {
         var builder = new StringBuilder();
         builder.Append("new TransitionTableBuilder<")
@@ -401,6 +471,20 @@ internal static class StateTransitionSyntaxFactory
             .Append(">().WithInitial(")
             .Append(initialStateExpression)
             .Append(')');
+
+        // Add parent declarations before transitions (order doesn't matter for builder,
+        // but grouping them first makes the generated code more readable).
+        if (stateParents is not null)
+        {
+            foreach (var (childExpr, parentExpr) in stateParents)
+            {
+                builder.Append(".WithParent(")
+                    .Append(childExpr)
+                    .Append(", ")
+                    .Append(parentExpr)
+                    .Append(')');
+            }
+        }
 
         foreach (var transition in transitions)
         {

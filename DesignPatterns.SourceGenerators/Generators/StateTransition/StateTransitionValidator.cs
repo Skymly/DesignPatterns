@@ -10,19 +10,19 @@ namespace DesignPatterns.SourceGenerators.Generators.StateTransition;
 
 /// <summary>
 /// Validation stage: validates a <see cref="StateMachineModel"/> and reports
-/// per-model / per-transition diagnostics (DP026–DP031). Returns the list of
-/// valid, deduplicated <see cref="ResolvedTransition"/>s ready for emission,
-/// or <c>null</c> when the model should be skipped (no emission).
+/// per-model / per-transition diagnostics (DP026–DP031, DP056–DP059). Returns
+/// the validated (and flattened if hierarchical) <see cref="ResolvedTransition"/>s
+/// plus optional parent map, or <c>null</c> when the model should be skipped.
 /// </summary>
 internal static class StateTransitionValidator
 {
     /// <summary>
     /// Validates <paramref name="model"/>, reports diagnostics to
     /// <paramref name="context"/>, and returns the resolved transitions
-    /// to emit. Returns <c>null</c> when no source should be generated
-    /// for this model.
+    /// and optional parent map to emit. Returns <c>null</c> when no source
+    /// should be generated for this model.
     /// </summary>
-    public static List<ResolvedTransition>? Validate(
+    public static StateMachineValidationResult? Validate(
         SourceProductionContext context,
         StateMachineModel model)
     {
@@ -63,6 +63,27 @@ internal static class StateTransitionValidator
             .Select(static group => group.First())
             .ToList();
 
+        // Validate and build hierarchy if hierarchical mode is enabled.
+        Dictionary<string, string>? parentMap = null;
+        if (model.IsHierarchical)
+        {
+            parentMap = ValidateStateParents(context, model, stateType);
+            if (parentMap is not null)
+            {
+                // Flatten inherited transitions.
+                uniqueTransitions = HierarchyFlattener.Flatten(uniqueTransitions, parentMap);
+
+                // Re-deduplicate after flattening (inherited edges may duplicate).
+                uniqueTransitions = uniqueTransitions
+                    .GroupBy(static t => (t.FromMember, t.TriggerMember))
+                    .Select(static g => g.First())
+                    .ToList();
+
+                // Report orphan parents (DP059).
+                ReportOrphanParents(context, stateType, parentMap, uniqueTransitions, model.Location);
+            }
+        }
+
         ReportIsolatedStates(context, stateType, initialMember, uniqueTransitions, model.Location);
 
         if (uniqueTransitions.Count == 0 && model.Transitions.Count > 0)
@@ -70,7 +91,7 @@ internal static class StateTransitionValidator
             return null;
         }
 
-        return uniqueTransitions;
+        return new StateMachineValidationResult(uniqueTransitions, parentMap);
     }
 
     private static List<ResolvedTransition> ResolveValidTransitions(
@@ -292,6 +313,173 @@ internal static class StateTransitionValidator
                 holderName,
                 stateType.FullyQualifiedName,
                 triggerType.FullyQualifiedName));
+        }
+    }
+
+    // --- State hierarchy validation (DP056–DP059) ---
+
+    /// <summary>
+    /// Validates [StateParent] declarations and builds the parent map.
+    /// Returns <c>null</c> when a fatal error (cycle, invalid member) prevents
+    /// hierarchy construction; the caller should skip flattening but may still
+    /// emit the flat table.
+    /// </summary>
+    private static Dictionary<string, string>? ValidateStateParents(
+        SourceProductionContext context,
+        StateMachineModel model,
+        EnumTypeInfo stateType)
+    {
+        var validMembers = new HashSet<string>(
+            stateType.Members.Select(static m => m.Name),
+            StringComparer.Ordinal);
+
+        var parentMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        var hasFatalError = false;
+
+        foreach (var sp in model.StateParents)
+        {
+            // DP057: Invalid enum member
+            if (!sp.Child.IsValid)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StateParentInvalidMember,
+                    sp.Location,
+                    sp.Child.DisplayValue,
+                    stateType.FullyQualifiedName));
+                hasFatalError = true;
+                continue;
+            }
+
+            if (!sp.Parent.IsValid)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StateParentInvalidMember,
+                    sp.Location,
+                    sp.Parent.DisplayValue,
+                    stateType.FullyQualifiedName));
+                hasFatalError = true;
+                continue;
+            }
+
+            var childName = sp.Child.MemberName!;
+            var parentName = sp.Parent.MemberName!;
+
+            // DP058: Self-reference
+            if (string.Equals(childName, parentName, StringComparison.Ordinal))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StateParentSelfReference,
+                    sp.Location,
+                    childName));
+                hasFatalError = true;
+                continue;
+            }
+
+            // Multiple inheritance check (single inheritance only)
+            if (parentMap.TryGetValue(childName, out var existingParent)
+                && !string.Equals(existingParent, parentName, StringComparison.Ordinal))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StateParentInvalidMember,
+                    sp.Location,
+                    $"{childName} already has parent '{existingParent}'",
+                    stateType.FullyQualifiedName));
+                hasFatalError = true;
+                continue;
+            }
+
+            parentMap[childName] = parentName;
+        }
+
+        // DP056: Cycle detection
+        if (parentMap.Count > 0)
+        {
+            var cycle = DetectCycle(parentMap);
+            if (cycle is not null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StateHierarchyCycle,
+                    model.Location,
+                    cycle));
+                hasFatalError = true;
+            }
+        }
+
+        return hasFatalError ? null : parentMap;
+    }
+
+    /// <summary>
+    /// Detects a cycle in the parent map. Returns a string describing the cycle
+    /// (e.g. "A -> B -> C -> A") or <c>null</c> if no cycle exists.
+    /// </summary>
+    private static string? DetectCycle(Dictionary<string, string> parentMap)
+    {
+        foreach (var start in parentMap.Keys)
+        {
+            var visited = new List<string>();
+            var current = start;
+            var seen = new HashSet<string>();
+
+            while (current is not null)
+            {
+                if (!seen.Add(current))
+                {
+                    // Found a cycle — build the description.
+                    var cycleStart = current;
+                    var cyclePath = new List<string> { cycleStart };
+                    var node = parentMap[cycleStart];
+                    while (!string.Equals(node, cycleStart, StringComparison.Ordinal))
+                    {
+                        cyclePath.Add(node);
+                        node = parentMap[node];
+                    }
+
+                    cyclePath.Add(cycleStart); // Close the loop
+                    return string.Join(" -> ", cyclePath);
+                }
+
+                visited.Add(current);
+                if (!parentMap.TryGetValue(current, out var parent))
+                {
+                    break; // Reached root — no cycle from this start.
+                }
+
+                current = parent;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Reports DP059 (Info): parent states that have no outgoing transitions.
+    /// This is a hint that the parent state only serves as a grouping container
+    /// and could potentially be simplified.
+    /// </summary>
+    private static void ReportOrphanParents(
+        SourceProductionContext context,
+        EnumTypeInfo stateType,
+        Dictionary<string, string> parentMap,
+        IReadOnlyCollection<ResolvedTransition> transitions,
+        Location location)
+    {
+        var parentStates = new HashSet<string>(
+            parentMap.Values,
+            StringComparer.Ordinal);
+
+        var statesWithEdges = new HashSet<string>(
+            transitions.Select(static t => t.FromMember),
+            StringComparer.Ordinal);
+
+        foreach (var parentState in parentStates)
+        {
+            if (!statesWithEdges.Contains(parentState))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DesignPatternsDiagnosticDescriptors.StateParentOrphanParent,
+                    location,
+                    parentState));
+            }
         }
     }
 }

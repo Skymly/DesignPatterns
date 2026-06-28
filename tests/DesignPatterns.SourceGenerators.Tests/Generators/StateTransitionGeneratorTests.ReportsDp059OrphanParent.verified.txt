@@ -1,0 +1,14 @@
+﻿[
+  {
+    Id: DP059,
+    Message: State 'Active' is declared as a parent but has no children and no outgoing transitions. Either add [StateParent] declarations using it as a parent, or add [Transition] edges from this state.
+  },
+  {
+    Id: DP031,
+    Message: State 'Active' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP031,
+    Message: State 'Cancelled' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  }
+]

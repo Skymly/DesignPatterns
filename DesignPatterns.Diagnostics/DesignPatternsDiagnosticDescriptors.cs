@@ -273,6 +273,40 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Warning,
         GeneratorCategory);
 
+    // State hierarchy (DP056–DP059)
+
+    public static DiagnosticDescriptor StateHierarchyCycle { get; } = Create(
+        DiagnosticIds.StateHierarchyCycle,
+        "State hierarchy cycle detected",
+        "State hierarchy cycle detected: {0}. Remove the circular [StateParent] declaration that creates this cycle.",
+        "Hierarchical state machines require a tree structure; cycles in parent relationships are invalid.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateParentInvalidMember { get; } = Create(
+        DiagnosticIds.StateParentInvalidMember,
+        "StateParent references invalid enum member",
+        "[StateParent] references '{0}' which is not a member of the state enum '{1}'. Use a valid enum member name.",
+        "StateParent child and parent arguments must be members of the state enum declared on [StateMachine].",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateParentSelfReference { get; } = Create(
+        DiagnosticIds.StateParentSelfReference,
+        "StateParent self-reference",
+        "[StateParent] declares state '{0}' as its own parent. A state cannot be its own parent.",
+        "Remove the self-referencing [StateParent] attribute.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor StateParentOrphanParent { get; } = Create(
+        DiagnosticIds.StateParentOrphanParent,
+        "StateParent parent has no children or outgoing edges",
+        "State '{0}' is declared as a parent but has no children and no outgoing transitions. Either add [StateParent] declarations using it as a parent, or add [Transition] edges from this state.",
+        "Parent states should have at least one child state or outgoing transition to be useful.",
+        DiagnosticSeverity.Info,
+        GeneratorCategory);
+
     public static DiagnosticDescriptor RegistryKeyNotRegistered { get; } = Create(
         DiagnosticIds.RegistryKeyNotRegistered,
         "Registry key is not registered",

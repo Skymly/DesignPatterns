@@ -1,0 +1,14 @@
+﻿[
+  {
+    Id: DP031,
+    Message: State 'Submitted' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP031,
+    Message: State 'Active' is declared on enum 'TestAssembly.OrderStatus' but never appears as a [Transition] from state. This is informational for terminal or reserved states.
+  },
+  {
+    Id: DP057,
+    Message: [StateParent] references '99' which is not a member of the state enum 'TestAssembly.OrderStatus'. Use a valid enum member name.
+  }
+]
