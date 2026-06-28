@@ -177,6 +177,156 @@ public sealed class DesignPatternsServiceCollectionExtensionsTests
 
     #endregion
 
+    #region Async Factory Registry Tests
+
+    [Fact]
+    public async Task AddAsyncFactoryRegistry_RegistersAndResolves()
+    {
+        var services = new ServiceCollection();
+
+        services.AddAsyncFactoryRegistry<string, ITestProduct>(builder =>
+        {
+            builder.Register("widget", () => new TestProduct("Widget"));
+            builder.Register("gadget", () => new TestProduct("Gadget"));
+        });
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IAsyncFactoryRegistry<string, ITestProduct>>();
+
+        Assert.Equal(2, registry.Keys.Count);
+
+        var widget = await registry.CreateAsync("widget");
+        Assert.Equal("Widget", widget.Name);
+
+        var gadget = await registry.CreateAsync("gadget");
+        Assert.Equal("Gadget", gadget.Name);
+    }
+
+    [Fact]
+    public async Task AddAsyncFactoryRegistry_CreatesNewInstancePerCall()
+    {
+        var services = new ServiceCollection();
+
+        services.AddAsyncFactoryRegistry<string, ITestProduct>(builder =>
+        {
+            builder.Register("widget", () => new TestProduct("Widget"));
+        });
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IAsyncFactoryRegistry<string, ITestProduct>>();
+
+        var first = await registry.CreateAsync("widget");
+        var second = await registry.CreateAsync("widget");
+
+        Assert.NotSame(first, second);
+    }
+
+    [Fact]
+    public void AddAsyncFactoryRegistry_DefaultLifetime_IsSingleton()
+    {
+        var services = new ServiceCollection();
+
+        services.AddAsyncFactoryRegistry<string, ITestProduct>(builder =>
+        {
+            builder.Register("widget", () => new TestProduct("Widget"));
+        });
+
+        var provider = services.BuildServiceProvider();
+        var first = provider.GetRequiredService<IAsyncFactoryRegistry<string, ITestProduct>>();
+        var second = provider.GetRequiredService<IAsyncFactoryRegistry<string, ITestProduct>>();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void AddAsyncFactoryRegistry_NullServices_Throws()
+    {
+        Assert.Throws<ArgumentNullException>("services", () =>
+            DesignPatternsServiceCollectionExtensions.AddAsyncFactoryRegistry<string, ITestProduct>(
+                null!, _ => { }));
+    }
+
+    [Fact]
+    public void AddAsyncFactoryRegistry_NullConfigure_Throws()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentNullException>("configure", () =>
+            services.AddAsyncFactoryRegistry<string, ITestProduct>(null!));
+    }
+
+    #endregion
+
+    #region Pooled Factory Registry Tests
+
+    [Fact]
+    public async Task AddPooledFactoryRegistry_RegistersAndResolves()
+    {
+        var services = new ServiceCollection();
+
+        services.AddPooledFactoryRegistry<string, ITestProduct>(builder =>
+        {
+            builder.Register("widget", () => new TestProduct("Widget"));
+        }, poolSize: 4);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IPooledFactoryRegistry<string, ITestProduct>>();
+
+        var widget = await registry.RentAsync("widget");
+        Assert.Equal("Widget", widget.Name);
+        registry.Return("widget", widget);
+    }
+
+    [Fact]
+    public async Task AddPooledFactoryRegistry_RentAfterReturn_ReusesInstance()
+    {
+        var services = new ServiceCollection();
+
+        services.AddPooledFactoryRegistry<string, ITestProduct>(builder =>
+        {
+            builder.Register("widget", () => new TestProduct("Widget"));
+        }, poolSize: 4);
+
+        var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IPooledFactoryRegistry<string, ITestProduct>>();
+
+        var first = await registry.RentAsync("widget");
+        registry.Return("widget", first);
+
+        var second = await registry.RentAsync("widget");
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void AddPooledFactoryRegistry_NullServices_Throws()
+    {
+        Assert.Throws<ArgumentNullException>("services", () =>
+            DesignPatternsServiceCollectionExtensions.AddPooledFactoryRegistry<string, ITestProduct>(
+                null!, _ => { }, 4));
+    }
+
+    [Fact]
+    public void AddPooledFactoryRegistry_NullConfigure_Throws()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentNullException>("configure", () =>
+            services.AddPooledFactoryRegistry<string, ITestProduct>(null!, 4));
+    }
+
+    [Fact]
+    public void AddPooledFactoryRegistry_InvalidPoolSize_Throws()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            services.AddPooledFactoryRegistry<string, ITestProduct>(
+                builder => { }, 0));
+    }
+
+    #endregion
+
     #region Handler Pipeline Tests
 
     [Fact]

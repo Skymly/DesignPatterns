@@ -90,6 +90,93 @@ public static class DesignPatternsServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers an <see cref="IAsyncFactoryRegistry{TKey,TProduct}"/> built by the provided configuration delegate.
+    /// </summary>
+    /// <typeparam name="TKey">The factory key type.</typeparam>
+    /// <typeparam name="TProduct">The product type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">A delegate to configure the <see cref="AsyncFactoryRegistryBuilder{TKey,TProduct}"/>.</param>
+    /// <param name="lifetime">The service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddAsyncFactoryRegistry<TKey, TProduct>(
+        this IServiceCollection services,
+        Action<AsyncFactoryRegistryBuilder<TKey, TProduct>> configure,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TKey : notnull
+        where TProduct : class
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(IAsyncFactoryRegistry<TKey, TProduct>),
+            _ =>
+            {
+                var builder = new AsyncFactoryRegistryBuilder<TKey, TProduct>();
+                configure(builder);
+                return builder.Build();
+            },
+            lifetime));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers an <see cref="IPooledFactoryRegistry{TKey,TProduct}"/> built by the provided configuration delegate.
+    /// </summary>
+    /// <typeparam name="TKey">The factory key type.</typeparam>
+    /// <typeparam name="TProduct">The product type.</typeparam>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">A delegate to configure the <see cref="AsyncFactoryRegistryBuilder{TKey,TProduct}"/>.</param>
+    /// <param name="poolSize">The maximum pool size per key. Must be a positive integer.</param>
+    /// <param name="lifetime">The service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddPooledFactoryRegistry<TKey, TProduct>(
+        this IServiceCollection services,
+        Action<AsyncFactoryRegistryBuilder<TKey, TProduct>> configure,
+        int poolSize = 16,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TKey : notnull
+        where TProduct : class
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        if (poolSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(poolSize), poolSize,
+                "Pool size must be a positive integer.");
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(IPooledFactoryRegistry<TKey, TProduct>),
+            _ =>
+            {
+                var builder = new AsyncFactoryRegistryBuilder<TKey, TProduct>();
+                configure(builder);
+                builder.WithPooling(poolSize);
+                return builder.Build();
+            },
+            lifetime));
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers a <see cref="HandlerPipeline{TContext}"/> built by the provided configuration delegate.
     /// </summary>
     /// <remarks>
