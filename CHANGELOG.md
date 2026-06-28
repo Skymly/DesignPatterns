@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0-preview2] - 2026-06-28
+
+### Added
+
+- **Generated code XML documentation**: all 8 source generators now emit `/// <summary>` XML doc comments on every public type and member in the generated output. New `GeneratedCodeHelper.CreateXmlDoc` / `WithXmlDoc` helpers centralize the mechanism. 43 Verify snapshots updated (PR #176, #177).
+- **Chain exception observability**: `HandlerPipelineStepStatus.Failed` + `HandlerPipelineStep.Exception` + `HandlerPipelineTrace.FailedHandlerIndex` / `Exception` properties. `InvokeTracedAsync` now wraps handler and guard invocations in try-catch, records the failure, and re-throws. New `IHandlerExceptionObserver<TContext>` interface for side-effect notification (logging, metrics). `InvokeTracedAsync` overload accepts an optional observer (PR #179).
+- **EventAggregator publish tracing**: `PublishTracedAsync` overloads returning `EventPublicationTrace` with per-handler `EventPublicationStep` (Index, HandlerName, Status, Exception?). Supports all three `EventPublishErrorHandling` modes (StopOnError / ContinueOnError / AggregateErrors). New `IEventPublicationObserver<in TEvent>` interface for side-effect notification (PR #181).
+- **Strategy execution tracing**: `ExecuteTracedAsync` extension methods returning `StrategyExecutionTrace<TOutput>` with Key, Status, Output, Exception?, ElapsedMilliseconds. `StrategyExecutionStepStatus` enum: Executed / KeyNotFound / GuardRejected / Failed. Uses `TryGetWithGuard` to distinguish KeyNotFound vs GuardRejected. New `IStrategyExecutionObserver<in TInput, TOutput>` interface with `OnExecutionCompleted` / `OnExecutionFailed` callbacks. Stopwatch-based timing (PR #183).
+
+### Changed
+
+- **Generated code attribute ordering**: `AddGeneratedCodeAttribute` now preserves existing leading trivia (XML doc comments) so `/// <summary>` appears before `[GeneratedCode]` in generated output, matching idiomatic C# ordering (PR #177).
+- **ROADMAP updated**: F2+ third-tier (observability) and second-tier (generated code quality) marked complete; all known issues resolved (PR #184).
+
 ## [0.2.0-preview1] - 2026-06-24
 
 ### Breaking
