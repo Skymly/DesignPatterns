@@ -9,12 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0-preview4] - 2026-06-30
+
 ### Added
 
 - **Hierarchical state machine v3.1 (runtime)**: `IStateHierarchy<TState>` interface with `GetParent`, `IsInState`, `GetAncestors`; `TransitionTableBuilder.WithParent` for declaring parent-child relationships; `TransitionTable<TState,TTrigger>` implements `IStateHierarchy<TState>` (PR #204).
 - **Hierarchical state machine v3.2 (source generator)**: `[StateParent]` attribute collection, `HierarchyFlattener` edge inheritance flattening, diagnostics DP056–DP059 (cycle, self-reference, unknown child/parent, orphan parent) (PR #205).
 - **Hierarchical state machine v3.3 (action chains)**: `ActionChainComposer` with LCA (Lowest Common Ancestor) algorithm, exit/enter chain computation (RFC §8.2/§8.3/§8.4), composite delegate generation (`CompositeExit_{From}_{Trigger}` / `CompositeEnter_{From}_{Trigger}`). Per-state action map (first-wins), composite delegates only when chain has 2+ actions. Sync + async variants (PR #206).
 - **Hierarchical state machine v3.4 (DI + sample + docs)**: `AddStateHierarchy<TState,TTrigger>` MSDI extension; generated `RegisterDi` now registers `IStateHierarchy<TState>` when hierarchical; `TransitionTableBuilder.Add` overload consolidation (all optional params have defaults); new sample `DesignPatterns.Samples.HierarchicalState`; docs updated (PR #207).
+- **Runtime action chain tests**: 4 tests covering hierarchical exit action firing, mixed sync+async on same edge, enter+exit ordering, and parent-level edge action capture.
+- **Fix duplicate `using System;` in generated code**: `WrapInCompilationUnit` no longer emits a duplicate `using System;` when callers include `"System"` in additionalUsings. 26 Verify snapshots updated.
 
 ### Changed
 
