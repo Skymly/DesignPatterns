@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1-preview1] - 2026-06-30
+
 ### Added
 
 - **DI lifetime validation (DP060–DP061)**: `LifetimeMismatchAnalyzer` reports captive dependency (DP060, Warning) when `RegisterDi` registryLifetime exceeds implementationLifetime, and wasteful mismatch (DP061, Info) when implementationLifetime exceeds registryLifetime. 6 Verify snapshots.

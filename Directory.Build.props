@@ -6,8 +6,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Single source of truth for NuGet publish; override via VERSION env or Nuke version parameter at release time. -->
-    <VersionPrefix>0.2.0</VersionPrefix>
-    <VersionSuffix>preview4</VersionSuffix>
+    <VersionPrefix>0.2.1</VersionPrefix>
+    <VersionSuffix>preview1</VersionSuffix>
     <Version>$(VersionPrefix)-$(VersionSuffix)</Version>
     <PackageVersion>$(Version)</PackageVersion>
 
