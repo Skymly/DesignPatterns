@@ -597,4 +597,178 @@ public sealed class StateTransitionGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    // --- Hierarchical action chain tests (v3.3) ---
+
+    [Fact]
+    public Task EmitsHierarchicalTableWithActionChainCompositeDelegate()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus
+            {
+                Draft,
+                Active,
+                Submitted,
+                Paid,
+                Cancelled,
+            }
+
+            public enum OrderTrigger
+            {
+                Submit,
+                Pay,
+                Cancel,
+            }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+            [StateParent(OrderStatus.Paid, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, OnExit = nameof(OnExitDraft))]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Pay, OrderStatus.Paid, OnExit = nameof(OnExitSubmitted))]
+            [Transition(OrderStatus.Active, OrderTrigger.Cancel, OrderStatus.Cancelled, OnExit = nameof(OnExitActive))]
+            public static partial class OrderStatusMachine
+            {
+                public static void OnExitDraft(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+                public static void OnExitSubmitted(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+                public static void OnExitActive(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsHierarchicalTableWithAsyncActionChainCompositeDelegate()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus
+            {
+                Draft,
+                Active,
+                Submitted,
+                Cancelled,
+            }
+
+            public enum OrderTrigger
+            {
+                Submit,
+                Cancel,
+            }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, OnExit = nameof(OnExitDraftAsync))]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Cancel, OrderStatus.Cancelled, OnExit = nameof(OnExitSubmittedAsync))]
+            [Transition(OrderStatus.Active, OrderTrigger.Cancel, OrderStatus.Cancelled, OnExit = nameof(OnExitActiveAsync))]
+            public static partial class OrderStatusMachine
+            {
+                public static ValueTask OnExitDraftAsync(OrderStatus from, OrderStatus to, OrderTrigger trigger, CancellationToken ct) => default;
+                public static ValueTask OnExitSubmittedAsync(OrderStatus from, OrderStatus to, OrderTrigger trigger, CancellationToken ct) => default;
+                public static ValueTask OnExitActiveAsync(OrderStatus from, OrderStatus to, OrderTrigger trigger, CancellationToken ct) => default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsHierarchicalTableWithEnterActionChain()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus
+            {
+                Init,
+                Active,
+                Submitted,
+                Paid,
+            }
+
+            public enum OrderTrigger
+            {
+                Activate,
+                Submit,
+                Pay,
+                Go,
+            }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Init, Hierarchical = true)]
+            [StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+            [StateParent(OrderStatus.Paid, OrderStatus.Active)]
+            [Transition(OrderStatus.Init, OrderTrigger.Activate, OrderStatus.Active, OnEnter = nameof(OnEnterActive))]
+            [Transition(OrderStatus.Active, OrderTrigger.Submit, OrderStatus.Submitted, OnEnter = nameof(OnEnterSubmitted))]
+            [Transition(OrderStatus.Active, OrderTrigger.Pay, OrderStatus.Paid, OnEnter = nameof(OnEnterPaid))]
+            [Transition(OrderStatus.Init, OrderTrigger.Go, OrderStatus.Submitted)]
+            public static partial class OrderStatusMachine
+            {
+                public static void OnEnterActive(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+                public static void OnEnterSubmitted(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+                public static void OnEnterPaid(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsHierarchicalTableWithDiIntegrationRegistersIStateHierarchy()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus
+            {
+                Draft,
+                Active,
+                Submitted,
+                Paid,
+                Cancelled,
+            }
+
+            public enum OrderTrigger
+            {
+                Submit,
+                Pay,
+                Cancel,
+            }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+            [StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+            [StateParent(OrderStatus.Paid, OrderStatus.Active)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            [Transition(OrderStatus.Submitted, OrderTrigger.Pay, OrderStatus.Paid)]
+            [Transition(OrderStatus.Active, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<StateTransitionGenerator>(
+            enableDiIntegration: true,
+            ("OrderMachine.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
 }

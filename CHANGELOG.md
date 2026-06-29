@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Hierarchical state machine v3.1 (runtime)**: `IStateHierarchy<TState>` interface with `GetParent`, `IsInState`, `GetAncestors`; `TransitionTableBuilder.WithParent` for declaring parent-child relationships; `TransitionTable<TState,TTrigger>` implements `IStateHierarchy<TState>` (PR #204).
+- **Hierarchical state machine v3.2 (source generator)**: `[StateParent]` attribute collection, `HierarchyFlattener` edge inheritance flattening, diagnostics DP056–DP059 (cycle, self-reference, unknown child/parent, orphan parent) (PR #205).
+- **Hierarchical state machine v3.3 (action chains)**: `ActionChainComposer` with LCA (Lowest Common Ancestor) algorithm, exit/enter chain computation (RFC §8.2/§8.3/§8.4), composite delegate generation (`CompositeExit_{From}_{Trigger}` / `CompositeEnter_{From}_{Trigger}`). Per-state action map (first-wins), composite delegates only when chain has 2+ actions. Sync + async variants (PR #206).
+- **Hierarchical state machine v3.4 (DI + sample + docs)**: `AddStateHierarchy<TState,TTrigger>` MSDI extension; generated `RegisterDi` now registers `IStateHierarchy<TState>` when hierarchical; `TransitionTableBuilder.Add` overload consolidation (all optional params have defaults); new sample `DesignPatterns.Samples.HierarchicalState`; docs updated (PR #207).
+
+### Changed
+
+- **`TransitionTableBuilder.Add` overload consolidation**: the 4 separate `Add` overloads (3/4/6/6-param) are replaced by a single 8-param signature with all optional parameters defaulting to `null`. Callers can now pass any subset of `guard`, `onEnterSync`, `onExitSync`, `onEnterAsync`, `onExitAsync` as named arguments without positional `null` placeholders. The 3-param `Add(from, trigger, to)` overload is retained.
+
 ## [0.2.0-preview3] - 2026-06-28
 
 ### Added

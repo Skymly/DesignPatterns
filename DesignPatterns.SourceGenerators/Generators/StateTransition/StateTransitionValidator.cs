@@ -65,11 +65,17 @@ internal static class StateTransitionValidator
 
         // Validate and build hierarchy if hierarchical mode is enabled.
         Dictionary<string, string>? parentMap = null;
+        ActionChainResult? actionChains = null;
         if (model.IsHierarchical)
         {
             parentMap = ValidateStateParents(context, model, stateType);
             if (parentMap is not null)
             {
+                // Build per-state action map from the original (pre-flatten) edges
+                // so that parent-level OnExit/OnEnter are captured as state-level
+                // actions for chain composition (RFC §8).
+                var stateActionMap = ActionChainComposer.BuildStateActionMap(uniqueTransitions);
+
                 // Flatten inherited transitions.
                 uniqueTransitions = HierarchyFlattener.Flatten(uniqueTransitions, parentMap);
 
@@ -81,6 +87,9 @@ internal static class StateTransitionValidator
 
                 // Report orphan parents (DP059).
                 ReportOrphanParents(context, stateType, parentMap, uniqueTransitions, model.Location);
+
+                // Compose hierarchical action chains (RFC §8: LCA + exit/enter chains).
+                actionChains = ActionChainComposer.Compose(uniqueTransitions, parentMap, stateActionMap);
             }
         }
 
@@ -91,7 +100,7 @@ internal static class StateTransitionValidator
             return null;
         }
 
-        return new StateMachineValidationResult(uniqueTransitions, parentMap);
+        return new StateMachineValidationResult(uniqueTransitions, parentMap, actionChains);
     }
 
     private static List<ResolvedTransition> ResolveValidTransitions(

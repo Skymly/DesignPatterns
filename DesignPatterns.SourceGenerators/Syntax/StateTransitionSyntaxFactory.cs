@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DesignPatterns.SourceGenerators;
+using DesignPatterns.SourceGenerators.Generators.StateTransition;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -35,6 +36,9 @@ internal static class StateTransitionSyntaxFactory
             string? OnEnterAsyncReference,
             string? OnExitAsyncReference)> transitions,
         IReadOnlyList<(string ChildExpression, string ParentExpression)>? stateParents,
+        IReadOnlyList<CompositeDelegateDefinition>? compositeDelegates,
+        string stateTypeFullyQualifiedDisplayString,
+        string triggerTypeFullyQualifiedDisplayString,
         GeneratorIntegrationOptions integrationOptions)
     {
         var tableExpression = BuildTransitionTableExpression(
@@ -191,12 +195,24 @@ internal static class StateTransitionSyntaxFactory
 
         if (integrationOptions.EnableDi)
         {
-            members.Add(CreateRegisterDiMethod(stateTypeName, triggerTypeName));
+            members.Add(CreateRegisterDiMethod(stateTypeName, triggerTypeName, isHierarchical));
         }
 
         if (integrationOptions.EnableAutofac)
         {
             members.Add(CreateTableRegisterAutofacMethod(stateTypeName, triggerTypeName));
+        }
+
+        // Add composite action chain delegate methods (hierarchical mode, RFC §8).
+        if (compositeDelegates is not null && compositeDelegates.Count > 0)
+        {
+            foreach (var definition in compositeDelegates)
+            {
+                members.Add(CreateCompositeDelegateMethod(
+                    definition,
+                    stateTypeFullyQualifiedDisplayString,
+                    triggerTypeFullyQualifiedDisplayString));
+            }
         }
 
         var tableClass = GeneratedCodeHelper.WithXmlDoc(
@@ -543,6 +559,55 @@ internal static class StateTransitionSyntaxFactory
         return SyntaxFactory.ParseExpression(builder.ToString());
     }
 
+    /// <summary>
+    /// Creates a static composite delegate method that calls each action in the
+    /// chain in order. Sync methods return <c>void</c>; async methods return
+    /// <c>ValueTask</c> and <c>await</c> each action.
+    /// </summary>
+    private static MethodDeclarationSyntax CreateCompositeDelegateMethod(
+        CompositeDelegateDefinition definition,
+        string stateTypeDisplay,
+        string triggerTypeDisplay)
+    {
+        var returnType = definition.IsAsync
+            ? "global::System.Threading.Tasks.ValueTask"
+            : "void";
+
+        var asyncModifier = definition.IsAsync ? "async " : "";
+
+        var parameters = definition.IsAsync
+            ? $"({stateTypeDisplay} from, {stateTypeDisplay} to, {triggerTypeDisplay} trigger, global::System.Threading.CancellationToken cancellationToken)"
+            : $"({stateTypeDisplay} from, {stateTypeDisplay} to, {triggerTypeDisplay} trigger)";
+
+        var summary = definition.IsExit
+            ? $"Composite exit action chain for {definition.Name} (hierarchical state machine)."
+            : $"Composite enter action chain for {definition.Name} (hierarchical state machine).";
+
+        var body = new StringBuilder();
+        body.AppendLine("{");
+        for (var i = 0; i < definition.ActionReferences.Count; i++)
+        {
+            var action = definition.ActionReferences[i];
+            if (definition.IsAsync)
+            {
+                body.AppendLine($"    await {action}(from, to, trigger, cancellationToken).ConfigureAwait(false);");
+            }
+            else
+            {
+                body.AppendLine($"    {action}(from, to, trigger);");
+            }
+        }
+
+        body.Append('}');
+
+        var method = SyntaxFactory.ParseMemberDeclaration(
+            $"private static {asyncModifier}{returnType} {definition.Name}{parameters}\n{body}") as MethodDeclarationSyntax;
+
+        return method is null
+            ? throw new System.InvalidOperationException($"Failed to parse composite delegate method {definition.Name}.")
+            : GeneratedCodeHelper.WithXmlDoc(method, summary);
+    }
+
     private static PropertyDeclarationSyntax CreateForwardingProperty(
         string name,
         string propertyTypeName,
@@ -645,7 +710,8 @@ internal static class StateTransitionSyntaxFactory
 
     private static MethodDeclarationSyntax CreateRegisterDiMethod(
         string stateTypeName,
-        string triggerTypeName)
+        string triggerTypeName,
+        bool isHierarchical)
     {
         var servicesParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("services"))
             .WithType(SyntaxFactory.ParseTypeName("global::Microsoft.Extensions.DependencyInjection.IServiceCollection"));
@@ -661,10 +727,23 @@ internal static class StateTransitionSyntaxFactory
 
         var interfaceType = $"ITransitionTable<{stateTypeName}, {triggerTypeName}>";
 
-        var body = SyntaxFactory.Block(
+        var statements = new List<StatementSyntax>
+        {
             SyntaxFactory.ParseStatement(
                 $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({interfaceType}), _ => Instance, lifetime));"),
-            SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
+        };
+
+        // When hierarchical, also register IStateHierarchy<TState> (cast from the table).
+        if (isHierarchical)
+        {
+            var hierarchyType = $"IStateHierarchy<{stateTypeName}>";
+            statements.Add(SyntaxFactory.ParseStatement(
+                $"services.TryAdd(new global::Microsoft.Extensions.DependencyInjection.ServiceDescriptor(typeof({hierarchyType}), sp => (IStateHierarchy<{stateTypeName}>)sp.GetRequiredService(typeof({interfaceType})), lifetime));"));
+        }
+
+        statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("services")));
+
+        var body = SyntaxFactory.Block(statements);
 
         return GeneratedCodeHelper.WithXmlDoc(
             SyntaxFactory.MethodDeclaration(

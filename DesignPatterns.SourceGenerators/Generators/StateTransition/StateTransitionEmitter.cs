@@ -18,12 +18,16 @@ internal static class StateTransitionEmitter
     /// Emits the transition table and holder partial for
     /// <paramref name="model"/> using the validated
     /// <paramref name="transitions"/> and optional <paramref name="parentMap"/>.
+    /// When <paramref name="actionChains"/> is non-null, composite delegate
+    /// methods are emitted and override references are used in the
+    /// <c>TransitionTableBuilder.Add</c> calls.
     /// </summary>
     public static void Emit(
         SourceProductionContext context,
         StateMachineModel model,
         List<ResolvedTransition> transitions,
         Dictionary<string, string>? parentMap,
+        ActionChainResult? actionChains,
         GeneratorIntegrationOptions integrationOptions)
     {
         var stateType = model.StateType!.Value;
@@ -33,15 +37,34 @@ internal static class StateTransitionEmitter
         var tableClassName = StateTransitionSyntaxFactory.GetTransitionTableClassName(stateType.Name);
         var initialExpression = StateTransitionSyntaxFactory.FormatEnumMember(stateType.FullyQualifiedDisplayString, initialMember);
         var transitionExpressions = transitions
-            .ConvertAll(static transition => (
-                transition.FromExpression,
-                transition.TriggerExpression,
-                transition.ToExpression,
-                transition.GuardMethodReference,
-                transition.OnEnterSyncReference,
-                transition.OnExitSyncReference,
-                transition.OnEnterAsyncReference,
-                transition.OnExitAsyncReference));
+            .ConvertAll(transition =>
+            {
+                // Apply action chain overrides when present (composite delegates).
+                string? onEnterSync = transition.OnEnterSyncReference;
+                string? onExitSync = transition.OnExitSyncReference;
+                string? onEnterAsync = transition.OnEnterAsyncReference;
+                string? onExitAsync = transition.OnExitAsyncReference;
+                if (actionChains is not null
+                    && actionChains.Overrides.TryGetValue(
+                        (transition.FromMember, transition.TriggerMember),
+                        out var overrides))
+                {
+                    onEnterSync = overrides.OnEnterSyncReference;
+                    onExitSync = overrides.OnExitSyncReference;
+                    onEnterAsync = overrides.OnEnterAsyncReference;
+                    onExitAsync = overrides.OnExitAsyncReference;
+                }
+
+                return (
+                    transition.FromExpression,
+                    transition.TriggerExpression,
+                    transition.ToExpression,
+                    transition.GuardMethodReference,
+                    onEnterSync,
+                    onExitSync,
+                    onEnterAsync,
+                    onExitAsync);
+            });
 
         // Build parent expressions for hierarchical mode.
         List<(string ChildExpression, string ParentExpression)>? stateParentExpressions = null;
@@ -66,6 +89,9 @@ internal static class StateTransitionEmitter
             initialExpression,
             transitionExpressions,
             stateParentExpressions,
+            actionChains?.DelegateDefinitions,
+            stateType.FullyQualifiedDisplayString,
+            triggerType.FullyQualifiedDisplayString,
             integrationOptions);
 
         var holderUnit = StateTransitionSyntaxFactory.CreateHolderPartialCompilationUnit(

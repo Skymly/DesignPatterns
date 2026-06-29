@@ -274,9 +274,94 @@ if (machine.TryTransition(OrderTrigger.Submit, out var next))
 
 ## 非目标（v1/v2）
 
-- 层次 / 并发 / 历史状态
+- ~~层次 / 并发 / 历史状态~~ — **层次状态已在 v3 实现**（见下方「层次状态机（v3）」章节）；并发 / 历史状态仍为非目标
 - `string` / `int` 状态键
 - guard 的编译期表达式求值（v2 仅运行时委托 + 方法引用校验）
+
+---
+
+## 层次状态机（v3）
+
+v3 引入层次状态机（Hierarchical State Machine），支持父子状态关系、边继承展平、entry/exit action 链合成与 `IStateHierarchy<TState>` DI 集成。设计 RFC：[rfc/HierarchicalStateMachine.md](rfc/HierarchicalStateMachine.md) §7–§8。
+
+### v3 交付阶段
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| **v3.1** | 运行时 `IStateHierarchy<TState>`、`TransitionTableBuilder.WithParent` | 已完成 |
+| **v3.2** | 源生成器 `[StateParent]` 收集、边继承展平、诊断 DP056–DP059 | 已完成 |
+| **v3.3** | LCA 算法 + entry/exit action 链合成 + 复合委托生成 | 已完成 |
+| **v3.4** | DI 集成（`AddStateHierarchy` + 生成器 `RegisterDi` 注册 `IStateHierarchy`）+ 示例 + 文档 | 已完成 |
+
+### 启用层次模式
+
+在 `[StateMachine]` 特性上设置 `Hierarchical = true`，并用 `[StateParent]` 声明父子关系：
+
+```csharp
+[StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft, Hierarchical = true)]
+[StateParent(OrderStatus.Submitted, OrderStatus.Active)]
+[StateParent(OrderStatus.Paid, OrderStatus.Active)]
+[Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+[Transition(OrderStatus.Submitted, OrderTrigger.Pay, OrderStatus.Paid)]
+[Transition(OrderStatus.Active, OrderTrigger.Cancel, OrderStatus.Cancelled, OnExit = nameof(OnExitActive))]
+public static partial class OrderMachine
+{
+    public static void OnExitActive(OrderStatus from, OrderStatus to, OrderTrigger trigger) { }
+}
+```
+
+### 边继承展平（v3.2）
+
+`[StateParent]` 声明的父子关系在编译期被 `HierarchyFlattener` 展平：父状态上的边自动继承到所有子状态。上例中 `Active + Cancel → Cancelled` 会被展平为 `Submitted + Cancel → Cancelled` 和 `Paid + Cancel → Cancelled`，无需重复声明。
+
+诊断 DP056–DP059 覆盖：循环父链、自引用父、未知子/父状态、孤立父声明。
+
+### Entry/Exit Action 链合成（v3.3）
+
+当层次模式下一条展平后的边跨越多个层级时，源生成器合成复合委托（composite delegate），按 RFC §8 的 LCA（最低公共祖先）算法计算 exit/enter 链：
+
+- **Exit 链**：从 `from` 向上到 LCA（不含 LCA），按从子到父的顺序执行
+- **Enter 链**：从 LCA 向下到 `to`（不含 LCA），按从父到子的顺序执行
+- **复合委托**：仅当链有 2+ action 时生成 `CompositeExit_{From}_{Trigger}` / `CompositeEnter_{From}_{Trigger}` 静态方法；1 action 直接用原引用；0 action 用 null
+
+**边界场景（RFC §8.4）**：
+
+| 场景 | Exit 链 | Enter 链 |
+|------|---------|----------|
+| 自环（from == to） | `[from]` | `[from]` |
+| LCA == from（进入后代） | `[]`（空） | LCA → to 的子链 |
+| LCA == to（返回祖先） | from → LCA 的子链 | `[]`（空） |
+| 无公共祖先 | from 全祖链 | to 全祖链 |
+
+复合委托对运行时透明：`TransitionEdge` 结构不变，复合委托是单个 `Action<TState,TState,TTrigger>` 或 `Func<...,ValueTask>`。
+
+### `IStateHierarchy<TState>` DI 集成（v3.4）
+
+生成的 `OrderStatusTransitionTable` 同时实现 `ITransitionTable<TState,TTrigger>` 和 `IStateHierarchy<TState>`。当启用 DI 集成时，生成的 `RegisterDi` 方法自动注册两者：
+
+```csharp
+var services = new ServiceCollection();
+OrderStatusTransitionTable.RegisterDi(services); // 注册 ITransitionTable + IStateHierarchy
+services.AddStateMachine<OrderStatus, OrderTrigger>();
+
+var provider = services.BuildServiceProvider();
+var table = provider.GetRequiredService<ITransitionTable<OrderStatus, OrderTrigger>>();
+var hierarchy = provider.GetRequiredService<IStateHierarchy<OrderStatus>>();
+```
+
+手动注册时使用 `AddStateHierarchy<TState, TTrigger>` 扩展方法（从容器解析 table 并转型）。
+
+### `TransitionTableBuilder.Add` 重载简化
+
+v3.4 将 `Add` 的多个重载合并为单一签名，所有可选参数（`guard`、`onEnterSync`、`onExitSync`、`onEnterAsync`、`onExitAsync`）均有默认值 `null`，调用方可按命名参数传任意子集，无需为占位提供 `null`：
+
+```csharp
+// v3.4：直接用命名参数，无需 guard 占位
+.Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, onExitSync: OnExitDraft)
+
+// v3.4 之前：需要 guard 占位
+.Add(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted, guard: null, onEnterSync: null, onExitSync: OnExitDraft)
+```
 
 ---
 
@@ -288,9 +373,13 @@ if (machine.TryTransition(OrderTrigger.Submit, out var next))
 | 生成器集成 | `tests/DesignPatterns.Tests/Integration/StateTransitionIntegrationTests.cs` |
 | 生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests/Generators/StateTransitionGeneratorTests.cs` |
 | Guard 生成器快照 | `tests/DesignPatterns.SourceGenerators.Tests/Generators/StateTransitionGeneratorTests.cs`（guard 用例） |
+| Action 链合成单元 | `tests/DesignPatterns.SourceGenerators.Tests/Generators/ActionChainComposerTests.cs` |
+| 层次 action 链快照 | `tests/DesignPatterns.SourceGenerators.Tests/Generators/StateTransitionGeneratorTests.cs`（`EmitsHierarchicalTableWith*ActionChain`） |
+| 层次 DI 快照 | `tests/DesignPatterns.SourceGenerators.Tests/Generators/StateTransitionGeneratorTests.cs`（`EmitsHierarchicalTableWithDiIntegrationRegistersIStateHierarchy`） |
 | DI 扩展 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests/TransitionTableDiExtensionsTests.cs` |
 | 字面量边 Analyzer | `tests/DesignPatterns.Analyzers.Tests/StateTransitionLiteralEdgeAnalyzerTests.cs` |
 
 ## 示例
 
-[DesignPatterns.Samples.State](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.State)
+- [DesignPatterns.Samples.State](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.State) — 基础状态机（guard、entry/exit action、DI）
+- [DesignPatterns.Samples.HierarchicalState](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.HierarchicalState) — 层次状态机（`[StateParent]`、边继承展平、action 链合成、`IStateHierarchy` DI）

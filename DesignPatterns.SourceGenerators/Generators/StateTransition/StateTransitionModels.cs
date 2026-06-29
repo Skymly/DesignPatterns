@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -147,10 +148,59 @@ internal sealed record StateMachineModel(
 /// Result of validating a <see cref="StateMachineModel"/>: the resolved
 /// transitions (flattened if hierarchical) and the optional parent map
 /// (child member name → parent member name) for hierarchy emission.
+/// When hierarchical action chains are composed, <see cref="ActionChains"/>
+/// carries the composite delegate definitions and per-edge override references.
 /// </summary>
 internal sealed record StateMachineValidationResult(
     List<ResolvedTransition> Transitions,
-    Dictionary<string, string>? ParentMap);
+    Dictionary<string, string>? ParentMap,
+    ActionChainResult? ActionChains);
+
+/// <summary>
+/// Per-state entry/exit action references collected from all declared edges.
+/// In hierarchical mode, a state's exit action is the <c>OnExit</c> declared on
+/// any edge where <c>from = state</c>; a state's enter action is the
+/// <c>OnEnter</c> declared on any edge where <c>to = state</c>. When multiple
+/// edges declare different actions for the same state, the first one encountered
+/// wins (UML convention: a state has at most one entry and one exit action).
+/// </summary>
+internal sealed class StateActionMap
+{
+    public Dictionary<string, string> ExitSync { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, string> ExitAsync { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, string> EnterSync { get; } = new(StringComparer.Ordinal);
+    public Dictionary<string, string> EnterAsync { get; } = new(StringComparer.Ordinal);
+}
+
+/// <summary>
+/// Override action references for a single flattened edge. When the action
+/// chain for an edge has more than one action, the override carries the
+/// composite delegate method name; otherwise it carries the single original
+/// reference (or <c>null</c> when the chain is empty).
+/// </summary>
+internal sealed record EdgeActionOverrides(
+    string? OnEnterSyncReference,
+    string? OnExitSyncReference,
+    string? OnEnterAsyncReference,
+    string? OnExitAsyncReference);
+
+/// <summary>
+/// A composite delegate definition to emit as a static method on the generated
+/// transition table class. The method body calls each action reference in order.
+/// </summary>
+internal sealed record CompositeDelegateDefinition(
+    string Name,
+    bool IsAsync,
+    bool IsExit,
+    List<string> ActionReferences);
+
+/// <summary>
+/// The output of action chain composition: per-edge override references and
+/// the composite delegate definitions to emit.
+/// </summary>
+internal sealed record ActionChainResult(
+    Dictionary<(string From, string Trigger), EdgeActionOverrides> Overrides,
+    List<CompositeDelegateDefinition> DelegateDefinitions);
 
 /// <summary>
 /// A transition that passed all per-edge validation and is ready for

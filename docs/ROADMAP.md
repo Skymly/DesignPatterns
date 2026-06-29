@@ -103,7 +103,7 @@
 
 | 候选 | 说明 | 探索价值 |
 |------|------|----------|
-| State 层级状态机 | `[StateMachine(..., Hierarchical = true)]` 支持嵌套状态 + 通配转换，生成器展平为快表 | ⭐⭐⭐ 与 Stateless 重叠但展示「编译期展平层级」技术 |
+| ~~State 层级状态机~~ | ~~`[StateMachine(..., Hierarchical = true)]` 支持嵌套状态 + 通配转换，生成器展平为快表~~ — **已在 v3 实现**（v3.1 运行时 `IStateHierarchy`、v3.2 `[StateParent]` + 展平 + DP056–DP059、v3.3 LCA + action 链合成、v3.4 DI + 示例 + 文档） | ⭐⭐⭐ 与 Stateless 重叠但展示「编译期展平层级」技术 |
 | Composite 并行遍历 + 懒加载 | `TraverseParallel(root, visitor, degreeOfParallelism)` + `[CompositePart(..., LazyChildren = true)]` + `AssembleAsync` | ⭐⭐ 大树场景实用；AOT 友好并行调度 |
 | Composite 树 schema 校验 | 编译期校验 max depth / parent-child 类型兼容性 / 节点计数 | ⭐⭐ 结构错误编译期捕获 |
 | Decorator 组合 / 嵌套 | `DecoratorStackBuilder.Compose(otherStack)`，Analyzer 校验栈间类型兼容 | ⭐⭐ 可复用装饰器组合 |

@@ -61,6 +61,7 @@ public sealed class StateTransitionGenerator : IIncrementalGenerator
                     model,
                     validationResult.Transitions,
                     validationResult.ParentMap,
+                    validationResult.ActionChains,
                     integrationOptions);
             }
         }

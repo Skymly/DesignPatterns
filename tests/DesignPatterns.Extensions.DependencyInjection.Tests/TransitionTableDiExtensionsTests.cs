@@ -133,6 +133,61 @@ public sealed class TransitionTableDiExtensionsTests
             ((IServiceCollection)null!).AddStateMachine<TestState, TestTrigger>());
     }
 
+    // --- Hierarchical state machine DI tests (v3.4) ---
+
+    private enum HierState { Init, Active, Submitted, Paid, Cancelled }
+
+    private enum HierTrigger { Activate, Submit, Pay, Cancel }
+
+    [Fact]
+    public void AddStateHierarchy_RegistersHierarchyFromTable()
+    {
+        var table = new TransitionTableBuilder<HierState, HierTrigger>()
+            .WithInitial(HierState.Init)
+            .WithParent(HierState.Submitted, HierState.Active)
+            .WithParent(HierState.Paid, HierState.Active)
+            .Add(HierState.Init, HierTrigger.Activate, HierState.Active)
+            .Add(HierState.Active, HierTrigger.Submit, HierState.Submitted)
+            .Add(HierState.Active, HierTrigger.Pay, HierState.Paid)
+            .Add(HierState.Active, HierTrigger.Cancel, HierState.Cancelled)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddTransitionTable(table);
+        services.AddStateHierarchy<HierState, HierTrigger>();
+
+        var provider = services.BuildServiceProvider();
+        var hierarchy = provider.GetRequiredService<IStateHierarchy<HierState>>();
+
+        Assert.NotNull(hierarchy);
+        Assert.Equal(HierState.Active, hierarchy.GetParent(HierState.Submitted));
+        Assert.True(hierarchy.IsInState(HierState.Submitted, HierState.Active));
+        Assert.False(hierarchy.IsInState(HierState.Cancelled, HierState.Active));
+    }
+
+    [Fact]
+    public void AddStateHierarchy_NullServices_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            ((IServiceCollection)null!).AddStateHierarchy<HierState, HierTrigger>());
+    }
+
+    [Fact]
+    public void AddStateHierarchy_ReturnsCollectionForChaining()
+    {
+        var table = new TransitionTableBuilder<HierState, HierTrigger>()
+            .WithInitial(HierState.Init)
+            .WithParent(HierState.Submitted, HierState.Active)
+            .Add(HierState.Init, HierTrigger.Activate, HierState.Active)
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddTransitionTable(table);
+        var result = services.AddStateHierarchy<HierState, HierTrigger>();
+
+        Assert.Same(services, result);
+    }
+
     [Fact]
     public void AddDecoratorStack_RegistersDecoratedService()
     {
