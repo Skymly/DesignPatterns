@@ -307,6 +307,24 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         GeneratorCategory);
 
+    // DI lifetime validation (DP060–DP061)
+
+    public static DiagnosticDescriptor DiLifetimeCaptiveDependency { get; } = Create(
+        DiagnosticIds.DiLifetimeCaptiveDependency,
+        "DI captive dependency: registry lifetime exceeds implementation lifetime",
+        "RegisterDi on '{0}' is called with registryLifetime={1} but implementationLifetime={2}. The {1} registry will capture {2} implementations, making them effectively {1}. Set implementationLifetime to {1} or higher, or set registryLifetime to {2}.",
+        "A longer-lived registry that resolves shorter-lived implementations creates a captive dependency — the implementations become effectively as long-lived as the registry.",
+        DiagnosticSeverity.Warning,
+        AnalyzerCategory);
+
+    public static DiagnosticDescriptor DiLifetimeWasteful { get; } = Create(
+        DiagnosticIds.DiLifetimeWasteful,
+        "DI lifetime mismatch: implementation lifetime exceeds registry lifetime",
+        "RegisterDi on '{0}' is called with implementationLifetime={1} but registryLifetime={2}. Singleton implementations registered with a {2} registry are wasteful — each registry instance gets its own Singleton implementation. Set registryLifetime to Singleton, or set implementationLifetime to {2}.",
+        "Singleton implementations with a shorter-lived registry create unnecessary instances that are never shared across registry instances.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
     public static DiagnosticDescriptor RegistryKeyNotRegistered { get; } = Create(
         DiagnosticIds.RegistryKeyNotRegistered,
         "Registry key is not registered",

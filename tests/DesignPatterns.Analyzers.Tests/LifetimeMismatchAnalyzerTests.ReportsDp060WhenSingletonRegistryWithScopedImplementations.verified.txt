@@ -1,0 +1,1 @@
+﻿DP060 [Warning] RegisterDi on 'FactoryRegistryHolder' is called with registryLifetime=Singleton but implementationLifetime=Scoped. The Singleton registry will capture Scoped implementations, making them effectively Singleton. Set implementationLifetime to Singleton or higher, or set registryLifetime to Scoped. @ Test.cs:(18,9)

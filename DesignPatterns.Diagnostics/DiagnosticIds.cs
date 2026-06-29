@@ -64,4 +64,6 @@ public static class DiagnosticIds
     public const string StateParentInvalidMember = "DP057";
     public const string StateParentSelfReference = "DP058";
     public const string StateParentOrphanParent = "DP059";
+    public const string DiLifetimeCaptiveDependency = "DP060";
+    public const string DiLifetimeWasteful = "DP061";
 }

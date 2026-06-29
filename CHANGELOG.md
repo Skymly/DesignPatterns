@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **DI lifetime validation (DP060–DP061)**: `LifetimeMismatchAnalyzer` reports captive dependency (DP060, Warning) when `RegisterDi` registryLifetime exceeds implementationLifetime, and wasteful mismatch (DP061, Info) when implementationLifetime exceeds registryLifetime. 6 Verify snapshots.
+- **DI health checks**: `AddDesignPatternsHealthChecks` extension method registers an `IHealthCheck` that verifies all DesignPatterns service registrations can be resolved from the DI container at runtime. Scans `IServiceCollection` for DesignPatterns namespace service types at registration time; resolves each at check time. 9 tests.
+
 ## [0.2.0-preview4] - 2026-06-30
 
 ### Added

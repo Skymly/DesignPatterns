@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using DesignPatterns.Behavioral;
 using DesignPatterns.Creational;
 using DesignPatterns.Structural;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace DesignPatterns.Extensions.DependencyInjection;
 
@@ -415,6 +417,54 @@ public static class DesignPatternsServiceCollectionExtensions
             typeof(TService),
             sp => buildFunc(sp, coreFactory(sp)),
             lifetime));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a health check that verifies all DesignPatterns service registrations
+    /// can be resolved from the DI container at runtime.
+    /// </summary>
+    /// <remarks>
+    /// This method scans the current <see cref="IServiceCollection"/> for service types
+    /// in DesignPatterns namespaces (e.g. <c>IStrategyRegistry&lt;,&gt;</c>,
+    /// <c>ITransitionTable&lt;,&gt;</c>, <c>IEventAggregator</c>) and registers an
+    /// <see cref="IHealthCheck"/> that attempts to resolve each at check time.
+    /// Call this method <strong>after</strong> all DesignPatterns services have been registered.
+    /// </remarks>
+    /// <param name="services">The service collection.</param>
+    /// <param name="name">The health check name. Defaults to <c>"designpatterns"</c>.</param>
+    /// <param name="failureStatus">The <see cref="HealthStatus"/> reported when one or more services cannot be resolved. Defaults to <see cref="HealthStatus.Unhealthy"/>.</param>
+    /// <param name="tags">Optional tags for filtering health checks.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddDesignPatternsHealthChecks(
+        this IServiceCollection services,
+        string name = "designpatterns",
+        HealthStatus? failureStatus = HealthStatus.Unhealthy,
+        IEnumerable<string>? tags = null)
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Health check name must not be null or empty.", nameof(name));
+        }
+
+        // Scan current registrations for DesignPatterns service types.
+        var serviceTypes = DesignPatternsServiceTypeScanner.Scan(services);
+
+        // Register the options so the health check can access the service type list.
+        services.TryAddSingleton(new DesignPatternsHealthCheckOptions(serviceTypes));
+
+        // Register the health check.
+        var healthChecksBuilder = services.AddHealthChecks()
+            .AddCheck<DesignPatternsHealthCheck>(
+                name,
+                failureStatus,
+                tags ?? Array.Empty<string>());
 
         return services;
     }

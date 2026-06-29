@@ -1,0 +1,1 @@
+﻿DP061 [Info] RegisterDi on 'StrategyRegistryHolder' is called with implementationLifetime=Singleton but registryLifetime=Transient. Singleton implementations registered with a Transient registry are wasteful — each registry instance gets its own Singleton implementation. Set registryLifetime to Singleton, or set implementationLifetime to Transient. @ Test.cs:(18,9)

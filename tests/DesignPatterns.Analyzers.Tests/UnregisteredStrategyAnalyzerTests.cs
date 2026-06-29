@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.DependencyInjection;
 using VerifyTests;
 
 namespace DesignPatterns.Analyzers.Tests;
@@ -224,6 +225,7 @@ internal static class AnalyzerTestContext
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ValueTask).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Behavioral.RegisterStrategyAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(ServiceLifetime).Assembly.Location),
         };
 
         var trustedPlatformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
