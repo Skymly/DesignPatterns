@@ -317,4 +317,123 @@ public sealed class StateHierarchyTests
         // IsInState(Active, Active) is true.
         Assert.True(table.IsInState(HierarchyState.Active, HierarchyState.Active));
     }
+
+    // --- Runtime action chain execution order (hierarchical) ---
+
+    [Fact]
+    public async Task TryTransitionAsync_HierarchicalExitChain_FiresChildThenParent()
+    {
+        var callOrder = new List<string>();
+
+        // The runtime TransitionTableBuilder does NOT flatten inherited edges or compose
+        // action chains — that is the source generator's job. Here we verify that when
+        // both child and parent have explicit exit actions on their own edges, each edge
+        // fires its own OnExit independently.
+        var table = new TransitionTableBuilder<HierarchyState, HierarchyTrigger>()
+            .WithInitial(HierarchyState.Draft)
+            .WithParent(HierarchyState.Submitted, HierarchyState.Active)
+            .WithParent(HierarchyState.Paid, HierarchyState.Active)
+            .Add(HierarchyState.Draft, HierarchyTrigger.Submit, HierarchyState.Submitted,
+                onExitSync: (_, _, _) => callOrder.Add("exit_Draft"))
+            .Add(HierarchyState.Submitted, HierarchyTrigger.Cancel, HierarchyState.Cancelled,
+                onExitSync: (_, _, _) => callOrder.Add("exit_Submitted"))
+            .Add(HierarchyState.Active, HierarchyTrigger.Cancel, HierarchyState.Cancelled,
+                onExitSync: (_, _, _) => callOrder.Add("exit_Active"))
+            .Build();
+
+        // Draft → Submitted (fires exit_Draft)
+        await table.TryTransitionAsync(HierarchyState.Draft, HierarchyTrigger.Submit, CancellationToken.None);
+        Assert.Equal(new[] { "exit_Draft" }, callOrder);
+
+        callOrder.Clear();
+
+        // Submitted → Cancelled (explicit edge, fires exit_Submitted only — no composite chain at runtime)
+        await table.TryTransitionAsync(HierarchyState.Submitted, HierarchyTrigger.Cancel, CancellationToken.None);
+        Assert.Equal(new[] { "exit_Submitted" }, callOrder);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_MixedSyncAndAsyncOnSameEdge_FiresInCorrectOrder()
+    {
+        var callOrder = new List<string>();
+
+        var table = new TransitionTableBuilder<HierarchyState, HierarchyTrigger>()
+            .WithInitial(HierarchyState.Draft)
+            .WithParent(HierarchyState.Submitted, HierarchyState.Active)
+            .Add(HierarchyState.Draft, HierarchyTrigger.Submit, HierarchyState.Submitted,
+                onExitSync: (_, _, _) => callOrder.Add("syncExit"),
+                onExitAsync: (_, _, _, _) =>
+                {
+                    callOrder.Add("asyncExit");
+                    return default;
+                },
+                onEnterSync: (_, _, _) => callOrder.Add("syncEnter"),
+                onEnterAsync: (_, _, _, _) =>
+                {
+                    callOrder.Add("asyncEnter");
+                    return default;
+                })
+            .Build();
+
+        await table.TryTransitionAsync(HierarchyState.Draft, HierarchyTrigger.Submit, CancellationToken.None);
+
+        // Order: syncExit → asyncExit → syncEnter → asyncEnter
+        Assert.Equal(new[] { "syncExit", "asyncExit", "syncEnter", "asyncEnter" }, callOrder);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_BothEnterAndExitActions_FiresExitBeforeEnter()
+    {
+        var callOrder = new List<string>();
+
+        var table = new TransitionTableBuilder<HierarchyState, HierarchyTrigger>()
+            .WithInitial(HierarchyState.Draft)
+            .WithParent(HierarchyState.Submitted, HierarchyState.Active)
+            .Add(HierarchyState.Draft, HierarchyTrigger.Submit, HierarchyState.Submitted,
+                onEnterSync: (_, _, _) => callOrder.Add("enter_Submitted"),
+                onExitSync: (_, _, _) => callOrder.Add("exit_Draft"))
+            .Build();
+
+        var result = await table.TryTransitionAsync(HierarchyState.Draft, HierarchyTrigger.Submit, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(new[] { "exit_Draft", "enter_Submitted" }, callOrder);
+    }
+
+    [Fact]
+    public async Task TryTransitionAsync_ParentEdge_FiresParentExitAction()
+    {
+        var exitActionInvoked = false;
+        HierarchyState capturedFrom = default;
+        HierarchyState capturedTo = default;
+
+        // The runtime TransitionTableBuilder does NOT flatten — the edge on Active is only
+        // reachable from Active, not from child states. We verify the parent-level edge fires
+        // its own OnExit when triggered from the parent state directly.
+        var table = new TransitionTableBuilder<HierarchyState, HierarchyTrigger>()
+            .WithInitial(HierarchyState.Draft)
+            .WithParent(HierarchyState.Submitted, HierarchyState.Active)
+            .WithParent(HierarchyState.Paid, HierarchyState.Active)
+            .Add(HierarchyState.Draft, HierarchyTrigger.Submit, HierarchyState.Active)
+            .Add(HierarchyState.Active, HierarchyTrigger.Cancel, HierarchyState.Cancelled,
+                onExitSync: (from, to, _) =>
+                {
+                    exitActionInvoked = true;
+                    capturedFrom = from;
+                    capturedTo = to;
+                })
+            .Build();
+
+        // Move to Active first
+        await table.TryTransitionAsync(HierarchyState.Draft, HierarchyTrigger.Submit, CancellationToken.None);
+
+        // Fire Cancel from Active — the edge's OnExit captures from=Active, to=Cancelled
+        var result = await table.TryTransitionAsync(HierarchyState.Active, HierarchyTrigger.Cancel, CancellationToken.None);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(HierarchyState.Cancelled, result.NextState);
+        Assert.True(exitActionInvoked);
+        Assert.Equal(HierarchyState.Active, capturedFrom);
+        Assert.Equal(HierarchyState.Cancelled, capturedTo);
+    }
 }

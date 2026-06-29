@@ -46,6 +46,12 @@ internal static class GeneratedCodeHelper
 
         foreach (var additionalUsing in additionalUsings)
         {
+            // Skip "System" — it is already added unconditionally above.
+            if (additionalUsing == "System")
+            {
+                continue;
+            }
+
             compilationUnit = compilationUnit.AddUsings(
                 SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(additionalUsing)));
         }

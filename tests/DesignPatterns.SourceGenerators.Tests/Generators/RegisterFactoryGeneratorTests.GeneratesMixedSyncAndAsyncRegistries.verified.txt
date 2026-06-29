@@ -1,7 +1,6 @@
 ﻿{
   IProductFactory.ProductFactoryAsyncRegistry.g.cs:
 using System;
-using System;
 using System.Threading;
 using DesignPatterns.Creational;
 
@@ -49,7 +48,6 @@ namespace TestAssembly
 #nullable enable
 ,
   IProductFactory.ProductFactoryRegistry.g.cs:
-using System;
 using System;
 using DesignPatterns.Creational;
 

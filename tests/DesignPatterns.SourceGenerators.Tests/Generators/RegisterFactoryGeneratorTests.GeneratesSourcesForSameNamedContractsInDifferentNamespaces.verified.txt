@@ -22,7 +22,6 @@ namespace Catalog
 ,
   Catalog_IProductFactory.ProductFactoryRegistry.g.cs:
 using System;
-using System;
 using DesignPatterns.Creational;
 
 namespace Catalog
@@ -65,7 +64,6 @@ namespace Fulfillment
 #nullable enable
 ,
   Fulfillment_IProductFactory.ProductFactoryRegistry.g.cs:
-using System;
 using System;
 using DesignPatterns.Creational;
 

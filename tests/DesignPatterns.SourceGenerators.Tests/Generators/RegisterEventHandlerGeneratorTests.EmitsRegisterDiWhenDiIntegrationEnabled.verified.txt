@@ -2,7 +2,6 @@
   InvoicePaidEvent.InvoicePaidEventHandlerRegistry.g.cs:
 using System;
 using DesignPatterns.Behavioral;
-using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using DesignPatterns.Extensions.DependencyInjection;

@@ -1,10 +1,8 @@
 ﻿{
   IProductFactory.ProductFactoryAsyncRegistry.g.cs:
 using System;
-using System;
 using System.Threading;
 using DesignPatterns.Creational;
-using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using DesignPatterns.Extensions.DependencyInjection;
@@ -63,10 +61,8 @@ namespace TestAssembly
 ,
   IProductFactory.ProductFactoryPooledRegistry.g.cs:
 using System;
-using System;
 using System.Threading;
 using DesignPatterns.Creational;
-using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using DesignPatterns.Extensions.DependencyInjection;
@@ -104,9 +100,7 @@ namespace TestAssembly
 ,
   IProductFactory.ProductFactoryRegistry.g.cs:
 using System;
-using System;
 using DesignPatterns.Creational;
-using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using DesignPatterns.Extensions.DependencyInjection;

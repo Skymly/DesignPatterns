@@ -81,7 +81,6 @@ namespace TestAssembly
 ,
   TestAssembly_OrderStatus.OrderStatusTransitionTable.g.cs:
 using System;
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;

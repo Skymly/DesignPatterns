@@ -26,7 +26,6 @@ namespace TestAssembly
 ,
   IProductFactory.ProductFactoryRegistry.g.cs:
 using System;
-using System;
 using DesignPatterns.Creational;
 
 namespace TestAssembly
