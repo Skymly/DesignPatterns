@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Singleton captive dependency diagnostic (DP062)**: `CaptiveDependencyAnalyzer` reports DP062 (Warning) when a Singleton service's constructor depends on a Scoped or Transient service. Scans `AddSingleton`/`AddScoped`/`AddTransient`/`TryAdd(ServiceDescriptor)` calls to build a type-to-lifetime registration map, then checks each Singleton implementation's constructor parameters against the map. 11 Verify snapshot tests.
+
 ## [0.2.1-preview1] - 2026-06-30
 
 ### Added

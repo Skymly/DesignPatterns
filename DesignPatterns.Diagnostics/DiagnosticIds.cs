@@ -66,4 +66,5 @@ public static class DiagnosticIds
     public const string StateParentOrphanParent = "DP059";
     public const string DiLifetimeCaptiveDependency = "DP060";
     public const string DiLifetimeWasteful = "DP061";
+    public const string CaptiveDependency = "DP062";
 }

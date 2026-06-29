@@ -1,0 +1,1 @@
+﻿DP062 [Warning] Singleton service 'MyService' depends on Transient service 'TransientDependency'. The Transient dependency will be captured by the Singleton and effectively become Singleton. Register 'TransientDependency' as Singleton, or use a factory delegate to resolve 'TransientDependency' per scope. @ Test.cs:(16,9)

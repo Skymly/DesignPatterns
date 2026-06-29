@@ -325,6 +325,16 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Info,
         AnalyzerCategory);
 
+    // Captive dependency (DP062)
+
+    public static DiagnosticDescriptor CaptiveDependency { get; } = Create(
+        DiagnosticIds.CaptiveDependency,
+        "Singleton captive dependency",
+        "Singleton service '{0}' depends on {1} service '{2}'. The {1} dependency will be captured by the Singleton and effectively become Singleton. Register '{2}' as Singleton, or use a factory delegate to resolve '{2}' per scope.",
+        "A Singleton that depends on a shorter-lived service (Scoped or Transient) captures the dependency, making it effectively Singleton for the lifetime of the capturing instance. This is a silent DI configuration error.",
+        DiagnosticSeverity.Warning,
+        AnalyzerCategory);
+
     public static DiagnosticDescriptor RegistryKeyNotRegistered { get; } = Create(
         DiagnosticIds.RegistryKeyNotRegistered,
         "Registry key is not registered",

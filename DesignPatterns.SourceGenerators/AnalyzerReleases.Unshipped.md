@@ -63,3 +63,4 @@ DP058    | DesignPatterns.Generators | Error    | StateParent self-reference (ch
 DP059    | DesignPatterns.Generators | Info     | StateParent parent has no children or outgoing edges
 DP060    | DesignPatterns.Analyzers | Warning  | DI captive dependency: registry lifetime exceeds implementation lifetime
 DP061    | DesignPatterns.Analyzers | Info     | DI lifetime mismatch: implementation lifetime exceeds registry lifetime
+DP062    | DesignPatterns.Analyzers | Warning  | Singleton captive dependency on Scoped/Transient service
