@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **DP062 Phase 2 — generated RegisterDi coverage**: `CaptiveDependencyAnalyzer` now also scans `RegisterDi` calls from DesignPatterns source generators. Extracts `implementationLifetime` (or `lifetime` for single-param overloads) and applies it to all types bearing `[RegisterStrategy]`, `[RegisterFactory]`, `[RegisterEventHandler]`, `[Decorator]`, `[CompositePart]` attributes. 5 new Verify snapshot tests.
+
 ## [0.2.2] - 2026-06-30
 
 ### Added
