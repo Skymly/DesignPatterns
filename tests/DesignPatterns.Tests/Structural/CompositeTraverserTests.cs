@@ -644,4 +644,79 @@ public sealed class CompositeTraverserTests
 
         Assert.Equal(4, visited.Count);
     }
+
+    // ─── Boundary + validation tests ──────────────────────────────────
+
+    [Fact]
+    public void TraverseParallel_MaxParallelDepth0_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { MaxParallelDepth = 0 });
+
+        Assert.Equal(4, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_WithMaxDegreeOfParallelism1_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { MaxDegreeOfParallelism = 1 });
+
+        Assert.Equal(4, visited.Count);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void TraverseParallel_InvalidMaxDegreeOfParallelism_Throws(int invalidDop)
+    {
+        var root = BuildSampleTree();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            CompositeTraverser.TraverseParallel(
+                root,
+                (_, _, _) => { },
+                new CompositeTraversalOptions<ITestNode> { MaxDegreeOfParallelism = invalidDop }));
+    }
+
+    [Fact]
+    public void TraverseParallel_NegativeMaxParallelDepth_Throws()
+    {
+        var root = BuildSampleTree();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            CompositeTraverser.TraverseParallel(
+                root,
+                (_, _, _) => { },
+                new CompositeTraversalOptions<ITestNode> { MaxParallelDepth = -1 }));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task TraverseParallelAsync_InvalidMaxDegreeOfParallelism_Throws(int invalidDop)
+    {
+        var root = BuildSampleTree();
+
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+            CompositeTraverser.TraverseParallelAsync(
+                root,
+                (_, _, _, _) => default,
+                new CompositeTraversalOptions<ITestNode> { MaxDegreeOfParallelism = invalidDop })
+                .AsTask());
+    }
 }

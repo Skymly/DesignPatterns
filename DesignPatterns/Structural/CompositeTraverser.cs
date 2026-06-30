@@ -150,7 +150,7 @@ public static class CompositeTraverser
         }
 
         options ??= new CompositeTraversalOptions<TNode>();
-        var maxDop = options.MaxDegreeOfParallelism ?? Environment.ProcessorCount;
+        var maxDop = ResolveMaxDop(options);
         var exceptions = new ConcurrentQueue<Exception>();
         TraverseParallelCore(root, visitor, options, maxDop, exceptions);
         ThrowIfExceptions(exceptions);
@@ -165,6 +165,11 @@ public static class CompositeTraverser
     /// concurrently from multiple threads. See <see cref="TraverseParallel{TNode}"/> for thread-safety requirements.
     /// </param>
     /// <param name="options">Optional traversal options.</param>
+    /// <remarks>
+    /// Roots are traversed sequentially; parallelism is within each root's subtree.
+    /// Exceptions from visitor callbacks are collected across all roots and rethrown
+    /// as <see cref="AggregateException"/> after all roots have been processed.
+    /// </remarks>
     public static void TraverseForestParallel<TNode>(
         IReadOnlyList<TNode> roots,
         Action<TNode, int, int> visitor,
@@ -182,7 +187,7 @@ public static class CompositeTraverser
         }
 
         options ??= new CompositeTraversalOptions<TNode>();
-        var maxDop = options.MaxDegreeOfParallelism ?? Environment.ProcessorCount;
+        var maxDop = ResolveMaxDop(options);
         var exceptions = new ConcurrentQueue<Exception>();
 
         for (var i = 0; i < roots.Count; i++)
@@ -221,7 +226,7 @@ public static class CompositeTraverser
         }
 
         options ??= new CompositeTraversalOptions<TNode>();
-        var maxDop = options.MaxDegreeOfParallelism ?? Environment.ProcessorCount;
+        var maxDop = ResolveMaxDop(options);
         var exceptions = new ConcurrentQueue<Exception>();
         await TraverseParallelAsyncCore(root, visitor, options, maxDop, exceptions, cancellationToken)
             .ConfigureAwait(false);
@@ -238,6 +243,11 @@ public static class CompositeTraverser
     /// </param>
     /// <param name="options">Optional traversal options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// Roots are traversed sequentially; parallelism is within each root's subtree.
+    /// Exceptions from visitor callbacks are collected across all roots and rethrown
+    /// as <see cref="AggregateException"/> after all roots have been processed.
+    /// </remarks>
     public static async ValueTask TraverseForestParallelAsync<TNode>(
         IReadOnlyList<TNode> roots,
         Func<TNode, int, int, CancellationToken, ValueTask> visitor,
@@ -256,7 +266,7 @@ public static class CompositeTraverser
         }
 
         options ??= new CompositeTraversalOptions<TNode>();
-        var maxDop = options.MaxDegreeOfParallelism ?? Environment.ProcessorCount;
+        var maxDop = ResolveMaxDop(options);
         var exceptions = new ConcurrentQueue<Exception>();
 
         for (var i = 0; i < roots.Count; i++)
@@ -1274,14 +1284,37 @@ public static class CompositeTraverser
                 {
                     semaphore.Release();
                 }
-            }, cancellationToken));
+            }));
         }
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
 #endif
     }
 
-    // ─── Exception helper ─────────────────────────────────────────────
+    // ─── Validation + exception helpers ───────────────────────────────
+
+    private static int ResolveMaxDop<TNode>(CompositeTraversalOptions<TNode> options)
+        where TNode : ICompositeNode<TNode>
+    {
+        var maxDop = options.MaxDegreeOfParallelism ?? Environment.ProcessorCount;
+        if (maxDop < 1)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options) + "." + nameof(CompositeTraversalOptions<TNode>.MaxDegreeOfParallelism),
+                maxDop,
+                "MaxDegreeOfParallelism must be >= 1 (or null for Environment.ProcessorCount).");
+        }
+
+        if (options.MaxParallelDepth < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options) + "." + nameof(CompositeTraversalOptions<TNode>.MaxParallelDepth),
+                options.MaxParallelDepth,
+                "MaxParallelDepth must be >= 0.");
+        }
+
+        return maxDop;
+    }
 
     private static void ThrowIfExceptions(ConcurrentQueue<Exception> exceptions)
     {
