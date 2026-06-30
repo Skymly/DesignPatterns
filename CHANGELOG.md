@@ -9,9 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-30
+
 ### Added
 
 - **Singleton captive dependency diagnostic (DP062)**: `CaptiveDependencyAnalyzer` reports DP062 (Warning) when a Singleton service's constructor depends on a Scoped or Transient service. Scans `AddSingleton`/`AddScoped`/`AddTransient`/`TryAdd(ServiceDescriptor)` calls to build a type-to-lifetime registration map, then checks each Singleton implementation's constructor parameters against the map. 11 Verify snapshot tests.
+
+### Previous preview (0.2.1-preview1)
+
+- **DI lifetime validation (DP060–DP061)**: `LifetimeMismatchAnalyzer` reports captive dependency (DP060, Warning) when `RegisterDi` registryLifetime exceeds implementationLifetime, and wasteful mismatch (DP061, Info) when implementationLifetime exceeds registryLifetime. 6 Verify snapshots.
+- **DI health checks**: `AddDesignPatternsHealthChecks` extension method registers an `IHealthCheck` that verifies all DesignPatterns service registrations can be resolved from the DI container at runtime. Scans `IServiceCollection` for DesignPatterns namespace service types at registration time; resolves each at check time. 9 tests.
 
 ## [0.2.1-preview1] - 2026-06-30
 
