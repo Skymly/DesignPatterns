@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Composite parallel traversal**: `CompositeTraverser.TraverseParallel` / `TraverseParallelAsync` / `TraverseForestParallel` / `TraverseForestParallelAsync` — parallel tree traversal with `MaxDegreeOfParallelism` and `MaxParallelDepth` options. BFS same-level parallel, DFS child-parallel recursion with sequential fallback beyond depth threshold. `AggregateException` for error aggregation. `ConfigureAwait(false)` for async paths. `#if` split: `Parallel.ForEachAsync` on net8.0, `SemaphoreSlim` + `Task.WhenAll` on netstandard2.0. 17 new tests. Design RFC: [docs/rfc/CompositeParallelTraversal.md](docs/rfc/CompositeParallelTraversal.md).
 - **DP062 Phase 2 — generated RegisterDi coverage**: `CaptiveDependencyAnalyzer` now also scans `RegisterDi` calls from DesignPatterns source generators. Extracts `implementationLifetime` (or `lifetime` for single-param overloads) and applies it to all types bearing `[RegisterStrategy]`, `[RegisterFactory]`, `[RegisterEventHandler]`, `[Decorator]`, `[CompositePart]` attributes. 5 new Verify snapshot tests.
 
 ## [0.2.2] - 2026-06-30

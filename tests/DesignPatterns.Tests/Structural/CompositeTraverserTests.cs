@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using DesignPatterns.Structural;
 
 namespace DesignPatterns.Tests.Structural;
@@ -375,5 +376,272 @@ public sealed class CompositeTraverserTests
         childA.SetChildren(new[] { grandchild });
         root.SetChildren(new[] { childA, childB });
         return root;
+    }
+
+    // ─── Parallel sync tests ──────────────────────────────────────────
+
+    [Fact]
+    public void TraverseParallel_DepthFirstPreOrder_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(root, (node, _, _) => visited.Add(node.Name));
+
+        Assert.Equal(4, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_BreadthFirst_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { Order = CompositeTraversalOrder.BreadthFirst });
+
+        Assert.Equal(4, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_DepthFirstPostOrder_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { Order = CompositeTraversalOrder.DepthFirstPostOrder });
+
+        Assert.Equal(4, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_RespectsMaxDepth()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { MaxDepth = 1 });
+
+        Assert.Equal(3, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.DoesNotContain("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_RespectsVisitLeavesOnly()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { VisitLeavesOnly = true });
+
+        Assert.Equal(2, visited.Count);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_RespectsShouldSkipSubtree()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseParallel(
+            root,
+            (node, _, _) => visited.Add(node.Name),
+            new CompositeTraversalOptions<ITestNode> { ShouldSkipSubtree = n => n.Name == "child-a" });
+
+        Assert.Equal(2, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-b", visited);
+        Assert.DoesNotContain("child-a", visited);
+        Assert.DoesNotContain("grandchild", visited);
+    }
+
+    [Fact]
+    public void TraverseParallel_AggregatesExceptions()
+    {
+        var root = BuildSampleTree();
+
+        var ex = Assert.Throws<AggregateException>(() =>
+            CompositeTraverser.TraverseParallel(root, (node, _, _) =>
+            {
+                if (node.Name == "child-a") throw new InvalidOperationException("fail-a");
+                if (node.Name == "child-b") throw new InvalidOperationException("fail-b");
+            }));
+
+        Assert.Equal(2, ex.InnerExceptions.Count);
+    }
+
+    [Fact]
+    public void TraverseForestParallel_VisitsAllNodes()
+    {
+        var forest = BuildSampleForest();
+        var visited = new ConcurrentBag<string>();
+
+        CompositeTraverser.TraverseForestParallel(forest, (node, _, _) => visited.Add(node.Name));
+
+        Assert.Equal(5, visited.Count);
+        Assert.Contains("root-a", visited);
+        Assert.Contains("root-b", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild-a", visited);
+    }
+
+    // ─── Parallel async tests ─────────────────────────────────────────
+
+    [Fact]
+    public async Task TraverseParallelAsync_DepthFirstPreOrder_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseParallelAsync(
+            root,
+            (node, _, _, _) => { visited.Add(node.Name); return default; });
+
+        Assert.Equal(4, visited.Count);
+        Assert.Contains("root", visited);
+        Assert.Contains("child-a", visited);
+        Assert.Contains("child-b", visited);
+        Assert.Contains("grandchild", visited);
+    }
+
+    [Fact]
+    public async Task TraverseParallelAsync_BreadthFirst_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseParallelAsync(
+            root,
+            (node, _, _, _) => { visited.Add(node.Name); return default; },
+            new CompositeTraversalOptions<ITestNode> { Order = CompositeTraversalOrder.BreadthFirst });
+
+        Assert.Equal(4, visited.Count);
+    }
+
+    [Fact]
+    public async Task TraverseParallelAsync_DepthFirstPostOrder_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseParallelAsync(
+            root,
+            (node, _, _, _) => { visited.Add(node.Name); return default; },
+            new CompositeTraversalOptions<ITestNode> { Order = CompositeTraversalOrder.DepthFirstPostOrder });
+
+        Assert.Equal(4, visited.Count);
+    }
+
+    [Fact]
+    public async Task TraverseParallelAsync_RespectsMaxDepth()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseParallelAsync(
+            root,
+            (node, _, _, _) => { visited.Add(node.Name); return default; },
+            new CompositeTraversalOptions<ITestNode> { MaxDepth = 1 });
+
+        Assert.Equal(3, visited.Count);
+        Assert.DoesNotContain("grandchild", visited);
+    }
+
+    [Fact]
+    public async Task TraverseParallelAsync_AggregatesExceptions()
+    {
+        var root = BuildSampleTree();
+
+        var ex = await Assert.ThrowsAsync<AggregateException>(async () =>
+            await CompositeTraverser.TraverseParallelAsync(
+                root,
+                (node, _, _, _) =>
+                {
+                    if (node.Name == "child-a")
+                    {
+                        throw new InvalidOperationException("fail-a");
+                    }
+                    return default;
+                }));
+
+        Assert.Single(ex.InnerExceptions);
+    }
+
+    [Fact]
+    public async Task TraverseParallelAsync_RespectsCancellation()
+    {
+        var root = BuildSampleTree();
+        using var cts = new CancellationTokenSource();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseParallelAsync(
+            root,
+            (node, _, _, ct) =>
+            {
+                visited.Add(node.Name);
+                cts.Cancel();
+                ct.ThrowIfCancellationRequested();
+                return default;
+            },
+            cancellationToken: cts.Token);
+
+        // At least one node visited before cancellation; no more after.
+        Assert.True(visited.Count >= 1);
+    }
+
+    [Fact]
+    public async Task TraverseForestParallelAsync_VisitsAllNodes()
+    {
+        var forest = BuildSampleForest();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseForestParallelAsync(
+            forest,
+            (node, _, _, _) => { visited.Add(node.Name); return default; });
+
+        Assert.Equal(5, visited.Count);
+    }
+
+    [Fact]
+    public async Task TraverseParallelAsync_WithMaxDegreeOfParallelism1_VisitsAllNodes()
+    {
+        var root = BuildSampleTree();
+        var visited = new ConcurrentBag<string>();
+
+        await CompositeTraverser.TraverseParallelAsync(
+            root,
+            (node, _, _, _) => { visited.Add(node.Name); return default; },
+            new CompositeTraversalOptions<ITestNode> { MaxDegreeOfParallelism = 1 });
+
+        Assert.Equal(4, visited.Count);
     }
 }
