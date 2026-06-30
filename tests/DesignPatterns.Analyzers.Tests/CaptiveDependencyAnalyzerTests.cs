@@ -584,4 +584,157 @@ public sealed class CaptiveDependencyAnalyzerTests
 
         await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
     }
+
+    [Fact]
+    public async Task DoesNotReport_WhenStrategyAndFactoryRegisterDiHaveDifferentLifetimes()
+    {
+        // Strategy RegisterDi registers strategies as Singleton.
+        // Factory RegisterDi registers factories as Transient.
+        // A strategy that depends on a factory implementation should NOT
+        // trigger DP062 because the factory is Transient (shorter-lived),
+        // and the strategy is Singleton — but the factory impl is NOT
+        // registered as Scoped/Transient by the strategy's RegisterDi.
+        // The fix ensures each RegisterDi only applies to its own category.
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Behavioral;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [RegisterStrategy("fast", typeof(IPaymentStrategy))]
+            public class FastStrategy : IPaymentStrategy
+            {
+                public FastStrategy() { }
+                public string Pay(decimal amount) => "fast";
+            }
+
+            public interface IPaymentStrategy
+            {
+                string Pay(decimal amount);
+            }
+
+            [RegisterFactory("widget", typeof(IWidget))]
+            public class WidgetFactory : IWidget
+            {
+                public WidgetFactory() { }
+                public IWidget Create() => this;
+            }
+
+            public interface IWidget
+            {
+                IWidget Create();
+            }
+
+            public static class StrategyRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            public static class FactoryRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Transient,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            public static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    StrategyRegistryHolder.RegisterDi(services, implementationLifetime: ServiceLifetime.Singleton);
+                    FactoryRegistryHolder.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
+
+    [Fact]
+    public async Task ReportsDp062_WhenStrategyRegisterDiSingletonAndFactoryImplDependsOnScoped()
+    {
+        // A [RegisterFactory] implementation depends on a Scoped service.
+        // The Factory RegisterDi call uses default Transient lifetime,
+        // so no DP062 should fire for the factory.
+        // But a [RegisterStrategy] implementation also depends on the same Scoped service,
+        // and Strategy RegisterDi uses Singleton — DP062 should fire for the strategy only.
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Behavioral;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            public class ScopedService { }
+
+            [RegisterStrategy("fast", typeof(IPaymentStrategy))]
+            public class FastStrategy : IPaymentStrategy
+            {
+                public FastStrategy(ScopedService scoped) { }
+                public string Pay(decimal amount) => "fast";
+            }
+
+            public interface IPaymentStrategy
+            {
+                string Pay(decimal amount);
+            }
+
+            [RegisterFactory("widget", typeof(IWidget))]
+            public class WidgetFactory : IWidget
+            {
+                public WidgetFactory(ScopedService scoped) { }
+                public IWidget Create() => this;
+            }
+
+            public interface IWidget
+            {
+                IWidget Create();
+            }
+
+            public static class StrategyRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            public static class FactoryRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Transient,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            public static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    services.AddScoped<ScopedService>();
+                    StrategyRegistryHolder.RegisterDi(services);
+                    FactoryRegistryHolder.RegisterDi(services);
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
 }

@@ -36,6 +36,20 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         Transient = 2,
     }
 
+    /// <summary>
+    /// Categories of DesignPatterns registration attributes.
+    /// Used to match attributed types to the correct RegisterDi call
+    /// based on the containing type name pattern.
+    /// </summary>
+    private enum RegistrationCategory
+    {
+        Strategy,
+        Factory,
+        EventHandler,
+        Decorator,
+        Composite,
+    }
+
     private sealed class RegistrationEntry
     {
         public INamedTypeSymbol ImplementationType { get; set; } = null!;
@@ -48,12 +62,12 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         var registrations = new List<RegistrationEntry>();
 
         // Phase 2: Pre-scan all types for DesignPatterns registration attributes.
-        // These types will be added to the lifetime map when a RegisterDi call
-        // specifies their implementation lifetime.
-        var attributedTypes = CollectAttributedImplementationTypes(context.Compilation);
+        // Types are grouped by category so each RegisterDi call only applies
+        // to the implementation types of its own pattern.
+        var attributedTypesByCategory = CollectAttributedImplementationTypes(context.Compilation);
 
         context.RegisterSyntaxNodeAction(
-            syntaxContext => CollectRegistration(syntaxContext, registrations, attributedTypes),
+            syntaxContext => CollectRegistration(syntaxContext, registrations, attributedTypesByCategory),
             SyntaxKind.InvocationExpression);
 
         context.RegisterCompilationEndAction(
@@ -62,12 +76,19 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     /// Scans all types in the compilation for DesignPatterns registration attributes
-    /// ([RegisterStrategy], [RegisterFactory], [RegisterEventHandler], [Decorator], [CompositePart])
-    /// and returns the set of implementation types that will be registered by RegisterDi.
+    /// and groups them by category for matching to the correct RegisterDi call.
     /// </summary>
-    private static HashSet<INamedTypeSymbol> CollectAttributedImplementationTypes(Compilation compilation)
+    private static Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> CollectAttributedImplementationTypes(
+        Compilation compilation)
     {
-        var types = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var result = new Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>>
+        {
+            [RegistrationCategory.Strategy] = new(SymbolEqualityComparer.Default),
+            [RegistrationCategory.Factory] = new(SymbolEqualityComparer.Default),
+            [RegistrationCategory.EventHandler] = new(SymbolEqualityComparer.Default),
+            [RegistrationCategory.Decorator] = new(SymbolEqualityComparer.Default),
+            [RegistrationCategory.Composite] = new(SymbolEqualityComparer.Default),
+        };
 
         foreach (var assembly in AnalyzerSymbolHelper.GetAssembliesInCompilation(compilation))
         {
@@ -81,27 +102,37 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                         continue;
                     }
 
-                    // Check if this is a DesignPatterns registration attribute.
-                    if (attrName == StrategyAnalysisConstants.RegisterStrategyMetadataName ||
-                        attrName == FactoryAnalysisConstants.RegisterFactoryMetadataName ||
-                        attrName == EventHandlerAnalysisConstants.RegisterEventHandlerMetadataName ||
-                        attrName == "DesignPatterns.Structural.DecoratorAttribute" ||
-                        attrName == "DesignPatterns.Structural.CompositePartAttribute")
+                    var category = attrName switch
                     {
-                        types.Add(typeSymbol);
+                        _ when attrName == StrategyAnalysisConstants.RegisterStrategyMetadataName =>
+                            RegistrationCategory.Strategy,
+                        _ when attrName == FactoryAnalysisConstants.RegisterFactoryMetadataName =>
+                            RegistrationCategory.Factory,
+                        _ when attrName == EventHandlerAnalysisConstants.RegisterEventHandlerMetadataName =>
+                            RegistrationCategory.EventHandler,
+                        "DesignPatterns.Structural.DecoratorAttribute" =>
+                            RegistrationCategory.Decorator,
+                        "DesignPatterns.Structural.CompositePartAttribute" =>
+                            RegistrationCategory.Composite,
+                        _ => (RegistrationCategory?)null,
+                    };
+
+                    if (category is { } cat)
+                    {
+                        result[cat].Add(typeSymbol);
                         break;
                     }
                 }
             }
         }
 
-        return types;
+        return result;
     }
 
     private static void CollectRegistration(
         SyntaxNodeAnalysisContext context,
         List<RegistrationEntry> registrations,
-        HashSet<INamedTypeSymbol> attributedTypes)
+        Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> attributedTypesByCategory)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -122,7 +153,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
         else if (methodName == "RegisterDi")
         {
-            CollectRegisterDiRegistration(context, invocation, attributedTypes, registrations);
+            CollectRegisterDiRegistration(context, invocation, attributedTypesByCategory, registrations);
         }
     }
 
@@ -241,13 +272,14 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     /// <summary>
     /// Collects registrations from generated <c>RegisterDi</c> calls.
-    /// Extracts the implementation lifetime and applies it to all types
-    /// bearing DesignPatterns registration attributes.
+    /// Extracts the implementation lifetime and applies it to the types
+    /// bearing the DesignPatterns registration attribute that matches
+    /// the RegisterDi holder's pattern (Strategy/Factory/EventHandler/Decorator/Composite).
     /// </summary>
     private static void CollectRegisterDiRegistration(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
-        HashSet<INamedTypeSymbol> attributedTypes,
+        Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> attributedTypesByCategory,
         List<RegistrationEntry> registrations)
     {
         var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
@@ -281,16 +313,29 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         // Resolve the lifetime value from the call arguments.
         var lifetime = ResolveLifetimeFromArg(invocation, implLifetimeParam, context.SemanticModel);
+        var containingTypeName = methodSymbol.ContainingType?.Name ?? "";
         if (lifetime is null)
         {
             // Use default: Factory → Transient, others → Singleton.
-            var containingTypeName = methodSymbol.ContainingType?.Name ?? "";
             lifetime = containingTypeName.Contains("Factory") ? Lifetime.Transient : Lifetime.Singleton;
         }
 
-        // Add all attributed implementation types with this lifetime.
-        // Each type gets its own RegistrationEntry pointing at the RegisterDi call site.
-        foreach (var implType in attributedTypes)
+        // Match the RegisterDi holder type name to the correct attribute category.
+        // This prevents cross-pattern contamination (e.g. a Strategy RegisterDi call
+        // should not apply its lifetime to Factory implementation types).
+        var category = MatchCategoryByHolderName(containingTypeName);
+        if (category is null)
+        {
+            return;
+        }
+
+        if (!attributedTypesByCategory.TryGetValue(category.Value, out var typesForCategory))
+        {
+            return;
+        }
+
+        // Add only the implementation types of the matched category.
+        foreach (var implType in typesForCategory)
         {
             // Skip open generics
             if (implType.IsUnboundGenericType ||
@@ -306,6 +351,40 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                 Invocation = invocation,
             });
         }
+    }
+
+    /// <summary>
+    /// Maps a RegisterDi holder type name to its registration category
+    /// based on naming conventions used by the source generators.
+    /// </summary>
+    private static RegistrationCategory? MatchCategoryByHolderName(string holderTypeName)
+    {
+        if (holderTypeName.Contains("Strategy"))
+        {
+            return RegistrationCategory.Strategy;
+        }
+
+        if (holderTypeName.Contains("Factory"))
+        {
+            return RegistrationCategory.Factory;
+        }
+
+        if (holderTypeName.Contains("EventHandler") || holderTypeName.Contains("EventAggregator"))
+        {
+            return RegistrationCategory.EventHandler;
+        }
+
+        if (holderTypeName.Contains("Decorator"))
+        {
+            return RegistrationCategory.Decorator;
+        }
+
+        if (holderTypeName.Contains("Composite"))
+        {
+            return RegistrationCategory.Composite;
+        }
+
+        return null;
     }
 
     /// <summary>
