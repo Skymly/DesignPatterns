@@ -181,7 +181,7 @@ internal static class AutofacIntegrationSyntaxHelper
                         SyntaxFactory.IdentifierName("Shared"))));
 
         var serviceKeyParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("serviceKey"))
-            .WithType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword)))
+            .WithType(SyntaxFactory.NullableType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ObjectKeyword))))
             .WithDefault(SyntaxFactory.EqualsValueClause(SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)));
 
         return GeneratedCodeHelper.WithXmlDoc(

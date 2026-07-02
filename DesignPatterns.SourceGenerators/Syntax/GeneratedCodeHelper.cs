@@ -27,10 +27,24 @@ internal static class GeneratedCodeHelper
             SyntaxFactory.EndOfLine("\n"));
 
     /// <summary>
+    /// Creates a <c>#nullable enable</c> preprocessor directive trivia.
+    /// Parsed from text for Roslyn 4.8 compatibility (the
+    /// <c>NullableDirectiveTrivia</c> factory overload is not available in 4.8).
+    /// </summary>
+    internal static SyntaxTrivia NullableEnableDirective =>
+        SyntaxFactory.ParseLeadingTrivia("#nullable enable").First();
+
+    /// <summary>
     /// Wraps a type declaration into a normalized <see cref="CompilationUnitSyntax"/>
     /// with the auto-generated header, <c>#nullable enable</c>,
-    /// <c>#pragma warning disable</c>, <c>System</c> using, and any additional usings.
+    /// <c>System</c> using, and any additional usings.
     /// The type declaration is annotated with <c>[GeneratedCode]</c>.
+    /// <para>
+    /// <c>#nullable enable</c> is placed as leading trivia on the first member
+    /// (namespace or type), after the using directives — not as trailing trivia
+    /// on the compilation unit. This ensures the directive is in scope for all
+    /// generated types.
+    /// </para>
     /// </summary>
     internal static CompilationUnitSyntax WrapInCompilationUnit(
         string? namespaceName,
@@ -56,22 +70,18 @@ internal static class GeneratedCodeHelper
                 SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(additionalUsing)));
         }
 
-        // Add #nullable enable directive after the usings.
-        var nullableTrivia = SyntaxFactory.ParseTrailingTrivia("#nullable enable")
-            .FirstOrDefault();
-
-        if (!nullableTrivia.IsKind(SyntaxKind.None))
-        {
-            compilationUnit = compilationUnit
-                .WithTrailingTrivia(SyntaxFactory.TriviaList(nullableTrivia));
-        }
-
         MemberDeclarationSyntax member = annotatedType;
         if (!string.IsNullOrEmpty(namespaceName))
         {
             member = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(namespaceName!))
                 .AddMembers(annotatedType);
         }
+
+        // Place #nullable enable as leading trivia on the first member so it
+        // appears after the using directives and before the namespace/type,
+        // ensuring the nullable context applies to all generated declarations.
+        member = member.WithLeadingTrivia(
+            SyntaxFactory.TriviaList(NullableEnableDirective, SyntaxFactory.CarriageReturnLineFeed));
 
         return compilationUnit.AddMembers(member).NormalizeWhitespace();
     }

@@ -459,14 +459,6 @@ internal static class CompositeSyntaxFactory
                 SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System")),
                 SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System.Threading.Tasks")));
 
-        var nullableTrivia = SyntaxFactory.ParseTrailingTrivia("#nullable enable")
-            .FirstOrDefault();
-        if (!nullableTrivia.IsKind(SyntaxKind.None))
-        {
-            multiCompilationUnit = multiCompilationUnit
-                .WithTrailingTrivia(SyntaxFactory.TriviaList(nullableTrivia));
-        }
-
         if (!string.IsNullOrEmpty(namespaceName))
         {
             var ns = SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName(namespaceName!));
@@ -475,10 +467,31 @@ internal static class CompositeSyntaxFactory
                 ns = ns.AddMembers(decl);
             }
 
+            // Place #nullable enable as leading trivia on the namespace so it
+            // appears after the using directives and before the namespace,
+            // ensuring the nullable context applies to all generated declarations.
+            ns = ns.WithLeadingTrivia(
+                SyntaxFactory.TriviaList(GeneratedCodeHelper.NullableEnableDirective, SyntaxFactory.CarriageReturnLineFeed));
+
             return multiCompilationUnit.AddMembers(ns).NormalizeWhitespace();
         }
 
-        return multiCompilationUnit.AddMembers(annotatedMembers).NormalizeWhitespace();
+        // No namespace — place #nullable enable on the first type declaration.
+        var membersWithNullable = new List<MemberDeclarationSyntax>(annotatedMembers.Length);
+        for (var i = 0; i < annotatedMembers.Length; i++)
+        {
+            if (i == 0)
+            {
+                membersWithNullable.Add(annotatedMembers[i].WithLeadingTrivia(
+                    SyntaxFactory.TriviaList(GeneratedCodeHelper.NullableEnableDirective, SyntaxFactory.CarriageReturnLineFeed)));
+            }
+            else
+            {
+                membersWithNullable.Add(annotatedMembers[i]);
+            }
+        }
+
+        return multiCompilationUnit.AddMembers(membersWithNullable.ToArray()).NormalizeWhitespace();
     }
 
     private static ClassDeclarationSyntax CreateDispatchExtensionsClass(
