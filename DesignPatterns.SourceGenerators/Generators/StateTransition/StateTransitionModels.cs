@@ -115,7 +115,7 @@ internal sealed record TransitionModel(
     TransitionArg From,
     TransitionArg Trigger,
     TransitionArg To,
-    Location Location,
+    LocationInfo Location,
     GuardResolution Guard,
     ActionResolution OnEnter,
     ActionResolution OnExit);
@@ -127,7 +127,7 @@ internal sealed record TransitionModel(
 internal sealed record StateParentModel(
     TransitionArg Child,
     TransitionArg Parent,
-    Location Location);
+    LocationInfo Location);
 
 /// <summary>
 /// The full state machine model extracted from a class marked with
@@ -141,7 +141,7 @@ internal sealed record StateMachineModel(
     EquatableArray<TransitionModel> Transitions,
     EquatableArray<StateParentModel> StateParents,
     bool IsHierarchical,
-    Location Location,
+    LocationInfo Location,
     bool IsValidHolder);
 
 /// <summary>
@@ -213,7 +213,7 @@ internal sealed class ResolvedTransition
         string fromMember,
         string triggerMember,
         string toMember,
-        Location location,
+        LocationInfo location,
         string fromExpression,
         string triggerExpression,
         string toExpression,
@@ -243,7 +243,7 @@ internal sealed class ResolvedTransition
 
     public string ToMember { get; }
 
-    public Location Location { get; }
+    public LocationInfo Location { get; }
 
     public string FromExpression { get; }
 

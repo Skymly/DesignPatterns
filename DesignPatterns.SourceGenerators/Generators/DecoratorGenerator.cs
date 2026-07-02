@@ -126,7 +126,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
                 ImplementsAsyncDecoratorInterface(decoratorType, serviceType),
                 HasValidAsyncSignature(decoratorType, serviceType),
                 HasPublicParameterlessConstructor(decoratorType),
-                context.TargetNode.GetLocation()));
+                new LocationInfo(context.TargetNode.GetLocation())));
         }
 
         return Result<DecoratorRegistration>.Empty;
@@ -186,7 +186,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DuplicateOrderDescriptor,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.Order,
                     serviceName));
             }
@@ -196,7 +196,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ContractMismatchDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.DecoratorName,
                 registration.Service.FullyQualifiedName));
         }
@@ -205,7 +205,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingDecoratorInterfaceDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.DecoratorName,
                 registration.Service.FullyQualifiedName));
         }
@@ -214,7 +214,7 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 AsyncSignatureMismatchDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.DecoratorName,
                 registration.Service.FullyQualifiedName));
         }
@@ -225,14 +225,14 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DiNotResolvableDescriptor,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.DecoratorName));
             }
             else
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     MissingParameterlessConstructorDescriptor,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.DecoratorName));
             }
         }
@@ -398,5 +398,5 @@ public sealed class DecoratorGenerator : IIncrementalGenerator
         bool ImplementsAsyncDecoratorInterface,
         bool HasValidAsyncSignature,
         bool HasPublicParameterlessConstructor,
-        Location Location);
+        LocationInfo Location);
 }

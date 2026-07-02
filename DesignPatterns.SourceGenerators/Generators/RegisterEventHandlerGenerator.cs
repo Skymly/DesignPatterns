@@ -33,7 +33,7 @@ internal sealed record EventHandlerRegistration(
     string HandlerFullyQualifiedDisplayString,
     bool ImplementsHandlerInterface,
     bool HasPublicParameterlessConstructor,
-    Location Location);
+    LocationInfo Location);
 
 /// <summary>
 /// Generates <c>{Event}EventHandlerRegistry</c> static classes for
@@ -122,7 +122,7 @@ public sealed class RegisterEventHandlerGenerator : IIncrementalGenerator
                     : eventType.ContainingNamespace.ToDisplayString(),
                 eventType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
-            var location = context.TargetNode.GetLocation();
+            var location = new LocationInfo(context.TargetNode.GetLocation());
             result.Add(new EventHandlerRegistration(
                 eventInfo,
                 handler.Name,
@@ -152,7 +152,7 @@ public sealed class RegisterEventHandlerGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.RegisterEventHandlerContractMismatch,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.HandlerName,
                 registration.Event.FullyQualifiedName));
         }
@@ -169,7 +169,7 @@ public sealed class RegisterEventHandlerGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.RegisterEventHandlerDuplicateOnSameClass,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.HandlerName,
                     registration.Event.FullyQualifiedName));
             }

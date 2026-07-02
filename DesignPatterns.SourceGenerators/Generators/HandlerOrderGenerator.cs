@@ -61,21 +61,21 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 source.Right));
     }
 
-    private static List<HandlerRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
+    private static EquatableArray<HandlerRegistration> Transform(GeneratorAttributeSyntaxContext context, bool isGenericAttribute)
     {
         var result = new List<HandlerRegistration>();
 
         if (context.TargetSymbol is not INamedTypeSymbol handlerType)
         {
-            return result;
+            return new EquatableArray<HandlerRegistration>(result.ToArray());
         }
 
         if (context.Attributes.IsDefaultOrEmpty)
         {
-            return result;
+            return new EquatableArray<HandlerRegistration>(result.ToArray());
         }
 
-        var location = context.TargetNode.GetLocation();
+        var location = new LocationInfo(context.TargetNode.GetLocation());
         var handlerName = handlerType.Name;
         var handlerFullyQualifiedDisplayString = handlerType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
@@ -147,7 +147,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
                 location));
         }
 
-        return result;
+        return new EquatableArray<HandlerRegistration>(result.ToArray());
     }
 
     private static void Execute(
@@ -218,7 +218,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DuplicateOrderDescriptor,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.Order,
                     contextName));
             }
@@ -228,7 +228,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 HandlerContractMismatchDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.HandlerName,
                 registration.Context.FullyQualifiedName));
         }
@@ -237,7 +237,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingParameterlessConstructorDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.HandlerName));
         }
 
@@ -262,7 +262,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.HandlerOrderGuardMethodNotFound,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     guard.Name,
                     registration.HandlerName,
                     contextTypeDisplay));
@@ -273,7 +273,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.HandlerOrderGuardMethodNotStatic,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     guard.Name,
                     registration.HandlerName));
                 continue;
@@ -283,7 +283,7 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.HandlerOrderGuardMethodWrongSignature,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     guard.Name,
                     registration.HandlerName,
                     contextTypeDisplay));
@@ -346,5 +346,5 @@ public sealed class HandlerOrderGenerator : IIncrementalGenerator
         bool ImplementsHandler,
         bool HasPublicParameterlessConstructor,
         GuardResolution Guard,
-        Location Location);
+        LocationInfo Location);
 }

@@ -63,7 +63,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
             }
         }
 
-        var location = classDeclaration.GetLocation();
+        var location = new LocationInfo(classDeclaration.GetLocation());
         var className = symbol.Name;
         var isStatic = symbol.IsStatic;
         var typeKind = symbol.TypeKind;
@@ -110,7 +110,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
     }
 
     private sealed record SingletonTargetInfo(
-        Location Location,
+        LocationInfo Location,
         string ClassName,
         string? NamespaceName,
         bool ThreadSafe,

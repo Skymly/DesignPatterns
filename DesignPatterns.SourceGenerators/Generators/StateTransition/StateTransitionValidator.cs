@@ -30,7 +30,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateMachineHolderInvalid,
-                model.Location,
+                model.Location.ToLocation(),
                 model.Holder.Name));
             return null;
         }
@@ -47,7 +47,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionInvalidInitialState,
-                model.Location,
+                model.Location.ToLocation(),
                 model.Initial.DisplayValue,
                 stateType.FullyQualifiedName));
             return null;
@@ -116,7 +116,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionInvalidStateMember,
-                    transition.Location,
+                    transition.Location.ToLocation(),
                     transition.From.DisplayValue,
                     stateType.FullyQualifiedName));
                 continue;
@@ -126,7 +126,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionInvalidStateMember,
-                    transition.Location,
+                    transition.Location.ToLocation(),
                     transition.To.DisplayValue,
                     stateType.FullyQualifiedName));
                 continue;
@@ -136,7 +136,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionInvalidTriggerMember,
-                    transition.Location,
+                    transition.Location.ToLocation(),
                     transition.Trigger.DisplayValue,
                     triggerType.FullyQualifiedName));
                 continue;
@@ -204,7 +204,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionDuplicateEdge,
-                    transition.Location,
+                    transition.Location.ToLocation(),
                     transition.FromMember,
                     transition.TriggerMember));
             }
@@ -216,7 +216,7 @@ internal static class StateTransitionValidator
         EnumTypeInfo stateType,
         string initialMember,
         IReadOnlyCollection<ResolvedTransition> transitions,
-        Location location)
+        LocationInfo location)
     {
         var fromStates = new HashSet<string>(
             transitions.Select(static transition => transition.FromMember),
@@ -233,7 +233,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateTransitionIsolatedState,
-                    location,
+                    location.ToLocation(),
                     member.Name,
                     stateType.FullyQualifiedName));
             }
@@ -253,7 +253,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodNotFound,
-                transition.Location,
+                transition.Location.ToLocation(),
                 guard.Name,
                 holderName,
                 stateType.FullyQualifiedName,
@@ -265,7 +265,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodNotStatic,
-                transition.Location,
+                transition.Location.ToLocation(),
                 guard.Name,
                 holderName));
             return;
@@ -275,7 +275,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionGuardMethodWrongSignature,
-                transition.Location,
+                transition.Location.ToLocation(),
                 guard.Name,
                 holderName,
                 stateType.FullyQualifiedName,
@@ -285,7 +285,7 @@ internal static class StateTransitionValidator
 
     private static void ReportActionDiagnostics(
         SourceProductionContext context,
-        Location location,
+        LocationInfo location,
         ActionResolution action,
         string holderName,
         EnumTypeInfo stateType,
@@ -295,7 +295,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionActionMethodNotFound,
-                location,
+                location.ToLocation(),
                 action.Name,
                 holderName,
                 stateType.FullyQualifiedName,
@@ -307,7 +307,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionActionMethodNotStatic,
-                location,
+                location.ToLocation(),
                 action.Name,
                 holderName));
             return;
@@ -317,7 +317,7 @@ internal static class StateTransitionValidator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.StateTransitionActionMethodWrongSignature,
-                location,
+                location.ToLocation(),
                 action.Name,
                 holderName,
                 stateType.FullyQualifiedName,
@@ -352,7 +352,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateParentInvalidMember,
-                    sp.Location,
+                    sp.Location.ToLocation(),
                     sp.Child.DisplayValue,
                     stateType.FullyQualifiedName));
                 hasFatalError = true;
@@ -363,7 +363,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateParentInvalidMember,
-                    sp.Location,
+                    sp.Location.ToLocation(),
                     sp.Parent.DisplayValue,
                     stateType.FullyQualifiedName));
                 hasFatalError = true;
@@ -378,7 +378,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateParentSelfReference,
-                    sp.Location,
+                    sp.Location.ToLocation(),
                     childName));
                 hasFatalError = true;
                 continue;
@@ -390,7 +390,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateParentInvalidMember,
-                    sp.Location,
+                    sp.Location.ToLocation(),
                     $"{childName} already has parent '{existingParent}'",
                     stateType.FullyQualifiedName));
                 hasFatalError = true;
@@ -408,7 +408,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateHierarchyCycle,
-                    model.Location,
+                    model.Location.ToLocation(),
                     cycle));
                 hasFatalError = true;
             }
@@ -470,7 +470,7 @@ internal static class StateTransitionValidator
         EnumTypeInfo stateType,
         Dictionary<string, string> parentMap,
         IReadOnlyCollection<ResolvedTransition> transitions,
-        Location location)
+        LocationInfo location)
     {
         var parentStates = new HashSet<string>(
             parentMap.Values,
@@ -486,7 +486,7 @@ internal static class StateTransitionValidator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StateParentOrphanParent,
-                    location,
+                    location.ToLocation(),
                     parentState));
             }
         }

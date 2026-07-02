@@ -210,12 +210,12 @@ public sealed class ActionChainComposerTests
     {
         var transitions = new List<ResolvedTransition>
         {
-            new("Draft", "Submit", "Submitted", location: null!,
+            new("Draft", "Submit", "Submitted", location: default,
                 "S.Draft", "T.Submit", "S.Submitted",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitDraft",
                 onEnterAsyncReference: null, onExitAsyncReference: null),
-            new("Submitted", "Pay", "Paid", location: null!,
+            new("Submitted", "Pay", "Paid", location: default,
                 "S.Submitted", "T.Pay", "S.Paid",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitSubmitted",
@@ -233,7 +233,7 @@ public sealed class ActionChainComposerTests
     {
         var transitions = new List<ResolvedTransition>
         {
-            new("Draft", "Submit", "Submitted", location: null!,
+            new("Draft", "Submit", "Submitted", location: default,
                 "S.Draft", "T.Submit", "S.Submitted",
                 guardMethodReference: null,
                 onEnterSyncReference: "Holder.OnEnterSubmitted", onExitSyncReference: null,
@@ -250,12 +250,12 @@ public sealed class ActionChainComposerTests
     {
         var transitions = new List<ResolvedTransition>
         {
-            new("Draft", "Submit", "Submitted", location: null!,
+            new("Draft", "Submit", "Submitted", location: default,
                 "S.Draft", "T.Submit", "S.Submitted",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitDraft1",
                 onEnterAsyncReference: null, onExitAsyncReference: null),
-            new("Draft", "Cancel", "Cancelled", location: null!,
+            new("Draft", "Cancel", "Cancelled", location: default,
                 "S.Draft", "T.Cancel", "S.Cancelled",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitDraft2",
@@ -281,18 +281,18 @@ public sealed class ActionChainComposerTests
 
         var transitions = new List<ResolvedTransition>
         {
-            new("Submitted", "Pay", "Paid", location: null!,
+            new("Submitted", "Pay", "Paid", location: default,
                 "S.Submitted", "T.Pay", "S.Paid",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitSubmitted",
                 onEnterAsyncReference: null, onExitAsyncReference: null),
-            new("Active", "Cancel", "Cancelled", location: null!,
+            new("Active", "Cancel", "Cancelled", location: default,
                 "S.Active", "T.Cancel", "S.Cancelled",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitActive",
                 onEnterAsyncReference: null, onExitAsyncReference: null),
             // Flattened inherited edge
-            new("Submitted", "Cancel", "Cancelled", location: null!,
+            new("Submitted", "Cancel", "Cancelled", location: default,
                 "S.Submitted", "T.Cancel", "S.Cancelled",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitActive",
@@ -327,7 +327,7 @@ public sealed class ActionChainComposerTests
 
         var transitions = new List<ResolvedTransition>
         {
-            new("Active", "Cancel", "Cancelled", location: null!,
+            new("Active", "Cancel", "Cancelled", location: default,
                 "S.Active", "T.Cancel", "S.Cancelled",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: "Holder.OnExitActive",
@@ -352,7 +352,7 @@ public sealed class ActionChainComposerTests
 
         var transitions = new List<ResolvedTransition>
         {
-            new("Draft", "Submit", "Submitted", location: null!,
+            new("Draft", "Submit", "Submitted", location: default,
                 "S.Draft", "T.Submit", "S.Submitted",
                 guardMethodReference: null,
                 onEnterSyncReference: null, onExitSyncReference: null,

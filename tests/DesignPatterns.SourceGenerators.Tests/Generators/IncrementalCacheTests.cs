@@ -1,15 +1,41 @@
 using DesignPatterns.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace DesignPatterns.SourceGenerators.Tests.Generators;
 
 /// <summary>
 /// Verifies that incremental generator pipeline stages return Cached or Unchanged
-/// on the second run when the input compilation is identical. This validates the
-/// P0 refactoring (value-equatable models) and P2 (WithTrackingName instrumentation).
+/// on the second run when the input compilation is cloned. This validates the
+/// P0 refactoring (value-equatable models) and P1-#5 (LocationInfo value equality).
 /// </summary>
 public sealed class IncrementalCacheTests
 {
+    [Fact]
+    public void LocationInfo_Equals_AfterClone()
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var tree = CSharpSyntaxTree.ParseText("class A {}", parseOptions);
+        var compilation = CSharpCompilation.Create(
+            "Test",
+            new[] { tree },
+            new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) });
+
+        var cloned = compilation.Clone();
+        var clonedTree = cloned.SyntaxTrees.First();
+
+        var origNode = tree.GetRoot().DescendantNodes().First();
+        var clonedNode = clonedTree.GetRoot().DescendantNodes().First();
+
+        var info1 = new LocationInfo(origNode.GetLocation());
+        var info2 = new LocationInfo(clonedNode.GetLocation());
+
+        Assert.Equal(info1, info2);
+        Assert.Equal(info1.GetHashCode(), info2.GetHashCode());
+    }
+
     [Fact]
     public void GenerateSingletonCachesOnSecondRun()
     {
