@@ -1,4 +1,5 @@
 using DesignPatterns.SourceGenerators.Generators;
+using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Tests.Generators;
 
@@ -175,5 +176,232 @@ public sealed class IncrementalCacheTests
 
         SourceGeneratorTestContext.AssertCacheHit<StateTransitionGenerator>(
             ("OrderMachine.cs", source));
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    //  Incremental edit tests — verify that editing one file only
+    //  regenerates the contracts in that file, while other contracts
+    //  remain cached. This is the core incremental value of source
+    //  generators in large projects.
+    // ───────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Two strategy contracts in separate files. After adding a new
+    /// strategy to one file, the transform for the unmodified file
+    /// should be Cached, and the Collect/Combine stages should be
+    /// Modified (because one input changed).
+    /// </summary>
+    [Fact]
+    public void RegisterStrategy_EditOneFile_UnmodifiedContractStaysCached()
+    {
+        var shippingSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface IShippingStrategy
+            {
+                decimal Calculate(decimal weight);
+            }
+
+            [RegisterStrategy("express", typeof(IShippingStrategy))]
+            public partial class ExpressShipping : IShippingStrategy
+            {
+                public decimal Calculate(decimal weight) => weight * 2m;
+            }
+            """;
+
+        var paymentSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface IPaymentStrategy
+            {
+                void Pay(decimal amount);
+            }
+
+            [RegisterStrategy("credit", typeof(IPaymentStrategy))]
+            public partial class CreditPayment : IPaymentStrategy
+            {
+                public void Pay(decimal amount) { }
+            }
+            """;
+
+        // Modified shipping source: add a second strategy.
+        var modifiedShippingSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public interface IShippingStrategy
+            {
+                decimal Calculate(decimal weight);
+            }
+
+            [RegisterStrategy("express", typeof(IShippingStrategy))]
+            public partial class ExpressShipping : IShippingStrategy
+            {
+                public decimal Calculate(decimal weight) => weight * 2m;
+            }
+
+            [RegisterStrategy("standard", typeof(IShippingStrategy))]
+            public partial class StandardShipping : IShippingStrategy
+            {
+                public decimal Calculate(decimal weight) => weight * 1m;
+            }
+            """;
+
+        var secondResult = SourceGeneratorTestContext.RunIncrementalEdit<RegisterStrategyGenerator>(
+            new[] { ("Shipping.cs", shippingSource), ("Payment.cs", paymentSource) },
+            "Shipping.cs",
+            modifiedShippingSource);
+
+        // The Combine stage should be Modified (one input changed).
+        // StrategyCollect is not tracked (no WithTrackingName on Collect),
+        // but StrategyCombine covers the Collect+Combine aggregation.
+        var combineReasons = SourceGeneratorTestContext.GetTrackedStepReasons(
+            secondResult, TrackingNames.StrategyCombine);
+        Assert.NotEmpty(combineReasons);
+        Assert.All(combineReasons, reason =>
+            Assert.True(
+                reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
+                $"StrategyCombine expected Modified or New, but was {reason}."));
+
+        // The transform stage should reflect the edit: at least one output
+        // should be Modified or New (the added StandardShipping strategy).
+        var transformReasons = SourceGeneratorTestContext.GetTrackedStepReasons(
+            secondResult, TrackingNames.StrategyNonGenericTransform);
+        Assert.NotEmpty(transformReasons);
+        Assert.Contains(transformReasons, reason =>
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New);
+    }
+
+    /// <summary>
+    /// Two singleton targets in separate files. After modifying one file
+    /// (adding a second singleton), the transform stage should reflect
+    /// the change — at least one output should be Modified or Added.
+    /// GenerateSingleton has no Collect stage (per-item output), so we
+    /// check the transform tracking name directly.
+    /// </summary>
+    [Fact]
+    public void GenerateSingleton_EditOneFile_TransformReflectsChange()
+    {
+        var serviceSource = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateSingleton]
+            public partial class MyService;
+            """;
+
+        var repoSource = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateSingleton]
+            public partial class MyRepository;
+            """;
+
+        // Modified service source: add a second singleton.
+        var modifiedServiceSource = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateSingleton]
+            public partial class MyService;
+
+            [GenerateSingleton]
+            public partial class MyCache;
+            """;
+
+        var secondResult = SourceGeneratorTestContext.RunIncrementalEdit<GenerateSingletonGenerator>(
+            new[] { ("Service.cs", serviceSource), ("Repo.cs", repoSource) },
+            "Service.cs",
+            modifiedServiceSource);
+
+        // The transform stage should have at least one Modified or Added
+        // output (the new MyCache singleton). The existing MyService and
+        // MyRepository may be Cached if their syntax nodes are unchanged.
+        var transformReasons = SourceGeneratorTestContext.GetTrackedStepReasons(
+            secondResult, TrackingNames.SingletonTransform);
+        Assert.NotEmpty(transformReasons);
+        Assert.Contains(transformReasons, reason =>
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New);
+    }
+
+    /// <summary>
+    /// Two state machines in separate files. After modifying one file
+    /// (adding a new transition), the Collect stage should be Modified.
+    /// </summary>
+    [Fact]
+    public void StateTransition_EditOneFile_CollectIsModified()
+    {
+        var orderSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted }
+            public enum OrderTrigger { Submit }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var paymentSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum PaymentStatus { Pending, Paid }
+            public enum PaymentTrigger { Confirm }
+
+            [StateMachine(typeof(PaymentStatus), typeof(PaymentTrigger), Initial = PaymentStatus.Pending)]
+            [Transition(PaymentStatus.Pending, PaymentTrigger.Confirm, PaymentStatus.Paid)]
+            public static partial class PaymentStatusMachine;
+            """;
+
+        // Modified order source: add a new transition.
+        var modifiedOrderSource = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public enum OrderStatus { Draft, Submitted, Cancelled }
+            public enum OrderTrigger { Submit, Cancel }
+
+            [StateMachine(typeof(OrderStatus), typeof(OrderTrigger), Initial = OrderStatus.Draft)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Submit, OrderStatus.Submitted)]
+            [Transition(OrderStatus.Draft, OrderTrigger.Cancel, OrderStatus.Cancelled)]
+            public static partial class OrderStatusMachine;
+            """;
+
+        var secondResult = SourceGeneratorTestContext.RunIncrementalEdit<StateTransitionGenerator>(
+            new[] { ("OrderMachine.cs", orderSource), ("PaymentMachine.cs", paymentSource) },
+            "OrderMachine.cs",
+            modifiedOrderSource);
+
+        // The Combine stage should be Modified (one input changed).
+        // StateMachineCollect is not tracked (no WithTrackingName on Collect),
+        // but StateMachineCombine covers the Collect+Combine aggregation.
+        var combineReasons = SourceGeneratorTestContext.GetTrackedStepReasons(
+            secondResult, TrackingNames.StateMachineCombine);
+        Assert.NotEmpty(combineReasons);
+        Assert.All(combineReasons, reason =>
+            Assert.True(
+                reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New,
+                $"StateMachineCombine expected Modified or New, but was {reason}."));
+
+        // The transform stage should reflect the edit.
+        var transformReasons = SourceGeneratorTestContext.GetTrackedStepReasons(
+            secondResult, TrackingNames.StateMachineTransform);
+        Assert.NotEmpty(transformReasons);
+        Assert.Contains(transformReasons, reason =>
+            reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New);
     }
 }

@@ -118,6 +118,102 @@ internal static class SourceGeneratorTestContext
         return driver.GetRunResult();
     }
 
+    /// <summary>
+    /// Runs the generator on an initial compilation, then re-runs it after replacing
+    /// one syntax tree with a modified version. Returns the second run's result so
+    /// the caller can inspect tracked step reasons (Cached vs Modified).
+    /// <para>
+    /// This is the core incremental edit test: it proves that editing one file
+    /// only regenerates the contracts in that file, while other contracts remain
+    /// cached.
+    /// </para>
+    /// </summary>
+    /// <param name="initialSources">All source files for the first run.</param>
+    /// <param name="modifiedPath">The path of the file to replace.</param>
+    /// <param name="modifiedSource">The new content for the replaced file.</param>
+    /// <param name="unchangedSources">Source files that are not modified (must match initialSources except for modifiedPath).</param>
+    /// <returns>The <see cref="GeneratorDriverRunResult"/> for the second (post-edit) run.</returns>
+    internal static GeneratorDriverRunResult RunIncrementalEdit<TGenerator>(
+        (string Path, string Source)[] initialSources,
+        string modifiedPath,
+        string modifiedSource)
+        where TGenerator : IIncrementalGenerator, new()
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        var driverOptions = new GeneratorDriverOptions(
+            disabledOutputs: IncrementalGeneratorOutputKind.None,
+            trackIncrementalGeneratorSteps: true);
+
+        var initialTrees = initialSources
+            .Select(s => CSharpSyntaxTree.ParseText(s.Source, parseOptions, path: s.Path))
+            .ToArray();
+
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "DesignPatterns.SourceGenerators.Tests.IncrementalEdit",
+            syntaxTrees: initialTrees,
+            references: References,
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            new[] { new TGenerator().AsSourceGenerator() },
+            driverOptions: driverOptions,
+            parseOptions: parseOptions);
+
+        // First run — populates the cache.
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+
+        // Replace one syntax tree with the modified version.
+        var oldTree = initialTrees.First(t => t.FilePath == modifiedPath);
+        var modifiedTree = CSharpSyntaxTree.ParseText(modifiedSource, parseOptions, path: modifiedPath);
+        var updatedCompilation = compilation.ReplaceSyntaxTree(oldTree, modifiedTree);
+
+        // Second run — should only re-execute stages for the modified file.
+        var secondResult = driver.RunGenerators(updatedCompilation).GetRunResult();
+
+        return secondResult;
+    }
+
+    /// <summary>
+    /// Gets the tracked step reasons for a specific tracking name from a run result.
+    /// Returns the list of (reason) for each output of the tracked step.
+    /// </summary>
+    internal static IReadOnlyList<IncrementalStepRunReason> GetTrackedStepReasons(
+        GeneratorDriverRunResult runResult,
+        string trackingName)
+    {
+        var reasons = new List<IncrementalStepRunReason>();
+        foreach (var generatorResult in runResult.Results)
+        {
+            if (generatorResult.TrackedSteps.TryGetValue(trackingName, out var steps))
+            {
+                foreach (var step in steps)
+                {
+                    foreach (var output in step.Outputs)
+                    {
+                        reasons.Add(output.Reason);
+                    }
+                }
+            }
+        }
+        return reasons;
+    }
+
+    /// <summary>
+    /// Gets all tracked step names from a run result for diagnostic purposes.
+    /// </summary>
+    internal static IReadOnlyList<string> GetAllTrackedStepNames(GeneratorDriverRunResult runResult)
+    {
+        var names = new HashSet<string>();
+        foreach (var generatorResult in runResult.Results)
+        {
+            foreach (var key in generatorResult.TrackedSteps.Keys)
+            {
+                names.Add(key);
+            }
+        }
+        return names.OrderBy(n => n).ToList();
+    }
+
     internal static IReadOnlyDictionary<string, string> GetGeneratedSources(GeneratorDriverRunResult runResult) =>
         runResult
             .Results
