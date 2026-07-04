@@ -36,6 +36,54 @@ public sealed class IncrementalCacheTests
         Assert.Equal(info1.GetHashCode(), info2.GetHashCode());
     }
 
+    /// <summary>
+    /// Verifies that <see cref="LocationInfo.ToLocation"/> reconstructs a
+    /// <see cref="Location"/> with the correct file path, source span, and
+    /// line span. The reconstructed location is an ExternalFileLocation (not
+    /// syntax-tree-backed), which is sufficient for Diagnostic.Create.
+    /// </summary>
+    [Fact]
+    public void LocationInfo_ToLocation_RoundTripsCoordinates()
+    {
+        var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
+        // Use a multi-line source so the line span is non-trivial.
+        var tree = CSharpSyntaxTree.ParseText(
+            """
+            class A
+            {
+                void M() { }
+            }
+            """,
+            parseOptions,
+            path: "Test.cs");
+
+        var methodNode = tree.GetRoot().DescendantNodes().First(n => n is MethodDeclarationSyntax);
+        var originalLocation = methodNode.GetLocation();
+        var info = new LocationInfo(originalLocation);
+
+        var reconstructed = info.ToLocation();
+
+        Assert.NotNull(reconstructed);
+        Assert.Equal("Test.cs", reconstructed!.SourceTree?.FilePath ?? reconstructed.GetLineSpan().Path);
+        Assert.Equal(originalLocation.SourceSpan, reconstructed.SourceSpan);
+
+        var expectedLineSpan = originalLocation.GetLineSpan().Span;
+        var actualLineSpan = reconstructed.GetLineSpan().Span;
+        Assert.Equal(expectedLineSpan, actualLineSpan);
+    }
+
+    /// <summary>
+    /// Verifies that a null Location produces a default LocationInfo whose
+    /// ToLocation returns null (no crash).
+    /// </summary>
+    [Fact]
+    public void LocationInfo_NullLocation_ToLocationReturnsNull()
+    {
+        var info = new LocationInfo(null);
+        Assert.Null(info.ToLocation());
+        Assert.Null(info.FilePath);
+    }
+
     [Fact]
     public void GenerateSingletonCachesOnSecondRun()
     {

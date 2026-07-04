@@ -27,9 +27,10 @@ internal readonly struct LocationInfo : IEquatable<LocationInfo>
             return;
         }
 
-        FilePath = location.SourceTree?.FilePath ?? location.GetLineSpan().Path;
+        var lineSpan = location.GetLineSpan();
+        FilePath = location.SourceTree?.FilePath ?? lineSpan.Path;
         TextSpan = location.SourceSpan;
-        LineSpan = location.GetLineSpan().Span;
+        LineSpan = lineSpan.Span;
     }
 
     /// <summary>
@@ -61,7 +62,9 @@ internal readonly struct LocationInfo : IEquatable<LocationInfo>
     {
         unchecked
         {
-            return ((FilePath?.GetHashCode() ?? 0) * 397) ^ TextSpan.GetHashCode() ^ LineSpan.GetHashCode();
+            return (StringComparer.Ordinal.GetHashCode(FilePath ?? string.Empty) * 397)
+                ^ TextSpan.GetHashCode()
+                ^ LineSpan.GetHashCode();
         }
     }
 
