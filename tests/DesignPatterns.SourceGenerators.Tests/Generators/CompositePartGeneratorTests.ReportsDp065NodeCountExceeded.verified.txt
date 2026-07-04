@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP065,
+    Message: Composite contract 'TestAssembly.IMenuNode' has 5 parts, exceeding the maximum of 3 declared by [CompositeSchema]. Consider splitting into multiple contracts or increasing MaxNodes.
+  }
+]

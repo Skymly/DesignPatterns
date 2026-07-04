@@ -335,6 +335,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Warning,
         AnalyzerCategory);
 
+    // Composite tree schema validation (DP063–DP065)
+
+    public static DiagnosticDescriptor CompositeTreeMaxDepthExceeded { get; } = Create(
+        DiagnosticIds.CompositeTreeMaxDepthExceeded,
+        "Composite tree max depth exceeded",
+        "Composite tree for contract '{0}' has depth {1}, exceeding the maximum depth of {2} declared by [CompositeSchema]. Consider flattening the tree structure or increasing MaxDepth.",
+        "Excessively deep composite trees can cause stack overflows in recursive traversal. Review the tree structure or adjust the MaxDepth constraint.",
+        DiagnosticSeverity.Warning,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor CompositeChildTypeNotAllowed { get; } = Create(
+        DiagnosticIds.CompositeChildTypeNotAllowed,
+        "Composite child type not allowed by parent",
+        "Composite part '{0}' (type '{1}') is not in the AllowedChildTypes of its parent '{2}' (type '{3}'). Add '{1}' to the parent's AllowedChildTypes or change the ParentKey to a compatible parent.",
+        "Parent-child type compatibility is enforced at compile time when AllowedChildTypes is specified. Ensure child implementation types are declared in the parent's AllowedChildTypes array.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor CompositeNodeCountExceeded { get; } = Create(
+        DiagnosticIds.CompositeNodeCountExceeded,
+        "Composite node count exceeds limit",
+        "Composite contract '{0}' has {1} parts, exceeding the maximum of {2} declared by [CompositeSchema]. Consider splitting into multiple contracts or increasing MaxNodes.",
+        "Excessive node counts may indicate architectural issues or cause performance problems in tree assembly and traversal.",
+        DiagnosticSeverity.Warning,
+        GeneratorCategory);
+
     public static DiagnosticDescriptor RegistryKeyNotRegistered { get; } = Create(
         DiagnosticIds.RegistryKeyNotRegistered,
         "Registry key is not registered",

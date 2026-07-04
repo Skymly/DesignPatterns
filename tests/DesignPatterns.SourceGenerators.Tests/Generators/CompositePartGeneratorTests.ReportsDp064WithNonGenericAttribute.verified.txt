@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP064,
+    Message: Composite part 'disallowed' (type 'DisallowedMenu') is not in the AllowedChildTypes of its parent 'root' (type 'RootMenu'). Add 'DisallowedMenu' to the parent's AllowedChildTypes or change the ParentKey to a compatible parent.
+  }
+]

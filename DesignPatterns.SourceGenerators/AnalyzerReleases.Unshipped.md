@@ -64,3 +64,6 @@ DP059    | DesignPatterns.Generators | Info     | StateParent parent has no chil
 DP060    | DesignPatterns.Analyzers | Warning  | DI captive dependency: registry lifetime exceeds implementation lifetime
 DP061    | DesignPatterns.Analyzers | Info     | DI lifetime mismatch: implementation lifetime exceeds registry lifetime
 DP062    | DesignPatterns.Analyzers | Warning  | Singleton captive dependency on Scoped/Transient service
+DP063    | DesignPatterns.Generators | Warning  | Composite tree max depth exceeded
+DP064    | DesignPatterns.Generators | Error    | Composite child type not allowed by parent AllowedChildTypes
+DP065    | DesignPatterns.Generators | Warning  | Composite node count exceeds MaxNodes limit

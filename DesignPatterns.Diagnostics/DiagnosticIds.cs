@@ -67,4 +67,7 @@ public static class DiagnosticIds
     public const string DiLifetimeCaptiveDependency = "DP060";
     public const string DiLifetimeWasteful = "DP061";
     public const string CaptiveDependency = "DP062";
+    public const string CompositeTreeMaxDepthExceeded = "DP063";
+    public const string CompositeChildTypeNotAllowed = "DP064";
+    public const string CompositeNodeCountExceeded = "DP065";
 }
