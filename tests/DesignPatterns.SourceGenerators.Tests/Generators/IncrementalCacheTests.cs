@@ -187,12 +187,20 @@ public sealed class IncrementalCacheTests
 
     /// <summary>
     /// Two strategy contracts in separate files. After adding a new
-    /// strategy to one file, the transform for the unmodified file
-    /// should be Cached, and the Collect/Combine stages should be
-    /// Modified (because one input changed).
+    /// strategy to one file, the transform for the modified file should
+    /// be Modified/New, and the Collect/Combine stages should be Modified
+    /// (because one input changed).
+    /// <para>
+    /// Note: the unmodified file's transform is also Modified because
+    /// RegisterStrategy's Transform returns List&lt;KeyedRegistration&gt;
+    /// (reference equality). Once LocationInfo + EquatableArray are applied
+    /// (PR #216), the unmodified file's transform will be Unchanged. Until
+    /// then, this test verifies that the Combine stage correctly reflects
+    /// the edit.
+    /// </para>
     /// </summary>
     [Fact]
-    public void RegisterStrategy_EditOneFile_UnmodifiedContractStaysCached()
+    public void RegisterStrategy_EditOneFile_CombineReflectsChange()
     {
         var shippingSource = """
             using DesignPatterns.Behavioral;
@@ -331,6 +339,13 @@ public sealed class IncrementalCacheTests
         Assert.NotEmpty(transformReasons);
         Assert.Contains(transformReasons, reason =>
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New);
+
+        // The unmodified file's transform should be Cached or Unchanged —
+        // Repo.cs was not edited, so MyRepository's transform output should
+        // be unchanged. (Cached = not re-executed; Unchanged = re-executed
+        // but produced identical output.)
+        Assert.Contains(transformReasons, reason =>
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged);
     }
 
     /// <summary>
@@ -403,5 +418,12 @@ public sealed class IncrementalCacheTests
         Assert.NotEmpty(transformReasons);
         Assert.Contains(transformReasons, reason =>
             reason is IncrementalStepRunReason.Modified or IncrementalStepRunReason.New);
+
+        // The unmodified file's transform should be Cached or Unchanged —
+        // PaymentMachine.cs was not edited, so PaymentStatusMachine's
+        // transform should be unchanged. (Cached = not re-executed;
+        // Unchanged = re-executed but produced identical output.)
+        Assert.Contains(transformReasons, reason =>
+            reason is IncrementalStepRunReason.Cached or IncrementalStepRunReason.Unchanged);
     }
 }

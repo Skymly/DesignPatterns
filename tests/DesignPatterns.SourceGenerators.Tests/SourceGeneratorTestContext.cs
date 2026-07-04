@@ -131,7 +131,6 @@ internal static class SourceGeneratorTestContext
     /// <param name="initialSources">All source files for the first run.</param>
     /// <param name="modifiedPath">The path of the file to replace.</param>
     /// <param name="modifiedSource">The new content for the replaced file.</param>
-    /// <param name="unchangedSources">Source files that are not modified (must match initialSources except for modifiedPath).</param>
     /// <returns>The <see cref="GeneratorDriverRunResult"/> for the second (post-edit) run.</returns>
     internal static GeneratorDriverRunResult RunIncrementalEdit<TGenerator>(
         (string Path, string Source)[] initialSources,
@@ -196,22 +195,6 @@ internal static class SourceGeneratorTestContext
             }
         }
         return reasons;
-    }
-
-    /// <summary>
-    /// Gets all tracked step names from a run result for diagnostic purposes.
-    /// </summary>
-    internal static IReadOnlyList<string> GetAllTrackedStepNames(GeneratorDriverRunResult runResult)
-    {
-        var names = new HashSet<string>();
-        foreach (var generatorResult in runResult.Results)
-        {
-            foreach (var key in generatorResult.TrackedSteps.Keys)
-            {
-                names.Add(key);
-            }
-        }
-        return names.OrderBy(n => n).ToList();
     }
 
     internal static IReadOnlyDictionary<string, string> GetGeneratedSources(GeneratorDriverRunResult runResult) =>
