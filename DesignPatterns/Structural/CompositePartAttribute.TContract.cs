@@ -39,6 +39,13 @@ public sealed class CompositePartAttribute<TContract> : Attribute
     /// Order among siblings with the same parent. Lower values come first.
     /// </summary>
     public int Order { get; set; }
+
+    /// <summary>
+    /// Allowed child implementation types, or <see langword="null"/> to allow any
+    /// type implementing the contract. When set, the source generator validates
+    /// that each child's implementation type is in this list.
+    /// </summary>
+    public Type[]? AllowedChildTypes { get; set; }
 }
 
 #endif

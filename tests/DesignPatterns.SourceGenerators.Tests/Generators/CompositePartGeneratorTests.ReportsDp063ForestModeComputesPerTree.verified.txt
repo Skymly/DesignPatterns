@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP063,
+    Message: Composite tree for contract 'TestAssembly.IMenuNode' has depth 3, exceeding the maximum depth of 2 declared by [CompositeSchema]. Consider flattening the tree structure or increasing MaxDepth.
+  }
+]

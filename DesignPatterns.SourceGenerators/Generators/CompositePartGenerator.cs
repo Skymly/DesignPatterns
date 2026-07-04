@@ -41,6 +41,15 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor MissingBuildableDescriptor =
         DesignPatternsDiagnosticDescriptors.CompositePartMissingBuildable;
 
+    private static readonly DiagnosticDescriptor TreeMaxDepthExceededDescriptor =
+        DesignPatternsDiagnosticDescriptors.CompositeTreeMaxDepthExceeded;
+
+    private static readonly DiagnosticDescriptor ChildTypeNotAllowedDescriptor =
+        DesignPatternsDiagnosticDescriptors.CompositeChildTypeNotAllowed;
+
+    private static readonly DiagnosticDescriptor NodeCountExceededDescriptor =
+        DesignPatternsDiagnosticDescriptors.CompositeNodeCountExceeded;
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -109,6 +118,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
 
             string? parentKey = null;
             var order = 0;
+            EquatableArray<string> allowedChildTypes = default;
             foreach (var named in attribute.NamedArguments)
             {
                 if (named.Key == "ParentKey" && named.Value.Value is string parent)
@@ -119,6 +129,10 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 {
                     order = orderValue;
                 }
+                else if (named.Key == "AllowedChildTypes" && !named.Value.IsNull)
+                {
+                    allowedChildTypes = ExtractAllowedChildTypes(named.Value);
+                }
             }
 
             var contractInfo = new ContractInfo(
@@ -128,6 +142,8 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                     ? null
                     : contract.ContainingNamespace.ToDisplayString(),
                 contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+
+            var (schemaMaxDepth, schemaMaxNodes, schemaLocation) = ExtractSchemaInfo(contract);
 
             return Result<CompositeRegistration>.Success(new CompositeRegistration(
                 key!,
@@ -142,7 +158,11 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 ImplementsContract(implementation, contract),
                 HasPublicParameterlessConstructor(implementation),
                 ImplementsBuildable(implementation, contract),
-                new LocationInfo(context.TargetNode.GetLocation())));
+                new LocationInfo(context.TargetNode.GetLocation()),
+                allowedChildTypes,
+                schemaMaxDepth,
+                schemaMaxNodes,
+                schemaLocation));
         }
 
         return Result<CompositeRegistration>.Empty;
@@ -171,6 +191,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             ReportContractMismatches(context, contractRegistrations);
             ReportMissingConstructors(context, contractRegistrations);
             ReportMissingBuildable(context, contractRegistrations, contract);
+            ReportSchemaViolations(context, contractRegistrations, contract);
 
             var valid = contractRegistrations
                 .Where(static r => r.ImplementsContract)
@@ -277,6 +298,219 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 registration.ImplementationName,
                 contract.FullyQualifiedName));
         }
+    }
+
+    private static void ReportSchemaViolations(
+        SourceProductionContext context,
+        List<CompositeRegistration> registrations,
+        ContractInfo contract)
+    {
+        // All registrations for the same contract share the same schema info
+        // (extracted from [CompositeSchema] on the contract type).
+        var schemaMaxDepth = registrations.FirstOrDefault()?.SchemaMaxDepth;
+        var schemaMaxNodes = registrations.FirstOrDefault()?.SchemaMaxNodes;
+        var schemaLocation = registrations.FirstOrDefault()?.SchemaLocation;
+
+        // DP065: Node count exceeded
+        if (schemaMaxNodes is { } maxNodes and > 0 && registrations.Count > maxNodes)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                NodeCountExceededDescriptor,
+                schemaLocation?.ToLocation() ?? Location.None,
+                contract.FullyQualifiedName,
+                registrations.Count,
+                maxNodes));
+        }
+
+        // DP063: Max depth exceeded
+        if (schemaMaxDepth is { } maxDepth and > 0)
+        {
+            var actualDepth = ComputeMaxDepth(registrations);
+            if (actualDepth > maxDepth)
+            {
+                // Report on the deepest leaf node
+                var deepestLeaf = FindDeepestLeaf(registrations, maxDepth);
+                context.ReportDiagnostic(Diagnostic.Create(
+                    TreeMaxDepthExceededDescriptor,
+                    deepestLeaf?.Location.ToLocation() ?? Location.None,
+                    contract.FullyQualifiedName,
+                    actualDepth,
+                    maxDepth));
+            }
+        }
+
+        // DP064: Child type not allowed by parent
+        ReportDisallowedChildTypes(context, registrations, contract);
+    }
+
+    private static void ReportDisallowedChildTypes(
+        SourceProductionContext context,
+        List<CompositeRegistration> registrations,
+        ContractInfo contract)
+    {
+        // Build a key-to-registration lookup that tolerates duplicate keys
+        // (DP010 already reports duplicates; we just skip them here).
+        var entryByKey = new Dictionary<string, CompositeRegistration>(StringComparer.Ordinal);
+        foreach (var reg in registrations)
+        {
+            if (!entryByKey.ContainsKey(reg.Key))
+            {
+                entryByKey[reg.Key] = reg;
+            }
+        }
+
+        foreach (var registration in registrations)
+        {
+            if (registration.ParentKey is null)
+            {
+                continue;
+            }
+
+            if (!entryByKey.TryGetValue(registration.ParentKey, out var parent))
+            {
+                continue; // DP011 already handles unknown parent keys
+            }
+
+            if (parent.AllowedChildTypes.Count == 0)
+            {
+                continue; // No restriction
+            }
+
+            if (!parent.AllowedChildTypes.Contains(registration.ImplementationFullyQualifiedDisplayString))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ChildTypeNotAllowedDescriptor,
+                    registration.Location.ToLocation(),
+                    registration.Key,
+                    registration.ImplementationName,
+                    parent.Key,
+                    parent.ImplementationName));
+            }
+        }
+    }
+
+    private static int ComputeMaxDepth(List<CompositeRegistration> registrations)
+    {
+        // Build children-by-parent map
+        var childrenByParent = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var keysWithNoParent = new List<string>();
+
+        foreach (var reg in registrations)
+        {
+            if (reg.ParentKey is null)
+            {
+                keysWithNoParent.Add(reg.Key);
+            }
+            else
+            {
+                if (!childrenByParent.TryGetValue(reg.ParentKey, out var children))
+                {
+                    children = new List<string>();
+                    childrenByParent[reg.ParentKey] = children;
+                }
+                children.Add(reg.Key);
+            }
+        }
+
+        // Memoized depth computation
+        var depthCache = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        int Depth(string key)
+        {
+            if (depthCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            if (!childrenByParent.TryGetValue(key, out var children) || children.Count == 0)
+            {
+                depthCache[key] = 1;
+                return 1;
+            }
+
+            var maxChildDepth = 0;
+            foreach (var child in children)
+            {
+                maxChildDepth = Math.Max(maxChildDepth, Depth(child));
+            }
+
+            var result = 1 + maxChildDepth;
+            depthCache[key] = result;
+            return result;
+        }
+
+        var max = 0;
+        foreach (var root in keysWithNoParent)
+        {
+            max = Math.Max(max, Depth(root));
+        }
+
+        // Also handle keys that are roots but also appear as children (shouldn't happen
+        // after cycle detection, but guard anyway)
+        foreach (var reg in registrations)
+        {
+            max = Math.Max(max, Depth(reg.Key));
+        }
+
+        return max;
+    }
+
+    private static CompositeRegistration? FindDeepestLeaf(List<CompositeRegistration> registrations, int maxDepth)
+    {
+        var childrenByParent = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var reg in registrations)
+        {
+            if (reg.ParentKey is not null)
+            {
+                if (!childrenByParent.TryGetValue(reg.ParentKey, out var children))
+                {
+                    children = new List<string>();
+                    childrenByParent[reg.ParentKey] = children;
+                }
+                children.Add(reg.Key);
+            }
+        }
+
+        var depthCache = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        int Depth(string key)
+        {
+            if (depthCache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
+
+            if (!childrenByParent.TryGetValue(key, out var children) || children.Count == 0)
+            {
+                depthCache[key] = 1;
+                return 1;
+            }
+
+            var maxChildDepth = 0;
+            foreach (var child in children)
+            {
+                maxChildDepth = Math.Max(maxChildDepth, Depth(child));
+            }
+
+            var result = 1 + maxChildDepth;
+            depthCache[key] = result;
+            return result;
+        }
+
+        CompositeRegistration? deepest = null;
+        var deepestDepth = 0;
+
+        foreach (var reg in registrations)
+        {
+            var depth = Depth(reg.Key);
+            if (depth > deepestDepth)
+            {
+                deepestDepth = depth;
+                deepest = reg;
+            }
+        }
+
+        return deepest;
     }
 
     private static void EmitGeneratedSources(
@@ -417,6 +651,64 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         implementation.InstanceConstructors.Any(static c =>
             c.Parameters.IsEmpty && c.DeclaredAccessibility == Accessibility.Public);
 
+    private static EquatableArray<string> ExtractAllowedChildTypes(TypedConstant value)
+    {
+        if (value.IsNull || value.Values.IsDefaultOrEmpty)
+        {
+            return default;
+        }
+
+        var types = new List<string>(value.Values.Length);
+        foreach (var element in value.Values)
+        {
+            if (element.Value is INamedTypeSymbol typeSymbol)
+            {
+                types.Add(typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            }
+        }
+
+        return new EquatableArray<string>(types.ToArray());
+    }
+
+    private static (int? MaxDepth, int? MaxNodes, LocationInfo? Location) ExtractSchemaInfo(INamedTypeSymbol contract)
+    {
+        foreach (var attr in contract.GetAttributes())
+        {
+            if (attr.AttributeClass is null ||
+                attr.AttributeClass.Name != "CompositeSchemaAttribute" ||
+                attr.AttributeClass.ContainingNamespace?.ToDisplayString() != "DesignPatterns.Structural")
+            {
+                continue;
+            }
+
+            int? maxDepth = null;
+            int? maxNodes = null;
+
+            foreach (var named in attr.NamedArguments)
+            {
+                if (named.Key == "MaxDepth" && named.Value.Value is int depth)
+                {
+                    maxDepth = depth;
+                }
+                else if (named.Key == "MaxNodes" && named.Value.Value is int nodes)
+                {
+                    maxNodes = nodes;
+                }
+            }
+
+            // Also check constructor arguments (positional)
+            for (var i = 0; i < attr.ConstructorArguments.Length; i++)
+            {
+                // CompositeSchemaAttribute has parameterless constructor; all values via named args
+            }
+
+            var location = attr.ApplicationSyntaxReference?.GetSyntax().GetLocation();
+            return (maxDepth, maxNodes, location is not null ? new LocationInfo(location) : null);
+        }
+
+        return (null, null, null);
+    }
+
     private static bool ImplementsBuildable(INamedTypeSymbol implementation, INamedTypeSymbol contract)
     {
         foreach (var iface in implementation.AllInterfaces)
@@ -446,5 +738,9 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         bool ImplementsContract,
         bool HasPublicParameterlessConstructor,
         bool ImplementsBuildable,
-        LocationInfo Location);
+        LocationInfo Location,
+        EquatableArray<string> AllowedChildTypes,
+        int? SchemaMaxDepth,
+        int? SchemaMaxNodes,
+        LocationInfo? SchemaLocation);
 }
