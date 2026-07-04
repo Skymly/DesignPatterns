@@ -39,7 +39,7 @@ internal static class StateTransitionTransform
             return Result<StateMachineModel>.Empty;
         }
 
-        var location = context.TargetNode.GetLocation();
+        var location = new LocationInfo(context.TargetNode.GetLocation());
         var classDeclaration = (ClassDeclarationSyntax)context.TargetNode;
         var isValidHolder = classDeclaration.Modifiers.Any(SyntaxKind.StaticKeyword)
             && classDeclaration.Modifiers.Any(SyntaxKind.PartialKeyword);
@@ -105,7 +105,7 @@ internal static class StateTransitionTransform
             }
 
             var transitionLocation = attribute.ApplicationSyntaxReference is { } syntaxReference
-                ? syntaxReference.SyntaxTree!.GetLocation(syntaxReference.Span)
+                ? new LocationInfo(syntaxReference.SyntaxTree!.GetLocation(syntaxReference.Span))
                 : location;
 
             var from = ResolveTransitionArg(attribute.ConstructorArguments[0], stateType, stateTypeInfo);
@@ -167,7 +167,7 @@ internal static class StateTransitionTransform
                 }
 
                 var parentLocation = attribute.ApplicationSyntaxReference is { } syntaxRef
-                    ? syntaxRef.SyntaxTree!.GetLocation(syntaxRef.Span)
+                    ? new LocationInfo(syntaxRef.SyntaxTree!.GetLocation(syntaxRef.Span))
                     : location;
 
                 var child = ResolveTransitionArg(attribute.ConstructorArguments[0], stateType, stateTypeInfo);

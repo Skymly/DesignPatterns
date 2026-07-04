@@ -250,14 +250,15 @@ internal static class SourceGeneratorTestContext
         // First run — populates the cache.
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
 
-        // Second run — same compilation; our tagged stages should be cached.
-        // We use the same compilation (not Clone) because Location uses reference
-        // equality: Clone forces the transform to re-execute, producing new
-        // Location objects that break model value equality even though the
-        // semantic content is identical. Using the same compilation verifies
-        // that the transform outputs are cached when inputs are unchanged,
-        // which is the guarantee the P0 refactoring restored.
-        var secondResult = driver.RunGenerators(compilation).GetRunResult();
+        // Second run — cloned compilation; our tagged stages should be cached.
+        // We use Clone (not the same compilation) to verify that LocationInfo
+        // value equality holds across cloned compilations. Previously, Location
+        // used reference equality, so Clone forced the transform to re-execute
+        // and broke model value equality. With LocationInfo (value-equatable),
+        // the transform outputs are cached even when Clone creates new syntax
+        // trees and Location objects.
+        var clonedCompilation = compilation.Clone();
+        var secondResult = driver.RunGenerators(clonedCompilation).GetRunResult();
 
         // Collect all tracking names defined in TrackingNames so we only check
         // our own stages, not Roslyn-internal ones (Compilation, etc.).

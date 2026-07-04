@@ -142,7 +142,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
                 ImplementsContract(implementation, contract),
                 HasPublicParameterlessConstructor(implementation),
                 ImplementsBuildable(implementation, contract),
-                context.TargetNode.GetLocation()));
+                new LocationInfo(context.TargetNode.GetLocation())));
         }
 
         return Result<CompositeRegistration>.Empty;
@@ -202,7 +202,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DuplicateKeyDescriptor,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.Key,
                     contractName));
             }
@@ -220,7 +220,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 UnknownParentKeyDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.ParentKey!,
                 contractName));
         }
@@ -235,7 +235,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 CycleDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.Key,
                 contractName));
         }
@@ -247,7 +247,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ContractMismatchDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.ImplementationName,
                 registration.Contract.FullyQualifiedName));
         }
@@ -259,7 +259,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingParameterlessConstructorDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.ImplementationName));
         }
     }
@@ -273,7 +273,7 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 MissingBuildableDescriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.ImplementationName,
                 contract.FullyQualifiedName));
         }
@@ -446,5 +446,5 @@ public sealed class CompositePartGenerator : IIncrementalGenerator
         bool ImplementsContract,
         bool HasPublicParameterlessConstructor,
         bool ImplementsBuildable,
-        Location Location);
+        LocationInfo Location);
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 
 namespace DesignPatterns.SourceGenerators.Generators;
@@ -17,7 +16,7 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     public DiagnosticDescriptor Descriptor { get; }
 
     /// <summary>Location where the diagnostic should be reported (may be null).</summary>
-    public Location? Location { get; }
+    public LocationInfo? Location { get; }
 
     /// <summary>Message arguments passed to <c>Diagnostic.Create</c>.</summary>
     public object?[] MessageArgs { get; }
@@ -26,7 +25,7 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     /// Creates a <see cref="DiagnosticInfo"/> from a descriptor, optional
     /// location, and message arguments.
     /// </summary>
-    public DiagnosticInfo(DiagnosticDescriptor descriptor, Location? location, params object?[] messageArgs)
+    public DiagnosticInfo(DiagnosticDescriptor descriptor, LocationInfo? location, params object?[] messageArgs)
     {
         Descriptor = descriptor;
         Location = location;
@@ -34,12 +33,12 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     }
 
     /// <summary>Reconstructs the <see cref="Diagnostic"/> for reporting.</summary>
-    public Diagnostic ToDiagnostic() => Diagnostic.Create(Descriptor, Location, MessageArgs)!;
+    public Diagnostic ToDiagnostic() => Diagnostic.Create(Descriptor, Location?.ToLocation(), MessageArgs)!;
 
     /// <inheritdoc />
     public bool Equals(DiagnosticInfo other) =>
         string.Equals(Descriptor.Id, other.Descriptor.Id, StringComparison.Ordinal)
-        && ReferenceEquals(Location, other.Location)
+        && Location == other.Location
         && MessageArgsEqual(other.MessageArgs);
 
     /// <inheritdoc />
@@ -49,7 +48,7 @@ internal readonly struct DiagnosticInfo : IEquatable<DiagnosticInfo>
     public override int GetHashCode()
     {
         var hash = Descriptor.Id?.GetHashCode() ?? 0;
-        hash = (hash * 31) + (Location is null ? 0 : RuntimeHelpers.GetHashCode(Location));
+        hash = (hash * 31) + (Location?.GetHashCode() ?? 0);
         foreach (var messageArg in MessageArgs ?? Array.Empty<object?>())
         {
             hash = (hash * 31) + EqualityComparer<object?>.Default.GetHashCode(messageArg);

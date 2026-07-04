@@ -33,11 +33,11 @@ internal sealed record KeyedRegistration(
     bool IsAsync,
     bool ImplementsAsyncFactory,
     int PoolSize,
-    Location Location);
+    LocationInfo Location);
 
 internal static class RegistrationGeneratorHelper
 {
-    internal static List<KeyedRegistration> Transform(
+    internal static EquatableArray<KeyedRegistration> Transform(
         GeneratorAttributeSyntaxContext context,
         bool isGenericAttribute)
     {
@@ -45,7 +45,7 @@ internal static class RegistrationGeneratorHelper
 
         if (context.TargetSymbol is not INamedTypeSymbol implementation)
         {
-            return result;
+            return new EquatableArray<KeyedRegistration>(result.ToArray());
         }
 
         foreach (var attribute in context.Attributes)
@@ -85,7 +85,7 @@ internal static class RegistrationGeneratorHelper
                     : contract.ContainingNamespace.ToDisplayString(),
                 contract.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
-            var location = context.TargetNode.GetLocation();
+            var location = new LocationInfo(context.TargetNode.GetLocation());
 
             // Resolve optional Guard property from the attribute.
             string? guardName = null;
@@ -134,7 +134,7 @@ internal static class RegistrationGeneratorHelper
                 location));
         }
 
-        return result;
+        return new EquatableArray<KeyedRegistration>(result.ToArray());
     }
 
     internal static void Execute(
@@ -210,7 +210,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     descriptor,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.Key,
                     contractName));
             }
@@ -226,7 +226,7 @@ internal static class RegistrationGeneratorHelper
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 descriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.ImplementationName,
                 registration.Contract.FullyQualifiedName));
         }
@@ -241,7 +241,7 @@ internal static class RegistrationGeneratorHelper
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 descriptor,
-                registration.Location,
+                registration.Location.ToLocation(),
                 registration.ImplementationName));
         }
     }
@@ -264,7 +264,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StrategyGuardMethodNotFound,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     guard.Name,
                     registration.ImplementationName,
                     keyTypeDisplay));
@@ -275,7 +275,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StrategyGuardMethodNotStatic,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     guard.Name,
                     registration.ImplementationName));
                 continue;
@@ -285,7 +285,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.StrategyGuardMethodWrongSignature,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     guard.Name,
                     registration.ImplementationName,
                     keyTypeDisplay));
@@ -306,7 +306,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.FactoryAsyncSignatureMismatch,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.ImplementationName,
                     registration.Contract.FullyQualifiedName));
             }
@@ -316,7 +316,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.FactoryPoolSizeInvalid,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.ImplementationName,
                     registration.PoolSize));
             }
@@ -326,7 +326,7 @@ internal static class RegistrationGeneratorHelper
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     DesignPatternsDiagnosticDescriptors.FactoryPoolSizeTooLarge,
-                    registration.Location,
+                    registration.Location.ToLocation(),
                     registration.ImplementationName,
                     registration.PoolSize));
             }
