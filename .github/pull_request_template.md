@@ -45,3 +45,16 @@ Closes #
 - [ ] PR description is **English** only — no AI/agent/Cursor tool attribution, no auto-generated summary blocks (e.g. `CURSOR_SUMMARY`, "Made with …")
 - [ ] No version bumps, tags, releases, or NuGet publish steps included unless explicitly requested
 - [ ] Public API / diagnostic / generated code changes are documented if user-visible
+
+## Documentation checklist
+
+<!-- See docs/DOCUMENTATION.md for the full documentation standard. -->
+
+- [ ] New/changed public API → Spec updated (`docs/spec/`)
+- [ ] New/changed diagnostic ID → Spec updated + `AnalyzerReleases.Unshipped.md` updated
+- [ ] Implementation detail changed → Design Doc updated (`docs/design/`)
+- [ ] New RFC → used `docs/rfc/_template.md` template
+- [ ] RFC status changed → frontmatter updated + archived to `docs/rfc/archive/` if Implemented/Rejected
+- [ ] New ADR → numbered from `docs/adr/README.md` next available
+- [ ] `CHANGELOG.md` `[Unreleased]` entry added
+- [ ] No documentation changes needed

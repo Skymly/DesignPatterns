@@ -63,7 +63,28 @@ dotnet test tests/DesignPatterns.SourceGenerators.Tests --filter FullyQualifiedN
 
 ## 文档
 
-- 用户可见变更：更新根目录 [`CHANGELOG.md`](CHANGELOG.md)（英语，Keep a Changelog；发版时将 `[Unreleased]` 条目迁入版本节）
-- 新模式：在 [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 增加示例项目、更新本仓 `docs/` 与 [`AGENTS.md`](AGENTS.md)
-- key 命名：遵循 [`docs/FactoryKeyConventions.md`](docs/FactoryKeyConventions.md)
-- 架构 backlog：见 [`docs/ROADMAP.md`](docs/ROADMAP.md)
+本仓库文档体系分为 RFC、ADR、Spec、Design Doc、Roadmap 五种类型，完整规范见 [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md)。人类开发者和 AI 编码助手均须遵守。
+
+### 文档工作流
+
+| 变更类型 | 需要的文档操作 |
+|----------|----------------|
+| 新增模式 / 诊断 ID / 破坏性 API | 创建 RFC → Accepted 后产出 ADR → 实现 PR 中更新 Spec + Design Doc |
+| Bug fix | Issue + PR；如影响实现细节则更新 Design Doc |
+| 公共 API 变更 | Spec 更新 + CHANGELOG 条目 |
+| 诊断 ID 变更 | Spec 更新 + `AnalyzerReleases.Unshipped.md` 更新 |
+| 用户可见变更 | 更新 [`CHANGELOG.md`](CHANGELOG.md)（英语，Keep a Changelog；发版时将 `[Unreleased]` 条目迁入版本节） |
+| 新模式 | 在 [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 增加示例项目、更新本仓 `docs/` 与 [`AGENTS.md`](AGENTS.md) |
+| key 命名 | 遵循 [`docs/FactoryKeyConventions.md`](docs/FactoryKeyConventions.md) |
+| 架构 backlog | 见 [`docs/ROADMAP.md`](docs/ROADMAP.md) |
+
+### 文档目录
+
+| 目录 | 用途 |
+|------|------|
+| [`docs/DOCUMENTATION.md`](docs/DOCUMENTATION.md) | 文档体系标准（类型、生命周期、模板、归档） |
+| [`docs/rfc/`](docs/rfc/README.md) | RFC — 设计提案与讨论 |
+| [`docs/adr/`](docs/adr/README.md) | ADR — 架构决策记录 |
+| [`docs/spec/`](docs/spec/README.md) | Spec — 稳定契约 |
+| [`docs/design/`](docs/design/README.md) | Design Doc — 实现细节 |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | 路线图 |

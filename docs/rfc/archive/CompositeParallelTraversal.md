@@ -1,8 +1,13 @@
 # RFC: Composite 并行遍历
 
-> **状态**：设计完成，待实现 Phase 1
-> **日期**：2026-06-30
-> **关联**：[Composite.md](../Composite.md)、[ROADMAP.md](../ROADMAP.md)
+> **状态**：Implemented
+> **类型**：Feature
+> **创建**：2026-06-30
+> **更新**：2026-07-07
+> **作者**：维护者
+> **关联 Roadmap**：F5
+> **关联 Issue**：—
+> **衍生 ADR**：[ADR-006](../../adr/ADR-006-composite-parallel-traversal.md)
 
 ## 概述
 
