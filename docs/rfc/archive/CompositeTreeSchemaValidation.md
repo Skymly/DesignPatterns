@@ -1,8 +1,13 @@
 # RFC: Composite 树 schema 校验
 
-> **状态**：设计完成，待实现
-> **日期**：2026-07-15
-> **关联**：[Composite.md](../Composite.md)、[ROADMAP.md](../ROADMAP.md)、[CompositeParallelTraversal.md](CompositeParallelTraversal.md)
+> **状态**：Implemented
+> **类型**：Feature
+> **创建**：2026-07-15
+> **更新**：2026-07-07
+> **作者**：维护者
+> **关联 Roadmap**：F5+
+> **关联 Issue**：#218
+> **衍生 ADR**：[ADR-007](../../adr/ADR-007-composite-tree-schema-validation.md)
 
 ## 概述
 

@@ -1,12 +1,13 @@
-# RFC：State 层级状态机（编译期展平）
+# RFC: State 层级状态机（编译期展平）
 
-| 字段 | 值 |
-|------|-----|
-| **状态** | Accepted（5 个开放问题已决策，待实现） |
-| **作者** | 维护者 |
-| **创建** | 2026-06-28 |
-| **关联** | [ROADMAP.md](../ROADMAP.md) F3 长期探索候选、[StateTransitionTable.md](../StateTransitionTable.md) v2、[rfc/StateTransitionTable.md](StateTransitionTable.md) §2.3 |
-| **诊断** | `DP056` 起新区段 |
+> **状态**：Implemented
+> **类型**：Pattern
+> **创建**：2026-06-28
+> **更新**：2026-07-07
+> **作者**：维护者
+> **关联 Roadmap**：F3
+> **关联 Issue**：—
+> **衍生 ADR**：[ADR-005](../../adr/ADR-005-state-transition-table.md)（与 StateTransitionTable RFC 共享 ADR）
 
 ---
 

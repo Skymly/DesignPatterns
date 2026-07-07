@@ -39,7 +39,7 @@ DesignPatterns.slnx
 ├── DesignPatterns.Extensions.Autofac/              # Autofac 扩展 + Autofac 生成器 targets
 ├── DesignPatterns.Package/                      # NuGet 元包（PackageId=Skymly.DesignPatterns）
 ├── tests/                                       # 单元 / 生成器 Verify / Analyzer / DI
-├── docs/                                        # DEVELOPMENT、ROADMAP、模式文档
+├── docs/                                        # 维护者文档（DOCUMENTATION、DEVELOPMENT、ROADMAP、rfc/、adr/、spec/、design/、模式文档）
 ├── .github/                                     # Issue/PR 模板、CI
 └── AGENTS.md
 ```
@@ -115,7 +115,7 @@ dotnet test DesignPatterns.slnx -c Release
 | State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
 | DI Health Checks | `AddDesignPatternsHealthChecks`、`IHealthCheck` | —（运行时扩展） |
 
-模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/StateTransitionTable.md](docs/StateTransitionTable.md)、[docs/rfc/StateTransitionTable.md](docs/rfc/StateTransitionTable.md)。
+模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/StateTransitionTable.md](docs/StateTransitionTable.md)。设计提案见 [docs/rfc/](docs/rfc/README.md)，架构决策见 [docs/adr/](docs/adr/README.md)。
 
 ---
 
@@ -309,6 +309,39 @@ git push origin v0.1.0-preview3
 - **生成器快照**：改动生成代码后运行测试并审阅 `*.received.*`，确认后接受为 `*.verified.txt`。
 
 详见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+---
+
+## 文档体系
+
+本仓库文档分为 5 种类型，完整规范见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)。Agent 与人类开发者均须遵守。
+
+| 类型 | 目录 | 用途 | 关键规则 |
+|------|------|------|----------|
+| **RFC** | `docs/rfc/` | 设计提案与讨论 | 新增模式/诊断/破坏性 API 必须 RFC；模板 `docs/rfc/_template.md`；已实现移入 `archive/` |
+| **ADR** | `docs/adr/` | 架构决策记录（不可变） | RFC Accepted → 产出 ADR；编号不复用；正文不修改，仅 Supersede |
+| **Spec** | `docs/spec/` | 稳定契约（API 面、诊断 ID、不变量） | 变更需 RFC + ADR；随代码 PR 同步更新 |
+| **Design Doc** | `docs/design/` | 实现细节、设计权衡、已知局限 | 随代码 PR 同步更新 |
+| **Roadmap** | `docs/ROADMAP.md` | 功能与技术 backlog | 完成项移入「已完成（归档）」章节 |
+
+**Plan** 以 GitHub Issue 为载体，不新建文档文件。
+
+### Agent 文档工作流约定
+
+| 场景 | Agent 行为 |
+|------|-----------|
+| 新增诊断 ID | 确认是否有对应 RFC；无则提示需创建 RFC |
+| 修改公共 API | 确认是否有对应 RFC + ADR；无则提示需创建 RFC |
+| 创建 RFC | 使用 `docs/rfc/_template.md`；frontmatter 从 `Draft` 开始 |
+| 创建 ADR | 编号取 `docs/adr/README.md` 中下一个可用编号 |
+| RFC 状态变更 | 更新 frontmatter `状态` + `更新` 日期；归档时移动到 `archive/` |
+| Spec 变更 | 确认 RFC 已 Accepted；同步更新 Spec 版本号 |
+| CHANGELOG | 在 `[Unreleased]` 下添加条目 |
+| 文档目录 | 不在 `docs/` 之外创建文档文件（`.Local/` 除外） |
+
+### 现有模式文档迁移
+
+现有 `docs/<PatternName>.md`（Strategy.md、Composite.md 等）将逐步拆分迁移至 `docs/spec/` + `docs/design/`。迁移计划见 [docs/spec/README.md](docs/spec/README.md)。迁移可逐模式进行，不要求一次性完成。
 
 ---
 
