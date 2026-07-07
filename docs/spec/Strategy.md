@@ -1,25 +1,15 @@
-# Strategy 模式 — 设计与实现文档
+# Spec: Strategy
 
-## 概述
+> **版本**：v0.2.2（与 NuGet 包版本对齐）
+> **关联 Design Doc**：[docs/design/Strategy.md](../design/Strategy.md)
 
-Strategy 模式允许在运行时按条件选择算法/行为实现，避免大量 `if/switch` 分支。本库的定位是：
+## API 面
 
-- 提供 **注册表 + 编译期生成** 减少手写胶水
-- **不替代** DI 容器的生命周期管理
-- **不做** 策略选择路由引擎（那是业务逻辑）
+### 运行时接口
 
-## 设计目标
+命名空间：`DesignPatterns.Behavioral`
 
-1. 用户只需在实现类上打一个特性，即可获得：强类型 Key 常量 + 注册表 + 可选 DI 扩展
-2. 编译期检查 key 重复、接口不匹配
-3. 不侵入实现类的继承链
-4. 同时支持同步与异步策略
-
----
-
-## 运行时 API（`DesignPatterns/Behavioral/`）
-
-### 策略接口（可选）
+#### 策略接口（可选标记接口）
 
 ```csharp
 namespace DesignPatterns.Behavioral;
@@ -45,7 +35,7 @@ public interface IAsyncStrategy<in TInput, TOutput>
 >
 > `IStrategy<,>` / `IAsyncStrategy<,>` 为**可选标记接口**，便于表达同步/异步算法形状；注册表与生成器不依赖它们。用法见 `tests/DesignPatterns.Tests/Behavioral/StrategyMarkerInterfaceTests.cs`。
 
-### 注册表
+#### 注册表
 
 ```csharp
 namespace DesignPatterns.Behavioral;
@@ -67,7 +57,7 @@ public interface IStrategyRegistry<TKey, TStrategy>
 
 提供不可变实现 `StrategyRegistry<TKey, TStrategy>`，net8.0 上内部使用 `FrozenDictionary` 优化查找。
 
-### Builder（手动注册，无生成器时）
+#### Builder（手动注册，无生成器时）
 
 ```csharp
 public sealed class StrategyRegistryBuilder<TKey, TStrategy> where TKey : notnull
@@ -78,7 +68,7 @@ public sealed class StrategyRegistryBuilder<TKey, TStrategy> where TKey : notnul
 }
 ```
 
-### 异步策略解析
+#### 异步策略解析
 
 `IAsyncStrategy<TInput, TOutput>` 与 `[RegisterStrategy]` 使用**同一套** Keys / Registry / `RegisterDi` 路径；契约可以是继承 `IAsyncStrategy<,>` 的专用接口，无需额外 attribute 或并行注册表类型。
 
@@ -100,7 +90,7 @@ var length = await registry.Get(TextProcessorKeys.Length).ExecuteAsync("hello");
 
 DI 场景：`{Contract}Registry.RegisterDi(services)` 后从容器解析 `IStrategyRegistry<string, TContract>`，再 `await registry.ExecuteAsync<...>(...)` 或 `Get(key).ExecuteAsync(...)`。
 
-### Guard 谓词
+#### Guard 谓词
 
 `TryGetWithGuard` 在解析策略时额外评估注册的 guard 谓词。guard 返回 `false` 时该策略视为未注册（返回 `false`）。
 
@@ -117,17 +107,13 @@ if (registry.TryGetWithGuard("alipay", out var strategy)) { ... }
 
 源生成器支持：`[RegisterStrategy<TContract>("key", Guard = nameof(CanEnable))]`，生成器校验 guard 方法签名（DP047-DP049）。
 
----
+### 特性（Attribute）
 
-## 编译期：`[RegisterStrategy]` 源生成器
+命名空间：`DesignPatterns.Behavioral`
 
-### 特性设计
-
-优先使用 **泛型 Attribute**（C# 11 / .NET 7+），同时为低版本提供非泛型重载：
+#### 泛型版本（C# 11 / .NET 7+）
 
 ```csharp
-namespace DesignPatterns.Behavioral;
-
 /// <summary>
 /// 标记一个类为某策略接口的实现，并注册到编译期生成的策略注册表中。
 /// </summary>
@@ -151,7 +137,11 @@ public sealed class RegisterStrategyAttribute<TContract> : Attribute
         Key = key;
     }
 }
+```
 
+#### 非泛型版本（netstandard2.0 / C# 7.3）
+
+```csharp
 /// <summary>
 /// 非泛型版本，用于不支持泛型 Attribute 的目标框架。
 /// </summary>
@@ -178,7 +168,7 @@ public sealed class RegisterStrategyAttribute : Attribute
 }
 ```
 
-### 用法示例
+#### 用法示例
 
 ```csharp
 // 泛型 Attribute（推荐，C# 11+）
@@ -193,7 +183,7 @@ public class WechatPayment : IPaymentStrategy { ... }
 public class AlipayPayment : IPaymentStrategy { ... }
 ```
 
-### 生成器输出
+### 生成器产出
 
 对于每个 `TContract`，生成器输出：
 
@@ -264,103 +254,41 @@ var registry = services.BuildServiceProvider()
 
 手动 Builder 仍可用：`services.AddStrategyRegistry<string, IPaymentStrategy>(...)`（见扩展包），与生成器互不冲突。
 
----
+## 诊断 ID
 
-## 诊断规则
-
-| ID | 严重性 | 来源 | 触发条件 | 说明 |
-|----|--------|------|----------|------|
-| DP003 | Error | 源生成器 | 同一 `TContract` 下 key 重复 | 编译期检测冲突 |
-| DP004 | Error | 源生成器 | 标记的类未实现指定的 `TContract` | 接口不匹配 |
-| DP006 | Info | Analyzer | 实现了某策略契约但未加 `[RegisterStrategy]` | 建议添加特性 |
-| DP007 | Error | 源生成器 | 标记的类缺少 public 无参构造 | 无法 `new()` 实例化 |
-| DP047 | Error | 源生成器 | `Guard` 指定的方法在实现类上未找到 | 添加 static 方法或移除 Guard |
-| DP048 | Error | 源生成器 | `Guard` 指定的方法非 static | 改为 static |
-| DP049 | Error | 源生成器 | `Guard` 指定的方法签名错误（须 `static bool Method(TKey key)`） | 修正参数类型或返回类型 |
+| ID | 级别 | 触发条件 | 消息格式 |
+|----|------|----------|----------|
+| DP003 | Error | 同一 `TContract` 下 key 重复 | 编译期检测冲突 |
+| DP004 | Error | 标记的类未实现指定的 `TContract` | 接口不匹配 |
+| DP006 | Info | 实现了某策略契约但未加 `[RegisterStrategy]` | 建议添加特性 |
+| DP007 | Error | 标记的类缺少 public 无参构造 | 无法 `new()` 实例化 |
+| DP047 | Error | `Guard` 指定的方法在实现类上未找到 | 添加 static 方法或移除 Guard |
+| DP048 | Error | `Guard` 指定的方法非 static | 改为 static |
+| DP049 | Error | `Guard` 指定的方法签名错误（须 `static bool Method(TKey key)`） | 修正参数类型或返回类型 |
 
 > **注意**：DP005 属于 Handler（`[HandlerOrder]` 重复 Order），不属于 Strategy。
 
----
+## 不变量
 
-## 泛型 Attribute 兼容策略
+1. **key 唯一性**：同一 `TContract` 下 key 不可重复（DP003 在编译期强制）。
+2. **`TStrategy` 不变（invariant）**：`IStrategyRegistry<TKey, TStrategy>` 的 `TStrategy` 非协变 `out`——`TryGetWithGuard` 的 `out TStrategy` 参数阻止协变。
+3. **guard 签名固定为 `Func<TKey, bool>`**：guard 仅接收 key，不接收 `TInput`。注册表层面不知道 `TInput`（`TStrategy` 不要求实现 `IStrategy<TInput, TOutput>`）。
+4. **`[RegisterStrategy]` 不要求实现 `IStrategy<,>`**：任何接口/基类均可作为策略契约。
+5. **标记的类须有 public 无参构造**：生成器使用 `new()` 实例化（DP007）。
+6. **标记的类须实现指定的 `TContract`**（DP004）。
+7. **`IStrategy<,>` / `IAsyncStrategy<,>` 为可选标记接口**：注册表与生成器不依赖它们。
 
-由于库目标 `netstandard2.0`，需要条件处理：
+## 兼容基线
 
-- **定义侧**：泛型 Attribute 需要 C# 11 + `net7.0+`。在 `netstandard2.0` 目标下用 `#if NET7_0_OR_GREATER` 条件编译。
-- **生成器侧**：`ForAttributeWithMetadataName` 同时注册两个元数据名（泛型版与非泛型版），合并处理。
-- **消费者侧**：使用 `net7.0+` 的项目自动获得泛型版；低版本使用非泛型版，体验稍弱但功能等价。
+- 运行时 TFM：`netstandard2.0` + `net8.0`（两者均须可用并随包分发）。
+- 泛型 Attribute（`RegisterStrategyAttribute<TContract>`）需要 C# 11+ / `net7.0+`；`netstandard2.0` 目标下用 `#if NET7_0_OR_GREATER` 条件编译。
+- 非泛型 `RegisterStrategyAttribute` 始终可用，功能等价。
+- net8.0 上 `StrategyRegistry<TKey, TStrategy>` 内部使用 `FrozenDictionary` 优化查找。
 
-```csharp
-// 条件编译示例
-#if NET7_0_OR_GREATER
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-public sealed class RegisterStrategyAttribute<TContract> : Attribute { ... }
-#endif
-
-// 非泛型版始终可用
-[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-public sealed class RegisterStrategyAttribute : Attribute { ... }
-```
-
----
-
-## 与 DI 容器集成
-
-**当前已实现**：`DesignPatterns.Extensions.DependencyInjection`（MSDI）+ 生成器 `RegisterDi` / `Create(IServiceProvider)`（Strategy / Factory / Handler）。
-
-- 生命周期由 DI 控制；注册表通过 `ServiceProviderStrategyRegistry` 在 `TryGet` 时解析实现类型。
-- Core 不引用 DI；启用 DI 生成路径需引用扩展包（targets 打开 `DesignPatterns_EnableDiIntegration`）。
-- **Autofac**：`DesignPatterns.Extensions.Autofac` — `RegisterAutofac`（见 [Autofac.md](Autofac.md)）
-- **插件程序集**：多项目 `[RegisterStrategy]` 布局见 [PluginAssemblies.md](PluginAssemblies.md)
-
----
-
-## 与 Factory Registry 的关系
-
-| | Strategy Registry | Factory Registry |
-|---|---|---|
-| 注册内容 | key → 实例（或 build 时 invoke 一次的 factory） | key → `Func<TProduct>` |
-| 生命周期 | 通常 Singleton（生成器用 `new()` 静态单例） | 每次 `Create` 调用 factory |
-| 编译期 | `[RegisterStrategy]` 生成 Keys + Registry | `[RegisterFactory]` 生成 Keys + `Create()` |
-| 共享抽象 | `IStrategyRegistry` 继承 `IReadOnlyRegistry` | `IFactoryRegistry` 继承 `IReadOnlyRegistry` |
-| DI | `PaymentStrategyRegistry.RegisterDi(services)` | `ProductFactoryRegistry.RegisterDi(services)` |
-
-详见 [FactoryRegistry.md](FactoryRegistry.md)。
-
----
-
-## 实施步骤
-
-| 步骤 | 内容 | 里程碑 |
-|------|------|--------|
-| 1 | `IStrategyRegistry<TKey, TStrategy>` + `StrategyRegistry` + Builder | M1 |
-| 2 | `RegisterStrategyAttribute` / `RegisterStrategyAttribute<T>` 定义 | M1 |
-| 3 | `RegisterStrategyGenerator`：扫描特性 → 生成 Keys + 注册表 | R1 |
-| 4 | 诊断 DP003/DP004/DP007（生成器）+ DP006（Analyzer） | R1 |
-| 5 | 示例项目 [DesignPatterns.Samples.Strategy](https://github.com/Skymly/DesignPatterns.Samples/tree/main/DesignPatterns.Samples.Strategy) | R1 |
-| 6 | DI 扩展包 + 生成器 `RegisterDi` | 已完成（MSDI） |
-
----
-
-## 规划中的能力
-
-- Autofac / DryIoc 扩展包
-- IDE CompletionProvider（维护成本高）
-
----
-
-## 不做
+## 不在范围内
 
 - 不做策略选择/路由逻辑（这是业务代码）
 - 不通过反射扫描程序集
 - 不在注册表里管理对象生命周期（那是 DI 的事）
 - 不做 `Func<T1, T2, ..., TResult>` 的无限委托展开
 - 不强制所有策略实现 `IStrategy<,>`
-
----
-
-## 参考
-
-- GoF: Strategy (Behavioral)
-- [AGENTS.md](../AGENTS.md) — 项目规则与里程碑
-- [docs/DEVELOPMENT.md](DEVELOPMENT.md) — 通用开发约定

@@ -115,7 +115,7 @@ dotnet test DesignPatterns.slnx -c Release
 | State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
 | DI Health Checks | `AddDesignPatternsHealthChecks`、`IHealthCheck` | —（运行时扩展） |
 
-模式文档：[docs/Strategy.md](docs/Strategy.md)、[docs/ChainOfResponsibility.md](docs/ChainOfResponsibility.md)、[docs/Composite.md](docs/Composite.md)、[docs/FactoryRegistry.md](docs/FactoryRegistry.md)、[docs/Decorator.md](docs/Decorator.md)、[docs/EventAggregator.md](docs/EventAggregator.md)、[docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)、[docs/StateTransitionTable.md](docs/StateTransitionTable.md)。设计提案见 [docs/rfc/](docs/rfc/README.md)，架构决策见 [docs/adr/](docs/adr/README.md)。
+模式文档：Spec（稳定契约）见 [docs/spec/](docs/spec/README.md)，Design Doc（实现细节）见 [docs/design/](docs/design/README.md)。横切约定见 [docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)。设计提案见 [docs/rfc/](docs/rfc/README.md)，架构决策见 [docs/adr/](docs/adr/README.md)。
 
 ---
 
@@ -339,9 +339,9 @@ git push origin v0.1.0-preview3
 | CHANGELOG | 在 `[Unreleased]` 下添加条目 |
 | 文档目录 | 不在 `docs/` 之外创建文档文件（`.Local/` 除外） |
 
-### 现有模式文档迁移
+### 模式文档结构
 
-现有 `docs/<PatternName>.md`（Strategy.md、Composite.md 等）将逐步拆分迁移至 `docs/spec/` + `docs/design/`。迁移计划见 [docs/spec/README.md](docs/spec/README.md)。迁移可逐模式进行，不要求一次性完成。
+所有模式文档已拆分为 Spec（`docs/spec/`）+ Design Doc（`docs/design/`）。Spec 描述稳定契约（API 面、诊断 ID、不变量），Design Doc 描述实现细节（设计权衡、已知局限）。索引见 [docs/spec/README.md](docs/spec/README.md) 和 [docs/design/README.md](docs/design/README.md)。
 
 ---
 

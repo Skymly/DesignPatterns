@@ -8,18 +8,16 @@
 
 ## 已有 Spec
 
-（Spec 文档将随模式文档迁移逐步创建。现有模式文档位于 `docs/<PatternName>.md`，将拆分迁移至 `docs/spec/` + `docs/design/`。）
+| 模式 | Spec | Design Doc | 关联 ADR |
+|------|------|------------|----------|
+| Strategy | [Strategy.md](Strategy.md) | [Strategy.md](../design/Strategy.md) | — |
+| Chain of Responsibility | [ChainOfResponsibility.md](ChainOfResponsibility.md) | [ChainOfResponsibility.md](../design/ChainOfResponsibility.md) | — |
+| Composite | [Composite.md](Composite.md) | [Composite.md](../design/Composite.md) | [ADR-006](../adr/ADR-006-composite-parallel-traversal.md)、[ADR-007](../adr/ADR-007-composite-tree-schema-validation.md) |
+| Factory Registry | [FactoryRegistry.md](FactoryRegistry.md) | [FactoryRegistry.md](../design/FactoryRegistry.md) | — |
+| Decorator | [Decorator.md](Decorator.md) | [Decorator.md](../design/Decorator.md) | — |
+| Event Aggregator | [EventAggregator.md](EventAggregator.md) | [EventAggregator.md](../design/EventAggregator.md) | — |
+| State Transition Table | [StateTransitionTable.md](StateTransitionTable.md) | [StateTransitionTable.md](../design/StateTransitionTable.md) | [ADR-005](../adr/ADR-005-state-transition-table.md) |
 
-## 迁移计划
+## 迁移状态
 
-| 模式 | 现有文档 | Spec 目标 | Design Doc 目标 |
-|------|----------|-----------|-----------------|
-| Strategy | [docs/Strategy.md](../Strategy.md) | `docs/spec/Strategy.md` | `docs/design/Strategy.md` |
-| Chain of Responsibility | [docs/ChainOfResponsibility.md](../ChainOfResponsibility.md) | `docs/spec/ChainOfResponsibility.md` | `docs/design/ChainOfResponsibility.md` |
-| Composite | [docs/Composite.md](../Composite.md) | `docs/spec/Composite.md` | `docs/design/Composite.md` |
-| Factory Registry | [docs/FactoryRegistry.md](../FactoryRegistry.md) | `docs/spec/FactoryRegistry.md` | `docs/design/FactoryRegistry.md` |
-| Decorator | [docs/Decorator.md](../Decorator.md) | `docs/spec/Decorator.md` | `docs/design/Decorator.md` |
-| Event Aggregator | [docs/EventAggregator.md](../EventAggregator.md) | `docs/spec/EventAggregator.md` | `docs/design/EventAggregator.md` |
-| State Transition Table | [docs/StateTransitionTable.md](../StateTransitionTable.md) | `docs/spec/StateTransitionTable.md` | `docs/design/StateTransitionTable.md` |
-
-迁移可逐模式进行，不要求一次性完成。每个模式的迁移创建一个独立 PR。
+所有 7 个模式文档已从 `docs/<PatternName>.md` 拆分迁移至 `docs/spec/` + `docs/design/`。旧文件已删除。
