@@ -27,6 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Test-only: Autofac registration sources in analyzer test compilations.
+         The analyzer itself matches Autofac symbols by name and has no package reference. -->
+    <PackageReference Include="Autofac" />
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />

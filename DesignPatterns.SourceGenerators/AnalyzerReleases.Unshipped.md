@@ -67,3 +67,4 @@ DP062    | DesignPatterns.Analyzers | Warning  | Singleton captive dependency on
 DP063    | DesignPatterns.Generators | Warning  | Composite tree max depth exceeded
 DP064    | DesignPatterns.Generators | Error    | Composite child type not allowed by parent AllowedChildTypes
 DP065    | DesignPatterns.Generators | Warning  | Composite node count exceeds MaxNodes limit
+DP066    | DesignPatterns.Analyzers | Warning  | Singleton factory delegate captures shorter-lived service

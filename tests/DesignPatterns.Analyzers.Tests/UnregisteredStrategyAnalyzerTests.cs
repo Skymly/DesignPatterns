@@ -226,6 +226,7 @@ internal static class AnalyzerTestContext
             MetadataReference.CreateFromFile(typeof(ValueTask).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Behavioral.RegisterStrategyAttribute).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ServiceLifetime).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Autofac.ContainerBuilder).Assembly.Location),
         };
 
         var trustedPlatformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
@@ -235,7 +236,8 @@ internal static class AnalyzerTestContext
             {
                 if (assemblyPath.EndsWith("System.Runtime.dll", StringComparison.OrdinalIgnoreCase) ||
                     assemblyPath.EndsWith("netstandard.dll", StringComparison.OrdinalIgnoreCase) ||
-                    assemblyPath.EndsWith("System.Collections.dll", StringComparison.OrdinalIgnoreCase))
+                    assemblyPath.EndsWith("System.Collections.dll", StringComparison.OrdinalIgnoreCase) ||
+                    assemblyPath.EndsWith($"{Path.DirectorySeparatorChar}System.ComponentModel.dll", StringComparison.OrdinalIgnoreCase))
                 {
                     references.Add(MetadataReference.CreateFromFile(assemblyPath));
                 }

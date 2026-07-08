@@ -335,6 +335,16 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Warning,
         AnalyzerCategory);
 
+    // Factory delegate captive dependency (DP066)
+
+    public static DiagnosticDescriptor FactoryDelegateCaptiveDependency { get; } = Create(
+        DiagnosticIds.FactoryDelegateCaptiveDependency,
+        "Singleton factory delegate captures shorter-lived service",
+        "Singleton factory delegate for '{0}' resolves {1} service '{2}'. The resolved instance is captured for the singleton's lifetime and effectively becomes Singleton. Register '{2}' as Singleton, or resolve it per operation instead of inside the factory delegate.",
+        "A factory delegate registered as Singleton runs once; any Scoped or Transient service it resolves is captured for the singleton's lifetime. This is a silent DI configuration error.",
+        DiagnosticSeverity.Warning,
+        AnalyzerCategory);
+
     // Composite tree schema validation (DP063–DP065)
 
     public static DiagnosticDescriptor CompositeTreeMaxDepthExceeded { get; } = Create(
