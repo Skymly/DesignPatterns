@@ -403,25 +403,25 @@ docs/
     └── PluginAssemblies.md
 ```
 
-### 8.1 现有模式文档的迁移
+### 8.1 现有模式文档的迁移（已完成）
 
-现有 `docs/<PatternName>.md`（Strategy.md、Composite.md 等）将逐步拆分迁移至 `docs/spec/` + `docs/design/`：
+所有 7 个模式文档已从 `docs/<PatternName>.md` 拆分迁移至 `docs/spec/` + `docs/design/`：
 
-| 现有文件 | 迁移目标 |
-|----------|----------|
-| `docs/Strategy.md` | `docs/spec/Strategy.md` + `docs/design/Strategy.md` |
-| `docs/ChainOfResponsibility.md` | `docs/spec/ChainOfResponsibility.md` + `docs/design/ChainOfResponsibility.md` |
-| `docs/Composite.md` | `docs/spec/Composite.md` + `docs/design/Composite.md` |
-| `docs/FactoryRegistry.md` | `docs/spec/FactoryRegistry.md` + `docs/design/FactoryRegistry.md` |
-| `docs/Decorator.md` | `docs/spec/Decorator.md` + `docs/design/Decorator.md` |
-| `docs/EventAggregator.md` | `docs/spec/EventAggregator.md` + `docs/design/EventAggregator.md` |
-| `docs/StateTransitionTable.md` | `docs/spec/StateTransitionTable.md` + `docs/design/StateTransitionTable.md` |
+| 原文件 | Spec | Design Doc |
+|--------|------|------------|
+| `docs/Strategy.md` | `docs/spec/Strategy.md` | `docs/design/Strategy.md` |
+| `docs/ChainOfResponsibility.md` | `docs/spec/ChainOfResponsibility.md` | `docs/design/ChainOfResponsibility.md` |
+| `docs/Composite.md` | `docs/spec/Composite.md` | `docs/design/Composite.md` |
+| `docs/FactoryRegistry.md` | `docs/spec/FactoryRegistry.md` | `docs/design/FactoryRegistry.md` |
+| `docs/Decorator.md` | `docs/spec/Decorator.md` | `docs/design/Decorator.md` |
+| `docs/EventAggregator.md` | `docs/spec/EventAggregator.md` | `docs/design/EventAggregator.md` |
+| `docs/StateTransitionTable.md` | `docs/spec/StateTransitionTable.md` | `docs/design/StateTransitionTable.md` |
 
 迁移遵循以下规则：
 - **API 面、诊断 ID 表、不变量、兼容基线** → Spec
 - **实现概览、设计权衡、与生态边界、已知局限、示例** → Design Doc
 - 横切约定文档（`FactoryKeyConventions.md`、`AppSettings.md` 等）保留在 `docs/` 根目录，不迁移。
-- 迁移可逐模式进行，不要求一次性完成。迁移时创建一个独立 PR。
+- 旧文件已删除。
 
 ---
 

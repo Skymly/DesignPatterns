@@ -42,7 +42,7 @@
 
 - 层次 / 并发 / 历史状态（UML 状态机超集）
 - 持久化快照、分布式状态、超时转换
-- ~~Entry / exit / internal transition 动作~~（v1 非目标；**v2 已实现** entry/exit action 委托 + `[Transition(OnEnter/OnExit)]` 源生成，见 [StateTransitionTable.md](../../StateTransitionTable.md)）
+- ~~Entry / exit / internal transition 动作~~（v1 非目标；**v2 已实现** entry/exit action 委托 + `[Transition(OnEnter/OnExit)]` 源生成，见 [StateTransitionTable.md](../../design/StateTransitionTable.md)）
 - Guard 的编译期表达式求值（v1 无 guard；v2 仅运行时委托）
 - `string` / `int` 状态键（v1 仅 **enum**；与 DP025 字面量键校验正交，后续再评）
 - 反射扫描或 AppDomain 自动发现转换
@@ -295,7 +295,7 @@ OrderStatusTransitionTable.RegisterDi(services); // Singleton ITransitionTable<,
 services.AddTransitionTable(OrderStatusTransitionTable.Instance);
 ```
 
-启用开关：MSBuild 属性 `DesignPatterns_EnableDiIntegration`（引用 DI 扩展包时自动为 `true`）。详见 [StateTransitionTable.md](../../StateTransitionTable.md#v2di-集成)。
+启用开关：MSBuild 属性 `DesignPatterns_EnableDiIntegration`（引用 DI 扩展包时自动为 `true`）。详见 [StateTransitionTable.md](../../design/StateTransitionTable.md#v2di-集成)。
 
 ---
 
@@ -356,9 +356,9 @@ services.AddTransitionTable(OrderStatusTransitionTable.Instance);
 
 ## 15. 参考
 
-- [Strategy.md](../../Strategy.md) — 注册表 + 生成器模式参考
+- [Strategy.md](../../spec/Strategy.md) — 注册表 + 生成器模式参考
 - [FactoryKeyConventions.md](../../FactoryKeyConventions.md) — 键约定（State v1 不用 string key）
-- [EventAggregator.md](../../EventAggregator.md) — 组合用 pub/sub
+- [EventAggregator.md](../../spec/EventAggregator.md) — 组合用 pub/sub
 - [ROADMAP.md](../../ROADMAP.md) F3 准入标准
 - Stateless 文档 — 生态边界对照
 

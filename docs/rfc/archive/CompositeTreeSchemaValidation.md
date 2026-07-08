@@ -270,7 +270,7 @@ private sealed record CompositeSchemaInfo(
 | `DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md` | **修改** — 新增 DP063/DP064/DP065 条目 |
 | `tests/DesignPatterns.SourceGenerators.Tests/Generators/CompositePartGeneratorTests.cs` | **修改** — 新增 10 个测试 |
 | `tests/DesignPatterns.Tests/Structural/CompositeSchemaAttributeTests.cs` | **新增** — 特性构造测试 |
-| `docs/Composite.md` | **修改** — 文档补充 schema 校验说明 |
+| `docs/spec/Composite.md` + `docs/design/Composite.md` | **修改** — 文档补充 schema 校验说明 |
 | `docs/ROADMAP.md` | **修改** — 标记完成 |
 
 **PR 边界**：跨 Runtime + Diagnostics + SourceGenerators 三个模块。按 AGENTS.md 规范，应拆分为：

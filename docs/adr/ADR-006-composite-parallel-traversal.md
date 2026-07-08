@@ -34,6 +34,5 @@ Composite 模式已有串行遍历（`Traverse` / `TraverseAsync`），但大树
 
 ## 参考
 
-- [docs/spec/Composite.md](../spec/Composite.md)（待创建）
-- [docs/design/Composite.md](../design/Composite.md)（待创建）
-- [docs/Composite.md](../Composite.md)（现有模式文档，待迁移）
+- [docs/spec/Composite.md](../spec/Composite.md)
+- [docs/design/Composite.md](../design/Composite.md)

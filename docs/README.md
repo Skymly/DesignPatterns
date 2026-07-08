@@ -29,19 +29,19 @@
 | [spec/](spec/README.md) | Spec — 模式稳定契约（API 面、诊断 ID、不变量） |
 | [design/](design/README.md) | Design Doc — 实现细节、设计权衡、已知局限 |
 
-> 现有模式文档（`docs/<PatternName>.md`）将逐步拆分迁移至 `spec/` + `design/`，见 [spec/README.md](spec/README.md#迁移计划)。
+> 所有模式文档已从 `docs/<PatternName>.md` 拆分迁移至 `spec/` + `design/`，见 [spec/README.md](spec/README.md)。
 
-## 模式设计（现有文档，待迁移）
+## 模式索引
 
-| 文档 | 模式 |
-|------|------|
-| [Strategy.md](Strategy.md) | Strategy + `[RegisterStrategy]` |
-| [ChainOfResponsibility.md](ChainOfResponsibility.md) | 责任链 + `[HandlerOrder]` |
-| [Composite.md](Composite.md) | Composite + `[CompositePart]` |
-| [FactoryRegistry.md](FactoryRegistry.md) | Factory Registry + `[RegisterFactory]` |
-| [Decorator.md](Decorator.md) | Decorator + `[Decorator]` |
-| [EventAggregator.md](EventAggregator.md) | Event Aggregator |
-| [StateTransitionTable.md](StateTransitionTable.md) | State 转换表 + `[StateMachine]` / `[Transition]` |
+| 模式 | Spec | Design Doc |
+|------|------|------------|
+| Strategy | [spec/Strategy.md](spec/Strategy.md) | [design/Strategy.md](design/Strategy.md) |
+| Chain of Responsibility | [spec/ChainOfResponsibility.md](spec/ChainOfResponsibility.md) | [design/ChainOfResponsibility.md](design/ChainOfResponsibility.md) |
+| Composite | [spec/Composite.md](spec/Composite.md) | [design/Composite.md](design/Composite.md) |
+| Factory Registry | [spec/FactoryRegistry.md](spec/FactoryRegistry.md) | [design/FactoryRegistry.md](design/FactoryRegistry.md) |
+| Decorator | [spec/Decorator.md](spec/Decorator.md) | [design/Decorator.md](design/Decorator.md) |
+| Event Aggregator | [spec/EventAggregator.md](spec/EventAggregator.md) | [design/EventAggregator.md](design/EventAggregator.md) |
+| State Transition Table | [spec/StateTransitionTable.md](spec/StateTransitionTable.md) | [design/StateTransitionTable.md](design/StateTransitionTable.md) |
 
 ## 横切约定
 

@@ -34,6 +34,5 @@ DesignPatterns 缺少有限状态机 primitive。现有库（Stateless、Akka.NE
 
 ## 参考
 
-- [docs/spec/StateTransitionTable.md](../spec/StateTransitionTable.md)（待创建）
-- [docs/design/StateTransitionTable.md](../design/StateTransitionTable.md)（待创建）
-- [docs/StateTransitionTable.md](../StateTransitionTable.md)（现有模式文档，待迁移）
+- [docs/spec/StateTransitionTable.md](../spec/StateTransitionTable.md)
+- [docs/design/StateTransitionTable.md](../design/StateTransitionTable.md)
