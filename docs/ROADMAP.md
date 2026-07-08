@@ -20,7 +20,7 @@
 | Event Aggregator | `{Event}EventHandlerRegistry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](design/Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP066**（DP063–DP065 为 Composite 树 schema 校验，DP060–DP062 为 DI 生命周期校验，DP056–DP059 为 State hierarchy，DP053–DP055 为 Factory async + pooling 签名/池化校验，DP050–DP052 为 Handler guard 签名校验，DP047–DP049 为 Strategy guard 签名校验，DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](design/Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP067**，DP067–DP071 已由 [Singleton 生命周期诊断 RFC](rfc/SingletonLifecycleDiagnostics.md) 预留（DP066 为 Singleton 工厂委托 captive dependency，DP063–DP065 为 Composite 树 schema 校验，DP060–DP062 为 DI 生命周期校验，DP056–DP059 为 State hierarchy，DP053–DP055 为 Factory async + pooling 签名/池化校验，DP050–DP052 为 Handler guard 签名校验，DP047–DP049 为 Strategy guard 签名校验，DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
 
 诊断 ID 预分配（F2+ 增强项，登记后不提前占用，实现时按序领取）：
 

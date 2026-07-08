@@ -21,7 +21,7 @@
 | 阶段 | 内容 | 模块（AGENTS.md 边界） | 状态 | PR |
 |------|------|------------------------|------|-----|
 | **P0** | RFC Draft → 设计评审（[Review](../review/2026-07-08-singleton-lifecycle-diagnostics-design.md)）→ Accepted → [ADR-008](../adr/ADR-008-singleton-lifecycle-diagnostics.md) | Docs | [x] | （直接提交） |
-| **P1** | 扩展 captive dependency：Autofac / RegisterAutofac 注册收集（符号名匹配）、工厂委托 lambda 分析；DP066；CaptiveDependencyAnalyzer 测试 | Analyzers | [ ] | — |
+| **P1** | 扩展 captive dependency：Autofac / RegisterAutofac 注册收集（符号名匹配）、工厂委托 lambda 分析；DP066；CaptiveDependencyAnalyzer 测试 | Analyzers | [x] | （直接提交） |
 | **P2a** | `GenerateSingletonAttribute.InitializeAsync` + 生成 `GetInstanceAsync`（`Lazy<Task<T>>`）+ 生成器 DP067 | Runtime + SourceGenerators（拆 2 PR） | [ ] | — |
 | **P2b** | DP068 DI 混用警告 + DP069 ThreadSafe 提示 | Analyzers | [ ] | — |
 | **P2** | Spec `docs/spec/Singleton.md` + Design Doc + Sample 更新（可选） | Docs | [ ] | — |
@@ -30,7 +30,7 @@
 
 ## 验收标准
 
-- [ ] P1：Autofac `SingleInstance` 构造函数 captive + 工厂委托 captive（DP066）有 Verify 测试；DP066 已登记并发布到 `AnalyzerReleases`
+- [x] P1：Autofac `SingleInstance` 构造函数 captive + 工厂委托 captive（DP066）有 Verify 测试；DP066 已登记并发布到 `AnalyzerReleases`
 - [ ] P2a：`InitializeAsync` 指定后生成 `GetInstanceAsync` 且不生成同步 `Instance`；无效签名报 DP067；netstandard2.0 / net8.0 测试通过
 - [ ] P2b：同时 `[GenerateSingleton]` + `AddSingleton` 报 DP068；`ThreadSafe=false` 场景报 DP069
 - [ ] P3：典型 static mutable singleton 样本报 DP070；与 DI 双重注册报 DP071；误报样本不报
@@ -51,3 +51,4 @@
 |------|------|------|
 | 2026-07-08 | 初版 Plan 自 RFC Draft 创建 | 用户选定完整 RFC 三阶段范围 |
 | 2026-07-08 | P1 删除字段注入项（DP066 改为工厂委托 captive）；P2a 改 `GetInstanceAsync` 设计 | 设计评审 Blocker #1/#2（[Review](../review/2026-07-08-singleton-lifecycle-diagnostics-design.md)） |
+| 2026-07-08 | P1 完成：Autofac 注册收集 + DP066 工厂委托分析 + 11 个 Verify 测试 | P1 实现落地 |

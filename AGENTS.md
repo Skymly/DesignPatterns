@@ -154,14 +154,15 @@ dotnet test DesignPatterns.slnx -c Release
 | DP063 | Composite tree max depth exceeded（生成器；`[CompositeSchema(MaxDepth)]` 约束被超过 Warning） |
 | DP064 | Composite child type not allowed（生成器；子节点实现类型不在父节点 `AllowedChildTypes` 集合中 Error） |
 | DP065 | Composite node count exceeded（生成器；`[CompositeSchema(MaxNodes)]` 约束被超过 Warning） |
+| DP066 | Factory delegate captive dependency（Analyzer；Singleton 工厂委托内解析 Scoped/Transient 服务 Warning） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP066**；ID 一经发布不复用、不改语义。
+- 下一个可用 ID：**DP067**；ID 一经发布不复用、不改语义（DP067–DP071 已由 [RFC: Singleton 生命周期诊断](docs/rfc/SingletonLifecycleDiagnostics.md) 预留）。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
-- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 属 **Analyzer**；其余属**生成器**。
+- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
 - DP038（action 方法非 static）因 C# 编译器 CS0708 先于生成器拒绝 static 类中的实例成员，无法通过生成器测试触发；诊断保留供完整性。
 

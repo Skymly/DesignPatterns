@@ -70,4 +70,5 @@ public static class DiagnosticIds
     public const string CompositeTreeMaxDepthExceeded = "DP063";
     public const string CompositeChildTypeNotAllowed = "DP064";
     public const string CompositeNodeCountExceeded = "DP065";
+    public const string FactoryDelegateCaptiveDependency = "DP066";
 }

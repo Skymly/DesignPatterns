@@ -737,4 +737,166 @@ public sealed class CaptiveDependencyAnalyzerTests
 
         await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
     }
+
+    [Fact]
+    public async Task ReportsDp062_WhenAutofacSingleInstanceDependsOnInstancePerLifetimeScope()
+    {
+        const string source = """
+            using Autofac;
+
+            namespace TestAssembly;
+
+            public class ScopedService { }
+            public class SingletonService
+            {
+                public SingletonService(ScopedService scoped) { }
+            }
+
+            public static class Startup
+            {
+                public static void Configure(ContainerBuilder builder)
+                {
+                    builder.RegisterType<ScopedService>().InstancePerLifetimeScope();
+                    builder.RegisterType<SingletonService>().SingleInstance();
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
+
+    [Fact]
+    public async Task ReportsDp062_WhenAutofacSingleInstanceDependsOnDefaultTransient()
+    {
+        // Autofac defaults to InstancePerDependency (Transient) when no
+        // lifetime method is chained.
+        const string source = """
+            using Autofac;
+
+            namespace TestAssembly;
+
+            public class TransientService { }
+            public class SingletonService
+            {
+                public SingletonService(TransientService transient) { }
+            }
+
+            public static class Startup
+            {
+                public static void Configure(ContainerBuilder builder)
+                {
+                    builder.RegisterType<TransientService>();
+                    builder.RegisterType<SingletonService>().SingleInstance();
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
+
+    [Fact]
+    public async Task ReportsDp062_WhenAutofacChainHasIntermediateCalls()
+    {
+        // The lifetime method appears after intermediate fluent calls (As<T>()).
+        const string source = """
+            using Autofac;
+
+            namespace TestAssembly;
+
+            public interface IWorker { }
+            public class ScopedService { }
+            public class SingletonService : IWorker
+            {
+                public SingletonService(ScopedService scoped) { }
+            }
+
+            public static class Startup
+            {
+                public static void Configure(ContainerBuilder builder)
+                {
+                    builder.RegisterType<ScopedService>().InstancePerLifetimeScope();
+                    builder.RegisterType<SingletonService>().As<IWorker>().SingleInstance();
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
+
+    [Fact]
+    public async Task DoesNotReport_WhenAutofacSingleInstanceDependsOnSingleInstance()
+    {
+        const string source = """
+            using Autofac;
+
+            namespace TestAssembly;
+
+            public class DependencyService { }
+            public class SingletonService
+            {
+                public SingletonService(DependencyService dependency) { }
+            }
+
+            public static class Startup
+            {
+                public static void Configure(ContainerBuilder builder)
+                {
+                    builder.RegisterType<DependencyService>().SingleInstance();
+                    builder.RegisterType<SingletonService>().SingleInstance();
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
+
+    [Fact]
+    public async Task ReportsDp062_WhenSingletonDependsOnScopedFactoryRegistration()
+    {
+        // Factory-based registrations now feed the lifetime map, so a
+        // Singleton constructor-depending on a Scoped factory registration
+        // is a captive dependency.
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+
+            namespace TestAssembly;
+
+            public class ScopedService { }
+            public class SingletonService
+            {
+                public SingletonService(ScopedService scoped) { }
+            }
+
+            public static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    services.AddScoped<ScopedService>(sp => new ScopedService());
+                    services.AddSingleton<SingletonService>();
+                }
+            }
+            """;
+
+        var diagnostics = await AnalyzerTestContext.RunAnalyzersAsync(
+            source,
+            new CaptiveDependencyAnalyzer());
+
+        await Verifier.Verify(AnalyzerVerifyHelper.FormatDiagnostics(diagnostics, "DP062"));
+    }
 }

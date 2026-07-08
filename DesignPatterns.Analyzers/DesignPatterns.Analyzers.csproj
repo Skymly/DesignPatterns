@@ -8,14 +8,14 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <IsPackable>false</IsPackable>
     <RootNamespace>DesignPatterns.Analyzers</RootNamespace>
-    <!-- RS2003: The release tracking analyzer cannot verify shipped rule IDs
-         because IncludeBuildOutput=false prevents it from reflecting the
-         compiled assembly's SupportedDiagnostics. The diagnostic descriptors
-         are linked via <Compile Include> rather than a project reference,
-         so the analyzer cannot resolve the rule IDs at compile time.
-         The Shipped.md file is maintained manually and verified by the
-         AnalyzerReleases.Shipped.md entries matching DiagnosticIds.cs. -->
-    <NoWarn>$(NoWarn);RS2003</NoWarn>
+    <!-- RS2002/RS2003: The release tracking analyzer cannot verify rule IDs
+         (unshipped/shipped) because IncludeBuildOutput=false prevents it from
+         reflecting the compiled assembly's SupportedDiagnostics. The diagnostic
+         descriptors are linked via <Compile Include> rather than a project
+         reference, so the analyzer cannot resolve the rule IDs at compile time.
+         Both .md files are maintained manually and verified by the
+         AnalyzerReleases entries matching DiagnosticIds.cs. -->
+    <NoWarn>$(NoWarn);RS2002;RS2003</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

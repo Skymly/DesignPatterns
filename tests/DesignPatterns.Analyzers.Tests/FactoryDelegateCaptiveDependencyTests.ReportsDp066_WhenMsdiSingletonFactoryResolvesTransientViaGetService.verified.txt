@@ -1,0 +1,1 @@
+﻿DP066 [Warning] Singleton factory delegate for 'SingletonService' resolves Transient service 'TransientService'. The resolved instance is captured for the singleton's lifetime and effectively becomes Singleton. Register 'TransientService' as Singleton, or resolve it per operation instead of inside the factory delegate. @ Test.cs:(16,76)
