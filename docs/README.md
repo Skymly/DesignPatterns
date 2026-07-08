@@ -22,6 +22,13 @@
 | [rfc/](rfc/README.md) | RFC — 设计提案与讨论记录（[状态板](rfc/README.md)） |
 | [adr/](adr/README.md) | ADR — 架构决策记录（[索引](adr/README.md)） |
 
+## 计划与评审
+
+| 目录 | 说明 |
+|------|------|
+| [plans/](plans/README.md) | Plan — 大型任务计划（跨多 PR；[状态板](plans/README.md)） |
+| [review/](review/README.md) | Review — 评审记录（设计/实现/发版/回顾；[索引](review/README.md)） |
+
 ## 规范与设计文档
 
 | 目录 | 说明 |

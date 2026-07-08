@@ -312,9 +312,9 @@ git push origin v0.1.0-preview3
 
 ---
 
-## 文档体系
+## 文档体系（文档驱动开发）
 
-本仓库文档分为 5 种类型，完整规范见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)。Agent 与人类开发者均须遵守。
+本仓库实行**文档驱动开发**：先文档后代码，任何非琐碎变更先满足文档前置条件（决策表见 [docs/DOCUMENTATION.md §11](docs/DOCUMENTATION.md#11-文档驱动开发流程)）再进入实现。文档分为 7 种类型，完整规范见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)。Agent 与人类开发者均须遵守。
 
 | 类型 | 目录 | 用途 | 关键规则 |
 |------|------|------|----------|
@@ -322,9 +322,11 @@ git push origin v0.1.0-preview3
 | **ADR** | `docs/adr/` | 架构决策记录（不可变） | RFC Accepted → 产出 ADR；编号不复用；正文不修改，仅 Supersede |
 | **Spec** | `docs/spec/` | 稳定契约（API 面、诊断 ID、不变量） | 变更需 RFC + ADR；随代码 PR 同步更新 |
 | **Design Doc** | `docs/design/` | 实现细节、设计权衡、已知局限 | 随代码 PR 同步更新 |
+| **Plan** | `docs/plans/` | 大型任务计划（跨多 PR） | 里程碑对齐单模块 PR 边界；Done/Cancelled 移入 `archive/`；小任务用 Issue 即可 |
+| **Review** | `docs/review/` | 评审记录（设计/实现/发版/回顾） | Final 后正文不可变；行动项全部关闭移入 `archive/` |
 | **Roadmap** | `docs/ROADMAP.md` | 功能与技术 backlog | 完成项移入「已完成（归档）」章节 |
 
-**Plan** 以 GitHub Issue 为载体，不新建文档文件。
+**归档统一规则**：归档 = 移动文件 + 更新状态字段 + 更新 README 索引，同一 PR 完成；归档后正文不再修改（仅修失效链接）；归档不删除。
 
 ### Agent 文档工作流约定
 
@@ -332,9 +334,11 @@ git push origin v0.1.0-preview3
 |------|-----------|
 | 新增诊断 ID | 确认是否有对应 RFC；无则提示需创建 RFC |
 | 修改公共 API | 确认是否有对应 RFC + ADR；无则提示需创建 RFC |
+| 跨多 PR 的大型任务 | 确认 `docs/plans/` 是否有对应 Plan；无则先建 Plan（经用户确认）再实现 |
 | 创建 RFC | 使用 `docs/rfc/_template.md`；frontmatter 从 `Draft` 开始 |
 | 创建 ADR | 编号取 `docs/adr/README.md` 中下一个可用编号 |
-| RFC 状态变更 | 更新 frontmatter `状态` + `更新` 日期；归档时移动到 `archive/` |
+| 创建 Plan / Review | 使用对应 `_template.md`；Review 评审人注明为 Agent |
+| RFC / Plan / Review 状态变更 | 更新 frontmatter `状态` + 日期；归档时移动到对应 `archive/` 并更新 README 索引 |
 | Spec 变更 | 确认 RFC 已 Accepted；同步更新 Spec 版本号 |
 | CHANGELOG | 在 `[Unreleased]` 下添加条目 |
 | 文档目录 | 不在 `docs/` 之外创建文档文件（`.Local/` 除外） |
@@ -355,6 +359,15 @@ git push origin v0.1.0-preview3
 - **禁止**在 Commit / PR 中提及 AI / Agent 工具。
 
 ---
+
+## 澄清与规范
+
+Agent 行为准则——与「与用户沟通」并行生效：
+
+1. **用户表述不清楚时，立刻询问**：不要基于猜测继续工作。用聚焦的问题（而非开放式提问）澄清意图，提供 2–4 个具体选项供用户选择。
+2. **用户表述不合理时，立刻指出并给出建议**：包括但不限于——违反已有 ADR（如 Core 引用 MSDI、厚重基类体系替代 primitives）、复用或改变已发布 `DP###` 诊断 ID 的语义、未走 RFC/ADR 流程变更 Spec 契约、跳过测试（单元 / 生成器 Verify 快照 / Analyzer）、单 PR 混合多个模块、破坏兼容基线（TFM / Roslyn 4.8.0）、过度设计。指出问题时必须说明**为什么不合理**，并给出合理替代方案。
+3. **不要盲目执行**：即使能「做到」用户要求的事，如果认为方向有误，应先提出异议，等待用户确认后再动手。
+4. **发现矛盾时主动报告**：如果用户的新要求与已有 ADR / RFC / `AGENTS.md` 规则冲突，指出冲突点，由用户决定是否更新规则或调整需求（ADR 变更须走 Supersede 流程，见 [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md)）。
 
 ## 与用户沟通
 

@@ -56,5 +56,7 @@ Closes #
 - [ ] New RFC → used `docs/rfc/_template.md` template
 - [ ] RFC status changed → frontmatter updated + archived to `docs/rfc/archive/` if Implemented/Rejected
 - [ ] New ADR → numbered from `docs/adr/README.md` next available
+- [ ] New Plan / Review → used `docs/plans/_template.md` / `docs/review/_template.md` template
+- [ ] Plan / Review status changed → frontmatter updated + archived + index README updated
 - [ ] `CHANGELOG.md` `[Unreleased]` entry added
 - [ ] No documentation changes needed
