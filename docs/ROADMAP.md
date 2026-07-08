@@ -110,7 +110,7 @@
 | Decorator 组合 / 嵌套 | `DecoratorStackBuilder.Compose(otherStack)`，Analyzer 校验栈间类型兼容 | ⭐⭐ 可复用装饰器组合 |
 | MSDI keyed services（.NET 8+） | 生成 keyed registration 代码（`#if NET8_0_OR_GREATER`），与 Autofac keyed 对称 | ⭐⭐ 补齐 MSDI keyed 缺口 |
 | DI 健康检查 + 生命周期校验 | 生成 `IHealthCheck` 校验注册表键可解析；Analyzer 警告无效 lifetime 组合（Singleton registry + Transient impl） | ⭐⭐ 生产场景刚需 |
-| Singleton 生命周期诊断 | Analyzer 检测 singleton 捕获 scoped/transient 引用；async 初始化支持 | ⭐⭐ 防 DI 反模式 |
+| Singleton 生命周期诊断 | Analyzer 检测 singleton 捕获 scoped/transient 引用；async 初始化支持 | ⭐⭐ 防 DI 反模式 | [~] [RFC](rfc/SingletonLifecycleDiagnostics.md) / [Plan](plans/SingletonLifecycleDiagnostics.md) |
 
 State 转换表 v1 已于 0.1.0-preview4 发布；v2（guard 委托、DI 集成、DP036 字面量边校验）已实现，见 [StateTransitionTable.md](design/StateTransitionTable.md) 与 [rfc/StateTransitionTable.md](rfc/StateTransitionTable.md)。EventAggregator 联动示例仍为候选。
 

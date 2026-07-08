@@ -8,7 +8,9 @@ Request for Comments — 设计提案与讨论记录。
 
 ## 活跃 RFC
 
-（无活跃 RFC — 所有 RFC 均已实现并归档）
+| RFC | 标题 | 状态 | 创建日期 | 关联 Plan |
+|-----|------|------|----------|-----------|
+| [SingletonLifecycleDiagnostics.md](SingletonLifecycleDiagnostics.md) | Singleton 生命周期诊断 | Review | 2026-07-08 | [Plan](../plans/SingletonLifecycleDiagnostics.md) |
 
 ## 归档 RFC
 

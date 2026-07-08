@@ -8,7 +8,9 @@
 
 ## 活跃 Plan
 
-（无活跃 Plan）
+| Plan | 标题 | 状态 | 创建日期 | 关联 RFC |
+|------|------|----------|----------|----------|
+| [SingletonLifecycleDiagnostics.md](SingletonLifecycleDiagnostics.md) | Singleton 生命周期诊断 | Active | 2026-07-08 | [RFC](../rfc/SingletonLifecycleDiagnostics.md) |
 
 ## 归档 Plan
 

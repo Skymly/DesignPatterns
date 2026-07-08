@@ -8,7 +8,9 @@
 
 ## 行动项未关闭
 
-（无）
+| Review | 类型 | 结论 | 日期 |
+|--------|------|------|------|
+| [2026-07-08-singleton-lifecycle-diagnostics-design.md](2026-07-08-singleton-lifecycle-diagnostics-design.md) | Design | 有条件通过（修订已随评审完成，待 RFC Accepted 后归档） | 2026-07-08 |
 
 ## 归档 Review
 
