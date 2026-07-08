@@ -20,7 +20,7 @@
 
 | 阶段 | 内容 | 模块（AGENTS.md 边界） | 状态 | PR |
 |------|------|------------------------|------|-----|
-| **P0** | RFC Draft → 设计评审（[Review](../review/2026-07-08-singleton-lifecycle-diagnostics-design.md)）→ 待 Accepted → ADR-008 | Docs | [~] | （本变更） |
+| **P0** | RFC Draft → 设计评审（[Review](../review/2026-07-08-singleton-lifecycle-diagnostics-design.md)）→ Accepted → [ADR-008](../adr/ADR-008-singleton-lifecycle-diagnostics.md) | Docs | [x] | （直接提交） |
 | **P1** | 扩展 captive dependency：Autofac / RegisterAutofac 注册收集（符号名匹配）、工厂委托 lambda 分析；DP066；CaptiveDependencyAnalyzer 测试 | Analyzers | [ ] | — |
 | **P2a** | `GenerateSingletonAttribute.InitializeAsync` + 生成 `GetInstanceAsync`（`Lazy<Task<T>>`）+ 生成器 DP067 | Runtime + SourceGenerators（拆 2 PR） | [ ] | — |
 | **P2b** | DP068 DI 混用警告 + DP069 ThreadSafe 提示 | Analyzers | [ ] | — |

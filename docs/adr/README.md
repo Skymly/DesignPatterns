@@ -17,7 +17,8 @@
 | [ADR-005](ADR-005-state-transition-table.md) | State transition table | Accepted | 2026-06-14 | StateTransitionTable, HierarchicalStateMachine |
 | [ADR-006](ADR-006-composite-parallel-traversal.md) | Composite parallel traversal | Accepted | 2026-06-30 | CompositeParallelTraversal |
 | [ADR-007](ADR-007-composite-tree-schema-validation.md) | Composite tree schema validation | Accepted | 2026-07-07 | CompositeTreeSchemaValidation |
+| [ADR-008](ADR-008-singleton-lifecycle-diagnostics.md) | Singleton lifecycle diagnostics | Accepted | 2026-07-08 | SingletonLifecycleDiagnostics |
 
 ## 下一个可用编号
 
-**ADR-008**
+**ADR-009**
