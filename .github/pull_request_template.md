@@ -48,15 +48,8 @@ Closes #
 
 ## Documentation checklist
 
-<!-- See docs/DOCUMENTATION.md for the full documentation standard. -->
+<!-- See docs/DOCUMENTATION.md for documentation conventions. -->
 
-- [ ] New/changed public API → Spec updated (`docs/spec/`)
-- [ ] New/changed diagnostic ID → Spec updated + `AnalyzerReleases.Unshipped.md` updated
-- [ ] Implementation detail changed → Design Doc updated (`docs/design/`)
-- [ ] New RFC → used `docs/rfc/_template.md` template
-- [ ] RFC status changed → frontmatter updated + archived to `docs/rfc/archive/` if Implemented/Rejected
-- [ ] New ADR → numbered from `docs/adr/README.md` next available
-- [ ] New Plan / Review → used `docs/plans/_template.md` / `docs/review/_template.md` template
-- [ ] Plan / Review status changed → frontmatter updated + archived + index README updated
-- [ ] `CHANGELOG.md` `[Unreleased]` entry added
+- [ ] Design Doc updated if API / diagnostic / implementation changed
+- [ ] User-facing docs synced (separate PRs if multi-repo)
 - [ ] No documentation changes needed

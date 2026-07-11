@@ -4,11 +4,11 @@
 |------|-----|
 | **状态** | Accepted |
 | **日期** | 2026-07-08 |
-| **关联 RFC** | [docs/rfc/SingletonLifecycleDiagnostics.md](../rfc/SingletonLifecycleDiagnostics.md) |
+| **关联 Issue** | —（历史 RFC / Plan / Review 已随文档体系精简移除；决策以本文为准） |
 
 ## 背景
 
-DP062 已覆盖 MSDI 构造函数注入的 Singleton captive dependency，但 Autofac 注册与 `AddSingleton` 工厂委托不在检测范围内；`[GenerateSingleton]` 缺少 async 初始化路径，与 DI 容器单例混用时无警告；DEVELOPMENT.md 声明的「静态可变单例提示」尚无对应 Analyzer。设计评审（[2026-07-08](../review/2026-07-08-singleton-lifecycle-diagnostics-design.md)）确认了三阶段扩展方案并修正两处初稿设计错误。
+DP062 已覆盖 MSDI 构造函数注入的 Singleton captive dependency，但 Autofac 注册与 `AddSingleton` 工厂委托不在检测范围内；`[GenerateSingleton]` 缺少 async 初始化路径，与 DI 容器单例混用时无警告；DEVELOPMENT.md 声明的「静态可变单例提示」尚无对应 Analyzer。设计评审确认了三阶段扩展方案并修正两处初稿设计错误（async 不可用属性 getter、不存在的 MSDI 字段注入）。
 
 ## 决策
 
@@ -38,5 +38,4 @@ DP062 已覆盖 MSDI 构造函数注入的 Singleton captive dependency，但 Au
 
 - [ADR-001 Primitives over frameworks](ADR-001-primitives-over-frameworks.md)
 - [ADR-004 Core does not reference MSDI](ADR-004-core-does-not-reference-msdi.md)
-- [设计评审记录](../review/2026-07-08-singleton-lifecycle-diagnostics-design.md)
-- [实现计划](../plans/SingletonLifecycleDiagnostics.md)
+- [docs/ROADMAP.md](../ROADMAP.md)（Singleton 生命周期诊断条目）

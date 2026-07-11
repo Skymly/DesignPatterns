@@ -4,7 +4,7 @@
 |------|-----|
 | **状态** | Accepted |
 | **日期** | 2026-06-14 |
-| **关联 RFC** | [docs/rfc/archive/StateTransitionTable.md](../rfc/archive/StateTransitionTable.md)、[docs/rfc/archive/HierarchicalStateMachine.md](../rfc/archive/HierarchicalStateMachine.md) |
+| **关联 Issue** | —（历史 RFC 已随文档体系精简移除） |
 
 ## 背景
 
@@ -34,5 +34,4 @@ DesignPatterns 缺少有限状态机 primitive。现有库（Stateless、Akka.NE
 
 ## 参考
 
-- [docs/spec/StateTransitionTable.md](../spec/StateTransitionTable.md)
 - [docs/design/StateTransitionTable.md](../design/StateTransitionTable.md)
