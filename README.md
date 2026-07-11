@@ -88,8 +88,8 @@ DesignPatterns.slnx
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | 环境、构建、测试、架构约定 |
 | [docs/PUBLISHING.md](docs/PUBLISHING.md) | NuGet 发版流程 |
 | [docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md) | Strategy / Factory key 命名约定 |
-| [docs/spec/](docs/spec/README.md) | 模式规范（Spec）— 稳定契约：API 面、诊断 ID、不变量 |
-| [docs/design/](docs/design/README.md) | 模式设计文档（Design Doc）— 实现细节、设计权衡、已知局限 |
+| [docs/design/](docs/design/README.md) | 模式设计文档（Design Doc）— API / 诊断 / 实现与权衡 |
+| [docs/adr/](docs/adr/README.md) | 架构决策记录（ADR） |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | 功能与技术 backlog |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献与测试说明 |
 | [AGENTS.md](AGENTS.md) | AI 编码助手项目上下文 |

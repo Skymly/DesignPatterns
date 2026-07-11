@@ -4,7 +4,7 @@
 |------|-----|
 | **状态** | Accepted |
 | **日期** | 2026-07-07 |
-| **关联 RFC** | [docs/rfc/archive/CompositeTreeSchemaValidation.md](../rfc/archive/CompositeTreeSchemaValidation.md) |
+| **关联 Issue** | —（历史 RFC 已随文档体系精简移除） |
 
 ## 背景
 
@@ -34,5 +34,4 @@
 
 ## 参考
 
-- [docs/spec/Composite.md](../spec/Composite.md)
 - [docs/design/Composite.md](../design/Composite.md)

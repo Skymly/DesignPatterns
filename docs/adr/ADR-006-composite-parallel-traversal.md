@@ -4,7 +4,7 @@
 |------|-----|
 | **状态** | Accepted |
 | **日期** | 2026-06-30 |
-| **关联 RFC** | [docs/rfc/archive/CompositeParallelTraversal.md](../rfc/archive/CompositeParallelTraversal.md) |
+| **关联 Issue** | —（历史 RFC 已随文档体系精简移除） |
 
 ## 背景
 
@@ -34,5 +34,4 @@ Composite 模式已有串行遍历（`Traverse` / `TraverseAsync`），但大树
 
 ## 参考
 
-- [docs/spec/Composite.md](../spec/Composite.md)
 - [docs/design/Composite.md](../design/Composite.md)
