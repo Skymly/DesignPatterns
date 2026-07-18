@@ -71,4 +71,9 @@ public static class DiagnosticIds
     public const string CompositeChildTypeNotAllowed = "DP064";
     public const string CompositeNodeCountExceeded = "DP065";
     public const string FactoryDelegateCaptiveDependency = "DP066";
+    public const string GenerateSingletonInitializeAsyncInvalid = "DP067";
+    public const string GenerateSingletonDiDoubleRegistration = "DP068";
+    public const string GenerateSingletonNonThreadSafeMutableState = "DP069";
+    public const string StaticMutableSingleton = "DP070";
+    public const string StaticMutableSingletonDiDoubleRegistration = "DP071";
 }

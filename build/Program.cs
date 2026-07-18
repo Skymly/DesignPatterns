@@ -40,6 +40,8 @@ sealed class Build : NukeBuild
     readonly NuGetConsumerFeed ConsumerFeed = NuGetConsumerFeed.Local;
 
     AbsolutePath PackProject => Root / "DesignPatterns.Package" / "DesignPatterns.Package.csproj";
+    AbsolutePath DependencyInjectionPackProject => Root / "DesignPatterns.Extensions.DependencyInjection" / "DesignPatterns.Extensions.DependencyInjection.csproj";
+    AbsolutePath AutofacPackProject => Root / "DesignPatterns.Extensions.Autofac" / "DesignPatterns.Extensions.Autofac.csproj";
 
     static readonly string[] TestProjectRelativePaths =
     [
@@ -52,7 +54,18 @@ sealed class Build : NukeBuild
         "tests/DesignPatterns.Extensions.Configuration.Tests/DesignPatterns.Extensions.Configuration.Tests.csproj",
     ];
 
+    static readonly string[] Net48TestProjectRelativePaths =
+    [
+        "tests/DesignPatterns.Extensions.AppSettings.Tests.Net48/DesignPatterns.Extensions.AppSettings.Tests.Net48.csproj",
+        "tests/DesignPatterns.Extensions.Configuration.Tests.Net48/DesignPatterns.Extensions.Configuration.Tests.Net48.csproj",
+    ];
+
     const string ExpectedPackageId = "Skymly.DesignPatterns";
+    static readonly string[] ExtensionPackageIds =
+    [
+        "Skymly.DesignPatterns.Extensions.DependencyInjection",
+        "Skymly.DesignPatterns.Extensions.Autofac",
+    ];
 
     public static int Main() => Execute<Build>(x => x.Ci);
 
@@ -106,27 +119,49 @@ sealed class Build : NukeBuild
             }
         });
 
+    Target UnitTestNet48 => _ => _
+        .DependsOn(Compile)
+        .Executes(() =>
+        {
+            foreach (string relativePath in Net48TestProjectRelativePaths)
+            {
+                AbsolutePath projectFile = Root / relativePath;
+                Assert.FileExists(projectFile, $"Test project not found: {projectFile}");
+                DotNetTest(s => s
+                    .SetProjectFile(projectFile)
+                    .SetConfiguration(Configuration)
+                    .SetNoBuild(true)
+                    .SetResultsDirectory(TestResultsDirectory)
+                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+            }
+        });
+
     Target Pack => _ => _
         .DependsOn(UnitTest)
         .Executes(() =>
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
 
-            DotNetPack(s =>
+            foreach (AbsolutePath project in new[] { PackProject, DependencyInjectionPackProject, AutofacPackProject })
             {
-                s = s
-                    .SetProject(PackProject)
-                    .SetConfiguration(Configuration)
-                    .SetProperty("PackageOutputPath", PackageOutputDirectory)
-                    .SetProperty("ContinuousIntegrationBuild", "true");
-
-                if (!string.IsNullOrWhiteSpace(Version))
+                DotNetPack(s =>
                 {
-                    s = s.SetVersion(Version);
-                }
+                    s = s
+                        .SetProject(project)
+                        .SetConfiguration(Configuration)
+                        .SetProperty("PackageOutputPath", PackageOutputDirectory)
+                        .SetProperty("ContinuousIntegrationBuild", "true")
+                        .SetProperty("DesignPatternsPackageDependency", "true")
+                        .EnableNoBuild();
 
-                return s;
-            });
+                    if (!string.IsNullOrWhiteSpace(Version))
+                    {
+                        s = s.SetVersion(Version);
+                    }
+
+                    return s;
+                });
+            }
         });
 
     Target PackVerify => _ => _
@@ -160,6 +195,11 @@ sealed class Build : NukeBuild
 
             Assert.True(entries.Contains("README.md"), $"{ExpectedPackageId}: missing package README.md");
             Assert.True(entries.Contains("LICENSE") || entries.Contains("LICENSE.md"), $"{ExpectedPackageId}: missing LICENSE");
+
+            foreach (string packageId in ExtensionPackageIds)
+            {
+                VerifyExtensionPackage(packageId);
+            }
         });
 
     Target NuGetConsumerSmoke => _ => _
@@ -225,6 +265,9 @@ sealed class Build : NukeBuild
     Target Ci => _ => _
         .DependsOn(UnitTest);
 
+    Target CiNet48 => _ => _
+        .DependsOn(UnitTestNet48);
+
     Target Test => _ => _
         .DependsOn(UnitTest);
 
@@ -280,10 +323,30 @@ sealed class Build : NukeBuild
             throw new InvalidOperationException($"No packages found in {PackageOutputDirectory}");
         }
 
-        return nupkgs.SingleOrDefault(p => p.Name.StartsWith(ExpectedPackageId + ".", StringComparison.Ordinal))
-            ?? throw new InvalidOperationException(
-                $"Expected a single '{ExpectedPackageId}.*.nupkg' package, found: {string.Join(", ", nupkgs.Select(p => p.Name))}");
+        return GetPackage(ExpectedPackageId);
     }
+
+    void VerifyExtensionPackage(string packageId)
+    {
+        AbsolutePath nupkg = GetPackage(packageId);
+        using ZipArchive archive = ZipFile.OpenRead(nupkg);
+        HashSet<string> entries = archive.Entries
+            .Select(e => e.FullName.Replace('\\', '/'))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        string assemblyName = packageId.Replace("Skymly.", string.Empty);
+        Assert.True(entries.Contains($"lib/netstandard2.0/{assemblyName}.dll"), $"{packageId}: missing netstandard2.0 assembly");
+        Assert.True(entries.Contains($"lib/net8.0/{assemblyName}.dll"), $"{packageId}: missing net8.0 assembly");
+        Assert.True(entries.Contains($"build/{packageId}.targets"), $"{packageId}: missing automatic integration targets");
+        Assert.True(entries.Contains("README.md"), $"{packageId}: missing package README.md");
+    }
+
+    AbsolutePath GetPackage(string packageId) =>
+        PackageOutputDirectory.GlobFiles("*.nupkg")
+            .SingleOrDefault(p => p.Name.StartsWith(packageId + ".", StringComparison.Ordinal)
+                && p.Name.Length > packageId.Length + 1
+                && char.IsDigit(p.Name[packageId.Length + 1]))
+            ?? throw new InvalidOperationException($"Expected a '{packageId}.*.nupkg' package.");
 
     static string GetPackageVersion(AbsolutePath nupkg)
     {
