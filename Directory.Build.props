@@ -6,9 +6,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- Single source of truth for NuGet publish; override via VERSION env or Nuke version parameter at release time. -->
-    <VersionPrefix>0.2.2</VersionPrefix>
-    <VersionSuffix></VersionSuffix>
-    <Version>$(VersionPrefix)</Version>
+    <VersionPrefix>0.2.3</VersionPrefix>
+    <VersionSuffix>preview1</VersionSuffix>
+    <Version>$(VersionPrefix)-$(VersionSuffix)</Version>
     <PackageVersion>$(Version)</PackageVersion>
 
     <Authors>Skymly</Authors>

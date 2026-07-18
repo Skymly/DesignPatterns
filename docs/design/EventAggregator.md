@@ -1,6 +1,6 @@
 # Design Doc: Event Aggregator
 
-> **版本**：v0.2.2
+> **版本**：v0.2.3-preview1
 > **关联 ADR**：ADR-XXX（如有）
 
 ## 概述
