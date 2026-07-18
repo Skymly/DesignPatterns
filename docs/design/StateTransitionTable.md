@@ -1,6 +1,6 @@
 # Design Doc: State 转换表
 
-> **版本**：v0.2.2（与 NuGet 包版本对齐）
+> **版本**：v0.2.3-preview1（与 NuGet 包版本对齐）
 > **关联 ADR**：[ADR-005](../adr/ADR-005-state-transition-table.md)
 
 ## 概述

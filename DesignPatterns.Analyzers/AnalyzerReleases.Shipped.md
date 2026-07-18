@@ -14,3 +14,15 @@ DP044    | DesignPatterns.Analyzers | Info     | Event handler implementation mi
 DP060    | DesignPatterns.Analyzers | Warning  | DI captive dependency: registry lifetime exceeds implementation lifetime
 DP061    | DesignPatterns.Analyzers | Info     | DI lifetime mismatch: implementation lifetime exceeds registry lifetime
 DP062    | DesignPatterns.Analyzers | Warning  | Singleton captive dependency on Scoped/Transient service
+DP066    | DesignPatterns.Analyzers | Warning  | Singleton factory delegate captures shorter-lived service
+
+## Release 0.2.3
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+DP068   | DesignPatterns.Analyzers | Warning  | Generated singleton is also registered with DI
+DP069   | DesignPatterns.Analyzers | Info     | Non-thread-safe singleton has mutable instance state
+DP070   | DesignPatterns.Analyzers | Info     | Static mutable singleton candidate
+DP071   | DesignPatterns.Analyzers | Warning  | Static mutable singleton is also registered with DI

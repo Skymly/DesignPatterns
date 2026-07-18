@@ -9,16 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3-preview1] - 2026-07-18
+
+### Added
+
+- **Async Singleton initialization**: `[GenerateSingleton(InitializeAsync = nameof(Method))]` validates static `Task`/`ValueTask` initializers and generates `GetInstanceAsync()` backed by a lazy async singleton. Invalid initializer signatures report **DP067**.
+- **Singleton lifecycle diagnostics**: added **DP068** for generated Singleton plus DI double registration, **DP069** for mutable state on non-thread-safe generated Singletons, **DP070** for mutable static Singleton candidates, and **DP071** for mutable static Singleton plus DI registration.
+- **Diagnostic and integration coverage**: added generator, analyzer, runtime integration, package, and CI verification for the new Singleton lifecycle behavior.
+
+## [0.2.2] - 2026-06-30
+
 ### Added
 
 - **Composite parallel traversal**: `CompositeTraverser.TraverseParallel` / `TraverseParallelAsync` / `TraverseForestParallel` / `TraverseForestParallelAsync` — parallel tree traversal with `MaxDegreeOfParallelism` and `MaxParallelDepth` options. BFS same-level parallel, DFS child-parallel recursion with sequential fallback beyond depth threshold. `AggregateException` for error aggregation. `ConfigureAwait(false)` for async paths. `#if` split: `Parallel.ForEachAsync` on net8.0, `SemaphoreSlim` + `Task.WhenAll` on netstandard2.0. 17 new tests. See [ADR-006](docs/adr/ADR-006-composite-parallel-traversal.md).
 - **DP062 Phase 2 — generated RegisterDi coverage**: `CaptiveDependencyAnalyzer` now also scans `RegisterDi` calls from DesignPatterns source generators. Extracts `implementationLifetime` (or `lifetime` for single-param overloads) and applies it to all types bearing `[RegisterStrategy]`, `[RegisterFactory]`, `[RegisterEventHandler]`, `[Decorator]`, `[CompositePart]` attributes. 5 new Verify snapshot tests.
 - **Singleton lifecycle diagnostics P1 — Autofac and factory delegate coverage**: `CaptiveDependencyAnalyzer` now collects Autofac registrations (`RegisterType` + fluent lifetime chain, `Register(c => ...)`) via symbol-name matching with no Autofac package reference, and reports the new **DP066** (Warning) when a Singleton factory delegate (`AddSingleton<T>(sp => ...)` or Autofac `Register(...).SingleInstance()`) directly resolves a Scoped/Transient service via `GetRequiredService`/`GetService`/`Resolve`. MSDI factory and instance registrations now also feed the lifetime map, so Singletons constructor-depending on factory-registered Scoped/Transient services report DP062. Limitation: only direct resolution calls inside the delegate body are detected. 11 new Verify snapshot tests. See [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md).
 - **Documentation system simplification**: Removed in-repo RFC / Spec / Plan / Review document types. Spec content merged into Design Docs; task tracking and review use GitHub Issues / PRs. See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md).
-
-## [0.2.2] - 2026-06-30
-
-### Added
 
 - **Singleton captive dependency diagnostic (DP062)**: `CaptiveDependencyAnalyzer` reports DP062 (Warning) when a Singleton service's constructor depends on a Scoped or Transient service. Scans `AddSingleton`/`AddScoped`/`AddTransient`/`TryAdd(ServiceDescriptor)` calls to build a type-to-lifetime registration map, then checks each Singleton implementation's constructor parameters against the map. 11 Verify snapshot tests.
 
@@ -124,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `WithTrackingName` to generator pipelines and added cache-hit regression tests.
 - Migrated analyzer tests to Verify snapshots for consistency with generator tests.
 
+[0.2.3-preview1]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.2.3-preview1
 [0.2.0-preview1]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.2.0-preview1
 [0.1.0-preview7]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.1.0-preview7
 

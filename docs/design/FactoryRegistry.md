@@ -1,6 +1,6 @@
 # Design Doc: Factory Registry
 
-> **版本**：v0.2.2（与 NuGet 包版本对齐）
+> **版本**：v0.2.3-preview1（与 NuGet 包版本对齐）
 > **关联 ADR**：ADR-XXX（如有）
 
 ## 概述

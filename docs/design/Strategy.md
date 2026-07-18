@@ -1,6 +1,6 @@
 # Design Doc: Strategy
 
-> **版本**：v0.2.2（与 NuGet 包版本对齐）
+> **版本**：v0.2.3-preview1（与 NuGet 包版本对齐）
 
 ## 概述
 
