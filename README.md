@@ -47,12 +47,12 @@
 | 手动注册 | `AddStrategyRegistry` / `AddFactoryRegistry` / `AddHandlerPipeline` / `AddTransitionTable` / `AddStateMachine` | `RegisterTransitionTable` / `RegisterStateMachine` |
 | 生成器输出 | `{Contract}Registry.RegisterDi(services)` | `{Contract}Registry.RegisterAutofac(builder)` |
 
-引用对应扩展项目/包时，源生成器自动输出 `RegisterDi`（MSDI）或 `RegisterAutofac`（Autofac）方法，从容器解析实例。
+引用元包与对应扩展包时，源生成器自动输出 `RegisterDi`（MSDI）或 `RegisterAutofac`（Autofac）方法，从容器解析实例。
 
-- **MSDI**：引用 `DesignPatterns.Extensions.DependencyInjection`（自动导入 `build/*.targets`）
-- **Autofac**：引用 `DesignPatterns.Extensions.Autofac`（自动导入 `build/*.targets`）
+- **MSDI**：引用 `Skymly.DesignPatterns` 与 `Skymly.DesignPatterns.Extensions.DependencyInjection`（自动导入 `build/*.targets`）
+- **Autofac**：引用 `Skymly.DesignPatterns` 与 `Skymly.DesignPatterns.Extensions.Autofac`（自动导入 `build/*.targets`）
 
-当前元包 **`Skymly.DesignPatterns`** 不包含 DI 扩展；独立 NuGet 发布策略待 API 与发版流程稳定后再确定。
+元包 **`Skymly.DesignPatterns`** 不包含 DI 扩展；两个扩展保持独立、与元包锁步发布。
 
 ## 仓库结构
 

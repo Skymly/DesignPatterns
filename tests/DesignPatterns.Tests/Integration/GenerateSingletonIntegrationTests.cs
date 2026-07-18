@@ -14,6 +14,34 @@ public partial class IntegrationFastCache
     public int Value { get; set; }
 }
 
+[GenerateSingleton(InitializeAsync = nameof(InitializeAsync))]
+public partial class IntegrationAsyncSettings
+{
+    public bool Initialized { get; private set; }
+
+    public static System.Threading.Tasks.Task InitializeAsync(
+        IntegrationAsyncSettings settings,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        settings.Initialized = true;
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+}
+
+[GenerateSingleton(InitializeAsync = nameof(InitializeAsync))]
+public partial class IntegrationValueTaskSettings
+{
+    public bool Initialized { get; private set; }
+
+    public static System.Threading.Tasks.ValueTask InitializeAsync(
+        IntegrationValueTaskSettings settings,
+        System.Threading.CancellationToken cancellationToken)
+    {
+        settings.Initialized = true;
+        return System.Threading.Tasks.ValueTask.CompletedTask;
+    }
+}
+
 public sealed class GenerateSingletonIntegrationTests
 {
     [Fact]
@@ -33,5 +61,23 @@ public sealed class GenerateSingletonIntegrationTests
         var second = IntegrationFastCache.Instance;
 
         Assert.Same(first, second);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GeneratedSingleton_AsyncInitializer_ReturnsInitializedSameReference()
+    {
+        var first = await IntegrationAsyncSettings.GetInstanceAsync();
+        var second = await IntegrationAsyncSettings.GetInstanceAsync();
+
+        Assert.Same(first, second);
+        Assert.True(first.Initialized);
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task GeneratedSingleton_ValueTaskInitializer_ReturnsInitializedInstance()
+    {
+        var instance = await IntegrationValueTaskSettings.GetInstanceAsync();
+
+        Assert.True(instance.Initialized);
     }
 }

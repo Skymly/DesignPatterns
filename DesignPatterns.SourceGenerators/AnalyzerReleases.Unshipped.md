@@ -68,3 +68,8 @@ DP063    | DesignPatterns.Generators | Warning  | Composite tree max depth excee
 DP064    | DesignPatterns.Generators | Error    | Composite child type not allowed by parent AllowedChildTypes
 DP065    | DesignPatterns.Generators | Warning  | Composite node count exceeds MaxNodes limit
 DP066    | DesignPatterns.Analyzers | Warning  | Singleton factory delegate captures shorter-lived service
+DP067    | DesignPatterns.Generators | Error    | GenerateSingleton asynchronous initializer has an invalid signature
+DP068    | DesignPatterns.Analyzers | Warning  | Generated singleton is also registered with DI
+DP069    | DesignPatterns.Analyzers | Info     | Non-thread-safe singleton has mutable instance state
+DP070    | DesignPatterns.Analyzers | Info     | Static mutable singleton candidate
+DP071    | DesignPatterns.Analyzers | Warning  | Static mutable singleton is also registered with DI

@@ -25,6 +25,9 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
     private static readonly DiagnosticDescriptor InvalidTargetDescriptor =
         DesignPatternsDiagnosticDescriptors.GenerateSingletonInvalidTarget;
 
+    private static readonly DiagnosticDescriptor InvalidInitializeAsyncDescriptor =
+        DesignPatternsDiagnosticDescriptors.GenerateSingletonInitializeAsyncInvalid;
+
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -52,6 +55,7 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
         }
 
         var threadSafe = true;
+        string? initializeAsync = null;
         foreach (var attribute in context.Attributes)
         {
             foreach (var named in attribute.NamedArguments)
@@ -59,6 +63,10 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
                 if (named.Key == "ThreadSafe" && named.Value.Value is bool value)
                 {
                     threadSafe = value;
+                }
+                else if (named.Key == "InitializeAsync" && named.Value.Value is string methodName)
+                {
+                    initializeAsync = methodName;
                 }
             }
         }
@@ -81,6 +89,14 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
                 new DiagnosticInfo(NotPartialDescriptor, location, className));
         }
 
+        if (initializeAsync is not null &&
+            (string.IsNullOrWhiteSpace(initializeAsync) ||
+             !TryValidateInitializeAsync(symbol, initializeAsync)))
+        {
+            return Result<SingletonTargetInfo>.Failure(
+                new DiagnosticInfo(InvalidInitializeAsyncDescriptor, location, initializeAsync, className));
+        }
+
         return Result<SingletonTargetInfo>.Success(new SingletonTargetInfo(
             location,
             className,
@@ -90,7 +106,8 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
             threadSafe,
             isStatic,
             typeKind,
-            isPartial));
+            isPartial,
+            initializeAsync));
     }
 
     private static void Execute(SourceProductionContext context, Result<SingletonTargetInfo> result)
@@ -103,7 +120,8 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
         var compilationUnit = SingletonSyntaxFactory.CreateCompilationUnit(
             info.NamespaceName,
             info.ClassName,
-            info.ThreadSafe);
+            info.ThreadSafe,
+            info.InitializeAsync);
 
         var sourceText = SourceText.From(compilationUnit.ToFullString(), Encoding.UTF8);
         context.AddSource($"{info.ClassName}.Singleton.g.cs", sourceText);
@@ -116,5 +134,34 @@ public sealed class GenerateSingletonGenerator : IIncrementalGenerator
         bool ThreadSafe,
         bool IsStatic,
         TypeKind TypeKind,
-        bool IsPartial);
+        bool IsPartial,
+        string? InitializeAsync);
+
+    private static bool TryValidateInitializeAsync(
+        INamedTypeSymbol type,
+        string methodName)
+    {
+        foreach (var method in type.GetMembers(methodName).OfType<IMethodSymbol>())
+        {
+            if (!method.IsStatic || method.Parameters.Length != 2 ||
+                !SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, type) ||
+                method.Parameters[1].Type.ToDisplayString() != "System.Threading.CancellationToken")
+            {
+                continue;
+            }
+
+            var returnType = method.ReturnType.ToDisplayString();
+            if (returnType == "System.Threading.Tasks.Task")
+            {
+                return true;
+            }
+
+            if (returnType == "System.Threading.Tasks.ValueTask")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

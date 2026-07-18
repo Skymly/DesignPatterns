@@ -7,11 +7,17 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageId>Skymly.DesignPatterns.Extensions.Autofac</PackageId>
+    <Title>Skymly DesignPatterns Autofac Extensions</Title>
+    <Description>Autofac integration for Skymly.DesignPatterns.</Description>
+    <PackageTags>design-patterns;dependency-injection;autofac</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="build\DesignPatterns.Extensions.Autofac.targets" Pack="true" PackagePath="build\DesignPatterns.Extensions.Autofac.targets" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="build\DesignPatterns.Extensions.Autofac.targets" Pack="true" PackagePath="build\Skymly.DesignPatterns.Extensions.Autofac.targets" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,7 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" />
+    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" PrivateAssets="all" Pack="false" />
+    <PackageReference Include="Skymly.DesignPatterns" Condition="'$(DesignPatternsPackageDependency)' == 'true'" />
   </ItemGroup>
 
 </Project>

@@ -84,4 +84,30 @@ public sealed class GenerateSingletonGeneratorTests
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
+
+    [Fact]
+    public void ReportsDp067WhenAsyncInitializerSignatureIsInvalid()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateSingleton(InitializeAsync = nameof(InitializeAsync))]
+            public partial class InvalidAsyncInitializer
+            {
+                public void InitializeAsync(
+                    InvalidAsyncInitializer instance,
+                    System.Threading.CancellationToken cancellationToken)
+                {
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateSingletonGenerator>(
+            ("InvalidAsyncInitializer.cs", source));
+
+        var diagnostics = SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult);
+        Assert.Contains(diagnostics, diagnostic => diagnostic.Id == "DP067");
+    }
 }

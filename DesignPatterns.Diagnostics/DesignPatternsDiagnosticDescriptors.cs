@@ -31,6 +31,46 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    public static DiagnosticDescriptor GenerateSingletonInitializeAsyncInvalid { get; } = Create(
+        DiagnosticIds.GenerateSingletonInitializeAsyncInvalid,
+        "GenerateSingleton asynchronous initializer is invalid",
+        "InitializeAsync method '{0}' on '{1}' must be static and have signature 'Task|ValueTask {0}({1} instance, CancellationToken cancellationToken)'.",
+        "An asynchronous singleton initializer must accept the generated instance and a cancellation token, and return Task or ValueTask.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateSingletonDiDoubleRegistration { get; } = Create(
+        DiagnosticIds.GenerateSingletonDiDoubleRegistration,
+        "Generated singleton is also registered with DI",
+        "Type '{0}' uses [GenerateSingleton] and is also registered as a DI Singleton. Use one lifecycle owner to avoid two independent singleton instances.",
+        "Generated singleton instances and DI singleton registrations have separate lifecycles.",
+        DiagnosticSeverity.Warning,
+        AnalyzerCategory);
+
+    public static DiagnosticDescriptor GenerateSingletonNonThreadSafeMutableState { get; } = Create(
+        DiagnosticIds.GenerateSingletonNonThreadSafeMutableState,
+        "Non-thread-safe singleton has mutable instance state",
+        "Type '{0}' sets ThreadSafe=false but contains mutable instance field '{1}'. Concurrent access can race; make the field readonly or enable thread safety.",
+        "Non-thread-safe singletons should not expose mutable instance state to concurrent callers.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
+    public static DiagnosticDescriptor StaticMutableSingleton { get; } = Create(
+        DiagnosticIds.StaticMutableSingleton,
+        "Static mutable singleton candidate",
+        "Type '{0}' exposes mutable static singleton state through '{1}'. Prefer an immutable Lazy-backed singleton or a DI-managed lifecycle.",
+        "Mutable static singleton state is vulnerable to accidental replacement and concurrent access.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
+    public static DiagnosticDescriptor StaticMutableSingletonDiDoubleRegistration { get; } = Create(
+        DiagnosticIds.StaticMutableSingletonDiDoubleRegistration,
+        "Static mutable singleton is also registered with DI",
+        "Type '{0}' exposes mutable static singleton state and is also registered as a DI Singleton. Use one lifecycle owner.",
+        "Combining mutable static singleton state with DI singleton registration creates two independent lifecycle owners.",
+        DiagnosticSeverity.Warning,
+        AnalyzerCategory);
+
     // Strategy (DP003–DP004, DP007)
 
     public static KeyedRegistrationDiagnostics RegisterStrategy { get; } = new(

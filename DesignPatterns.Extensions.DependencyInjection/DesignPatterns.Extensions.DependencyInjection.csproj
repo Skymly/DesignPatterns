@@ -7,11 +7,17 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageId>Skymly.DesignPatterns.Extensions.DependencyInjection</PackageId>
+    <Title>Skymly DesignPatterns Microsoft DI Extensions</Title>
+    <Description>Microsoft.Extensions.DependencyInjection integration for Skymly.DesignPatterns.</Description>
+    <PackageTags>design-patterns;dependency-injection;msdi</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="build\DesignPatterns.Extensions.DependencyInjection.targets" Pack="true" PackagePath="build\DesignPatterns.Extensions.DependencyInjection.targets" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="build\DesignPatterns.Extensions.DependencyInjection.targets" Pack="true" PackagePath="build\Skymly.DesignPatterns.Extensions.DependencyInjection.targets" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
@@ -25,7 +31,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" />
+    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" PrivateAssets="all" Pack="false" />
+    <PackageReference Include="Skymly.DesignPatterns" Condition="'$(DesignPatternsPackageDependency)' == 'true'" />
   </ItemGroup>
 
 </Project>

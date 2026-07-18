@@ -87,9 +87,38 @@ jobs:
         working-directory: DesignPatterns.Samples
         run: dotnet run --project build/_build.csproj -- --root . --target Ci --configuration Release
 
+  build-test-net48:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/global.json', '**/*.slnx') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run net48 tests via Nuke
+        run: dotnet run --project build/_build.csproj -- --root . --target CiNet48 --configuration Release
+
+      - name: Upload net48 test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-net48
+          path: TestResults/
+          if-no-files-found: warn
+
   pack:
     runs-on: ubuntu-latest
-    needs: [build-test, samples]
+    needs: [build-test, build-test-net48, samples]
     steps:
       - uses: actions/checkout@v4
 

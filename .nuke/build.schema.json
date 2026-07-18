@@ -33,6 +33,7 @@
       "type": "string",
       "enum": [
         "Ci",
+        "CiNet48",
         "CiPack",
         "Clean",
         "Compile",
@@ -44,7 +45,8 @@
         "Publish",
         "Restore",
         "Test",
-        "UnitTest"
+        "UnitTest",
+        "UnitTestNet48"
       ]
     },
     "Verbosity": {
