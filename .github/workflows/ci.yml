@@ -67,6 +67,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Skymly/DesignPatterns.Samples
+          # Paired PR branches share a name; main pushes use main.
+          ref: ${{ github.head_ref || github.ref_name }}
           path: DesignPatterns.Samples
 
       - name: Setup .NET SDK
