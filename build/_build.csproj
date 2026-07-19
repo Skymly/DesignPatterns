@@ -1,1 +1,19 @@
-值潲敪瑣匠此∽楍牣獯景⹴䕎⹔摓≫ാഊ 㰠牐灯牥祴片畯㹰਍††似瑵異呴灹㹥硅㱥伯瑵異呴灹㹥਍††吼牡敧䙴慲敭潷歲渾瑥〱〮⼼慔杲瑥牆浡睥牯㹫਍††䤼灭楬楣啴楳杮㹳湥扡敬⼼浉汰捩瑩獕湩獧ാ †㰠畎汬扡敬放慮汢㱥丯汵慬汢㹥਍††丼歵呥汥浥瑥祲敖獲潩㹮㰱丯歵呥汥浥瑥祲敖獲潩㹮਍††䤼偳捡慫汢㹥慦獬㱥䤯偳捡慫汢㹥਍†⼼牐灯牥祴片畯㹰਍਍†䤼整䝭潲灵ാ †㰠慐正条剥晥牥湥散䤠据畬敤∽畎敫䌮浯潭≮⼠ാ †㰠ⴡ‭敋灥丠歵❥⁳牴湡楳楴敶戠極摬搠灥湥敤据敩⁳湯瀠瑡档摥瘠牥楳湯⹳ⴠ㸭਍††值捡慫敧敒敦敲据⁥湉汣摵㵥丢䝵瑥倮捡慫楧杮•牐癩瑡䅥獳瑥㵳愢汬•㸯਍††值捡慫敧敒敦敲据⁥湉汣摵㵥匢獹整⹭敓畣楲祴䌮祲瑰杯慲桰⹹浘≬倠楲慶整獁敳獴∽污≬⼠ാ 㰠䤯整䝭潲灵ാഊ㰊倯潲敪瑣ാ�
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <NukeTelemetryVersion>1</NukeTelemetryVersion>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nuke.Common" />
+    <!-- Keep Nuke's transitive build dependencies on patched versions. -->
+    <PackageReference Include="NuGet.Packaging" PrivateAssets="all" />
+    <PackageReference Include="System.Security.Cryptography.Xml" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

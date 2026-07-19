@@ -4,13 +4,19 @@
 
 Works with generated `{Contract}Registry.Instance` / `{Contract}Keys` from `[RegisterStrategy]` (see [Strategy.md](Strategy.md)).
 
-Related: [AppSettings.md](AppSettings.md) (`ConfigurationManager.AppSettings` bridge), [PluginAssemblies.md](PluginAssemblies.md) (multi-assembly hosts), [Autofac.md](Autofac.md) (container registration).
+Related: [PluginAssemblies.md](PluginAssemblies.md) (multi-assembly hosts), [Autofac.md](Autofac.md) (container registration).
 
 ---
 
 ## Package
 
-Independent extension assembly (not included in the `Skymly.DesignPatterns` meta-package), same policy as MSDI and Autofac extensions.
+Independent extension package `Skymly.DesignPatterns.Extensions.Configuration` (not included in the `Skymly.DesignPatterns` meta-package), same policy as MSDI and Autofac extensions.
+
+```xml
+<PackageReference Include="Skymly.DesignPatterns.Extensions.Configuration" Version="..." />
+```
+
+Or sibling project reference:
 
 ```xml
 <ProjectReference Include="path/to/DesignPatterns.Extensions.Configuration/DesignPatterns.Extensions.Configuration.csproj" />
@@ -89,8 +95,9 @@ var card = RegistryConfiguration.ResolveConfigured(
 
 Prefer `{Contract}Keys` constants for `defaultKey` to stay DP025-safe at call sites.
 
-For `App.config` / `ConfigurationManager.AppSettings` hosts, use [AppSettings.md](AppSettings.md) instead.
+### Legacy App.config hosts
 
+There is no dedicated `ConfigurationManager.AppSettings` extension. Map AppSettings into `IConfiguration` in the host (indexer is enough for `RegistryConfiguration`), then call the same API. See the PluginAssemblies sample host for a minimal adapter.
 ---
 
 ## Tests
@@ -107,3 +114,4 @@ For `App.config` / `ConfigurationManager.AppSettings` hosts, use [AppSettings.md
 - MSBuild / App.config static analysis (**DP032** — future)
 - Factory registry bridge (strategy-only v1)
 - Replacing composition-root module order
+- Bundling `System.Configuration.ConfigurationManager` into this package

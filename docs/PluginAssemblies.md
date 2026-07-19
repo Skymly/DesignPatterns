@@ -125,9 +125,11 @@ v1 **不**提供 `[RegisterStrategyBundle]`；若样板过多再评估（见 #10
 
 ## 6. 配置选型
 
-`App.config` / `ConfigurationManager` 桥接由 `DesignPatterns.Extensions.AppSettings` 提供（`RegistryConfiguration.ResolveConfigured` / `TryResolveConfigured`，见 [AppSettings.md](AppSettings.md)）。
+宿主通过 `Skymly.DesignPatterns.Extensions.Configuration` 的 `RegistryConfiguration.ResolveConfigured` / `TryResolveConfigured`，把 `IConfiguration` 字符串映射到 strategy registry（见 [Configuration.md](Configuration.md)）。
 
-在桥接落地前，宿主可：
+`App.config` / `ConfigurationManager.AppSettings` 宿主可先把 AppSettings 适配为 `IConfiguration`（索引器即可），再调用同一 API；库不提供单独的 AppSettings 扩展包。
+
+也可不经过桥接：
 
 - 读取配置字符串，用 `{Contract}Keys` 常量比较；或
 - 对 `*Registry.Instance.TryGet(key, out var impl)` 做失败处理。

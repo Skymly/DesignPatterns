@@ -42,6 +42,7 @@ sealed class Build : NukeBuild
     AbsolutePath PackProject => Root / "DesignPatterns.Package" / "DesignPatterns.Package.csproj";
     AbsolutePath DependencyInjectionPackProject => Root / "DesignPatterns.Extensions.DependencyInjection" / "DesignPatterns.Extensions.DependencyInjection.csproj";
     AbsolutePath AutofacPackProject => Root / "DesignPatterns.Extensions.Autofac" / "DesignPatterns.Extensions.Autofac.csproj";
+    AbsolutePath ConfigurationPackProject => Root / "DesignPatterns.Extensions.Configuration" / "DesignPatterns.Extensions.Configuration.csproj";
 
     static readonly string[] TestProjectRelativePaths =
     [
@@ -50,13 +51,11 @@ sealed class Build : NukeBuild
         "tests/DesignPatterns.Analyzers.Tests/DesignPatterns.Analyzers.Tests.csproj",
         "tests/DesignPatterns.Extensions.DependencyInjection.Tests/DesignPatterns.Extensions.DependencyInjection.Tests.csproj",
         "tests/DesignPatterns.Extensions.Autofac.Tests/DesignPatterns.Extensions.Autofac.Tests.csproj",
-        "tests/DesignPatterns.Extensions.AppSettings.Tests/DesignPatterns.Extensions.AppSettings.Tests.csproj",
         "tests/DesignPatterns.Extensions.Configuration.Tests/DesignPatterns.Extensions.Configuration.Tests.csproj",
     ];
 
     static readonly string[] Net48TestProjectRelativePaths =
     [
-        "tests/DesignPatterns.Extensions.AppSettings.Tests.Net48/DesignPatterns.Extensions.AppSettings.Tests.Net48.csproj",
         "tests/DesignPatterns.Extensions.Configuration.Tests.Net48/DesignPatterns.Extensions.Configuration.Tests.Net48.csproj",
     ];
 
@@ -65,6 +64,7 @@ sealed class Build : NukeBuild
     [
         "Skymly.DesignPatterns.Extensions.DependencyInjection",
         "Skymly.DesignPatterns.Extensions.Autofac",
+        "Skymly.DesignPatterns.Extensions.Configuration",
     ];
 
     public static int Main() => Execute<Build>(x => x.Ci);
@@ -142,7 +142,7 @@ sealed class Build : NukeBuild
         {
             PackageOutputDirectory.CreateOrCleanDirectory();
 
-            foreach (AbsolutePath project in new[] { PackProject, DependencyInjectionPackProject, AutofacPackProject })
+            foreach (AbsolutePath project in new[] { PackProject, DependencyInjectionPackProject, AutofacPackProject, ConfigurationPackProject })
             {
                 DotNetPack(s =>
                 {
@@ -337,7 +337,13 @@ sealed class Build : NukeBuild
         string assemblyName = packageId.Replace("Skymly.", string.Empty);
         Assert.True(entries.Contains($"lib/netstandard2.0/{assemblyName}.dll"), $"{packageId}: missing netstandard2.0 assembly");
         Assert.True(entries.Contains($"lib/net8.0/{assemblyName}.dll"), $"{packageId}: missing net8.0 assembly");
-        Assert.True(entries.Contains($"build/{packageId}.targets"), $"{packageId}: missing automatic integration targets");
+        if (packageId is
+            "Skymly.DesignPatterns.Extensions.DependencyInjection" or
+            "Skymly.DesignPatterns.Extensions.Autofac")
+        {
+            Assert.True(entries.Contains($"build/{packageId}.targets"), $"{packageId}: missing automatic integration targets");
+        }
+
         Assert.True(entries.Contains("README.md"), $"{packageId}: missing package README.md");
     }
 

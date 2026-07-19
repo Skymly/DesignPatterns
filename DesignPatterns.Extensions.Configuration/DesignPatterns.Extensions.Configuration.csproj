@@ -7,15 +7,25 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <PackageId>Skymly.DesignPatterns.Extensions.Configuration</PackageId>
+    <Title>Skymly DesignPatterns Configuration Extensions</Title>
+    <Description>IConfiguration bridge to strategy registries for Skymly.DesignPatterns.</Description>
+    <PackageTags>design-patterns;configuration;strategy</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" />
+    <ProjectReference Include="..\DesignPatterns\DesignPatterns.csproj" PrivateAssets="all" Pack="false" />
+    <PackageReference Include="Skymly.DesignPatterns" Condition="'$(DesignPatternsPackageDependency)' == 'true'" />
   </ItemGroup>
 
 </Project>
