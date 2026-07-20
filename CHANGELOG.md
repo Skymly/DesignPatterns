@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Removed AppSettings extension**: deleted the non-packable `DesignPatterns.Extensions.AppSettings` project. Use `Skymly.DesignPatterns.Extensions.Configuration` with an `IConfiguration` adapter for legacy `App.config` hosts.
+- **Configuration extension packable**: `DesignPatterns.Extensions.Configuration` now ships as `Skymly.DesignPatterns.Extensions.Configuration`.
+- **Encoding fix**: restored UTF-8 content for files previously corrupted by the Nuke upgrade API push / bad re-encode (`Directory.Packages.props`, `global.json`, build project, CI workflows).
+
 ## [0.2.3-preview1] - 2026-07-18
 
 ### Added
