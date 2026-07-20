@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3-preview2] - 2026-07-20
+
 ### Changed
 
 - **Removed AppSettings extension**: deleted the non-packable `DesignPatterns.Extensions.AppSettings` project. Use `Skymly.DesignPatterns.Extensions.Configuration` with an `IConfiguration` adapter for legacy `App.config` hosts.
@@ -136,6 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `WithTrackingName` to generator pipelines and added cache-hit regression tests.
 - Migrated analyzer tests to Verify snapshots for consistency with generator tests.
 
+[0.2.3-preview2]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.2.3-preview2
 [0.2.3-preview1]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.2.3-preview1
 [0.2.0-preview1]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.2.0-preview1
 [0.1.0-preview7]: https://github.com/Skymly/DesignPatterns/releases/tag/v0.1.0-preview7

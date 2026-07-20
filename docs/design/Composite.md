@@ -1,6 +1,6 @@
 # Design Doc: Composite
 
-> **版本**：v0.2.3-preview1（与 NuGet 包版本对齐）
+> **版本**：v0.2.3-preview2（与 NuGet 包版本对齐）
 > **关联 ADR**：[ADR-006](../adr/ADR-006-composite-parallel-traversal.md)、[ADR-007](../adr/ADR-007-composite-tree-schema-validation.md)
 
 ## 概述
