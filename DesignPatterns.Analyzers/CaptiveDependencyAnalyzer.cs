@@ -57,13 +57,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol ImplementationType { get; set; } = null!;
         public Lifetime Lifetime { get; set; }
         public InvocationExpressionSyntax Invocation { get; set; } = null!;
-
-        /// <summary>
-        /// True for factory-delegate and instance registrations: the container
-        /// never invokes the implementation constructor, so constructor analysis
-        /// does not apply (the type still participates in the lifetime map).
-        /// </summary>
-        public bool SkipConstructorAnalysis { get; set; }
     }
 
     /// <summary>
@@ -81,7 +74,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var registrations = new List<RegistrationEntry>();
+        var mapBuilder = new DiRegistrationMapBuilder();
+        var registerDiEntries = new List<RegistrationEntry>();
         var factoryDelegates = new List<FactoryDelegateEntry>();
 
         // Phase 2: Pre-scan all types for DesignPatterns registration attributes.
@@ -90,11 +84,16 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         var attributedTypesByCategory = CollectAttributedImplementationTypes(context.Compilation);
 
         context.RegisterSyntaxNodeAction(
-            syntaxContext => CollectRegistration(syntaxContext, registrations, factoryDelegates, attributedTypesByCategory),
+            syntaxContext => CollectRegistration(
+                syntaxContext,
+                mapBuilder,
+                registerDiEntries,
+                factoryDelegates,
+                attributedTypesByCategory),
             SyntaxKind.InvocationExpression);
 
         context.RegisterCompilationEndAction(
-            endContext => AnalyzeRegistrations(endContext, registrations, factoryDelegates));
+            endContext => AnalyzeRegistrations(endContext, mapBuilder, registerDiEntries, factoryDelegates));
     }
 
     /// <summary>
@@ -154,7 +153,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static void CollectRegistration(
         SyntaxNodeAnalysisContext context,
-        List<RegistrationEntry> registrations,
+        DiRegistrationMapBuilder mapBuilder,
+        List<RegistrationEntry> registerDiEntries,
         List<FactoryDelegateEntry> factoryDelegates,
         Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> attributedTypesByCategory)
     {
@@ -167,42 +167,34 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         var methodName = memberAccess.Name.Identifier.ValueText;
 
-        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient")
+        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd" or "RegisterType" or "Register")
         {
-            CollectDirectRegistration(context, invocation, methodName, registrations, factoryDelegates);
-        }
-        else if (methodName == "TryAdd")
-        {
-            CollectTryAddRegistration(context, invocation, registrations);
+            if (mapBuilder.TryCollect(invocation, context.SemanticModel))
+            {
+                TryCollectFactoryDelegate(context, invocation, methodName, factoryDelegates);
+            }
         }
         else if (methodName == "RegisterDi")
         {
-            CollectRegisterDiRegistration(context, invocation, attributedTypesByCategory, registrations);
-        }
-        else if (methodName == "RegisterType")
-        {
-            CollectAutofacRegisterType(context, invocation, registrations);
-        }
-        else if (methodName == "Register")
-        {
-            CollectAutofacRegisterDelegate(context, invocation, registrations, factoryDelegates);
+            CollectRegisterDiRegistration(context, invocation, attributedTypesByCategory, registerDiEntries);
         }
     }
 
-    private static void CollectDirectRegistration(
+    /// <summary>
+    /// Collects Singleton factory delegates for DP066. Lifetime map entries for
+    /// these registrations are owned by <see cref="DiRegistrationMapBuilder"/>.
+    /// </summary>
+    private static void TryCollectFactoryDelegate(
         SyntaxNodeAnalysisContext context,
         InvocationExpressionSyntax invocation,
         string methodName,
-        List<RegistrationEntry> registrations,
         List<FactoryDelegateEntry> factoryDelegates)
     {
-        var lifetime = methodName switch
+        var args = invocation.ArgumentList?.Arguments ?? default;
+        if (args.Count == 0 || args[0].Expression is not AnonymousFunctionExpressionSyntax lambda)
         {
-            "AddSingleton" => Lifetime.Singleton,
-            "AddScoped" => Lifetime.Scoped,
-            "AddTransient" => Lifetime.Transient,
-            _ => Lifetime.Transient,
-        };
+            return;
+        }
 
         var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
         if (methodSymbol is null)
@@ -210,160 +202,38 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        INamedTypeSymbol? implType = null;
-        var args = invocation.ArgumentList?.Arguments ?? new SeparatedSyntaxList<ArgumentSyntax>();
-
-        // AddSingleton<TService, TImpl>() — 2 type args, TImpl is implementation
-        if (methodSymbol.TypeArguments.Length == 2 &&
-            methodSymbol.TypeArguments[1] is INamedTypeSymbol implFromGeneric)
+        if (methodName == "AddSingleton")
         {
-            implType = implFromGeneric;
-        }
-        // AddSingleton<TImpl>() — 1 type arg, TImpl is implementation
-        else if (methodSymbol.TypeArguments.Length == 1 &&
-                 methodSymbol.TypeArguments[0] is INamedTypeSymbol singleGeneric)
-        {
-            // Factory/instance registration: the container never calls the
-            // constructor, so skip constructor analysis but keep the type in
-            // the lifetime map. Singleton factory lambdas are analyzed for DP066.
-            if (args.Count > 0 && IsFactoryOrInstanceArg(args[0], context.SemanticModel))
+            if (methodSymbol.TypeArguments.Length != 1 ||
+                methodSymbol.TypeArguments[0] is not INamedTypeSymbol serviceType ||
+                AutofacRegistration.IsOpenGeneric(serviceType))
             {
-                if (IsOpenGeneric(singleGeneric))
-                {
-                    return;
-                }
-
-                registrations.Add(new RegistrationEntry
-                {
-                    ImplementationType = singleGeneric,
-                    Lifetime = lifetime,
-                    Invocation = invocation,
-                    SkipConstructorAnalysis = true,
-                });
-
-                if (lifetime == Lifetime.Singleton &&
-                    args[0].Expression is AnonymousFunctionExpressionSyntax lambda)
-                {
-                    factoryDelegates.Add(new FactoryDelegateEntry
-                    {
-                        ServiceType = singleGeneric,
-                        Lambda = lambda,
-                        SemanticModel = context.SemanticModel,
-                    });
-                }
-
                 return;
             }
 
-            implType = singleGeneric;
-        }
-
-        if (implType is null)
-        {
-            return;
-        }
-
-        if (IsOpenGeneric(implType))
-        {
-            return;
-        }
-
-        registrations.Add(new RegistrationEntry
-        {
-            ImplementationType = implType,
-            Lifetime = lifetime,
-            Invocation = invocation,
-        });
-    }
-
-    /// <summary>
-    /// Collects Autofac <c>RegisterType&lt;TImpl&gt;()</c> / <c>RegisterType(typeof(TImpl))</c>
-    /// registrations. Autofac methods are matched by containing namespace
-    /// (no Autofac package reference). The lifetime is resolved from the
-    /// fluent chain (<c>SingleInstance</c> etc.); Autofac defaults to
-    /// InstancePerDependency (Transient).
-    /// </summary>
-    private static void CollectAutofacRegisterType(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        List<RegistrationEntry> registrations)
-    {
-        var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-        if (!IsAutofacMethod(methodSymbol))
-        {
-            return;
-        }
-
-        INamedTypeSymbol? implType = null;
-        if (methodSymbol!.TypeArguments.Length == 1 &&
-            methodSymbol.TypeArguments[0] is INamedTypeSymbol generic)
-        {
-            implType = generic;
-        }
-        else
-        {
-            var args = invocation.ArgumentList?.Arguments ?? new SeparatedSyntaxList<ArgumentSyntax>();
-            if (args.Count == 1)
+            factoryDelegates.Add(new FactoryDelegateEntry
             {
-                implType = ResolveTypeofArg(args[0].Expression, context.SemanticModel);
+                ServiceType = serviceType,
+                Lambda = lambda,
+                SemanticModel = context.SemanticModel,
+            });
+            return;
+        }
+
+        if (methodName == "Register" && AutofacRegistration.IsAutofacMethod(methodSymbol))
+        {
+            if (methodSymbol.TypeArguments.Length != 1 ||
+                methodSymbol.TypeArguments[0] is not INamedTypeSymbol serviceType ||
+                AutofacRegistration.IsOpenGeneric(serviceType))
+            {
+                return;
             }
-        }
 
-        if (implType is null || IsOpenGeneric(implType))
-        {
-            return;
-        }
+            if (AutofacRegistration.ResolveChainLifetime(invocation) != Lifetime.Singleton)
+            {
+                return;
+            }
 
-        registrations.Add(new RegistrationEntry
-        {
-            ImplementationType = implType,
-            Lifetime = ResolveAutofacChainLifetime(invocation),
-            Invocation = invocation,
-        });
-    }
-
-    /// <summary>
-    /// Collects Autofac <c>Register(c =&gt; ...)</c> delegate registrations.
-    /// The container never calls the implementation constructor, so the entry
-    /// only feeds the lifetime map; Singleton delegates are analyzed for DP066.
-    /// </summary>
-    private static void CollectAutofacRegisterDelegate(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        List<RegistrationEntry> registrations,
-        List<FactoryDelegateEntry> factoryDelegates)
-    {
-        var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-        if (!IsAutofacMethod(methodSymbol))
-        {
-            return;
-        }
-
-        if (methodSymbol!.TypeArguments.Length != 1 ||
-            methodSymbol.TypeArguments[0] is not INamedTypeSymbol serviceType ||
-            IsOpenGeneric(serviceType))
-        {
-            return;
-        }
-
-        var args = invocation.ArgumentList?.Arguments ?? new SeparatedSyntaxList<ArgumentSyntax>();
-        if (args.Count == 0 || args[0].Expression is not AnonymousFunctionExpressionSyntax lambda)
-        {
-            return;
-        }
-
-        var lifetime = ResolveAutofacChainLifetime(invocation);
-
-        registrations.Add(new RegistrationEntry
-        {
-            ImplementationType = serviceType,
-            Lifetime = lifetime,
-            Invocation = invocation,
-            SkipConstructorAnalysis = true,
-        });
-
-        if (lifetime == Lifetime.Singleton)
-        {
             factoryDelegates.Add(new FactoryDelegateEntry
             {
                 ServiceType = serviceType,
@@ -371,98 +241,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                 SemanticModel = context.SemanticModel,
             });
         }
-    }
-
-    private static bool IsAutofacMethod(IMethodSymbol? methodSymbol) =>
-        methodSymbol?.ContainingNamespace?.ToDisplayString()
-            .StartsWith("Autofac", StringComparison.Ordinal) == true;
-
-    /// <summary>
-    /// Walks up the fluent chain from an Autofac registration call and returns
-    /// the declared lifetime. Intermediate calls (e.g. <c>As&lt;T&gt;()</c>)
-    /// are skipped; without an explicit lifetime call Autofac defaults to
-    /// InstancePerDependency (Transient).
-    /// </summary>
-    private static Lifetime ResolveAutofacChainLifetime(InvocationExpressionSyntax registrationCall)
-    {
-        var lifetime = Lifetime.Transient;
-        SyntaxNode node = registrationCall;
-
-        while (node.Parent is MemberAccessExpressionSyntax memberAccess &&
-               memberAccess.Parent is InvocationExpressionSyntax parentInvocation)
-        {
-            switch (memberAccess.Name.Identifier.ValueText)
-            {
-                case "SingleInstance":
-                    lifetime = Lifetime.Singleton;
-                    break;
-                case "InstancePerLifetimeScope":
-                case "InstancePerMatchingLifetimeScope":
-                case "InstancePerRequest":
-                case "InstancePerOwned":
-                    lifetime = Lifetime.Scoped;
-                    break;
-                case "InstancePerDependency":
-                    lifetime = Lifetime.Transient;
-                    break;
-            }
-
-            node = parentInvocation;
-        }
-
-        return lifetime;
-    }
-
-    private static bool IsOpenGeneric(INamedTypeSymbol type) =>
-        type.IsUnboundGenericType ||
-        (type.TypeParameters.Length > 0 && type.IsDefinition);
-
-    private static void CollectTryAddRegistration(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        List<RegistrationEntry> registrations)
-    {
-        var argList = invocation.ArgumentList;
-        if (argList is null || argList.Arguments.Count == 0)
-        {
-            return;
-        }
-
-        // TryAdd(new ServiceDescriptor(typeof(TService), typeof(TImpl), ServiceLifetime.Singleton))
-        var firstArg = argList.Arguments[0].Expression;
-        if (firstArg is not ObjectCreationExpressionSyntax objectCreation)
-        {
-            return;
-        }
-
-        var descriptorArgList = objectCreation.ArgumentList;
-        if (descriptorArgList is null || descriptorArgList.Arguments.Count < 3)
-        {
-            return;
-        }
-
-        var descriptorArgs = descriptorArgList.Arguments;
-
-        // Second arg: typeof(TImpl)
-        var implType = ResolveTypeofArg(descriptorArgs[1].Expression, context.SemanticModel);
-        if (implType is null)
-        {
-            return;
-        }
-
-        // Third arg: lifetime constant (e.g. Singleton)
-        var lifetime = LifetimeResolution.TryResolve(descriptorArgs[2].Expression, context.SemanticModel);
-        if (lifetime is null)
-        {
-            return;
-        }
-
-        registrations.Add(new RegistrationEntry
-        {
-            ImplementationType = implType,
-            Lifetime = lifetime.Value,
-            Invocation = invocation,
-        });
     }
 
     /// <summary>
@@ -585,27 +363,47 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeRegistrations(
         CompilationAnalysisContext context,
-        List<RegistrationEntry> registrations,
+        DiRegistrationMapBuilder mapBuilder,
+        List<RegistrationEntry> registerDiEntries,
         List<FactoryDelegateEntry> factoryDelegates)
     {
-        if (registrations.Count == 0)
+        var map = mapBuilder.Build();
+        if (map.Entries.Count == 0 && registerDiEntries.Count == 0)
         {
             return;
         }
 
         // Build the registration map: type → lifetime (last wins).
+        // Explicit container registrations come from DiRegistrationMap;
+        // attributed RegisterDi entries are overlaid (still private until #234).
         var lifetimeMap = new Dictionary<INamedTypeSymbol, Lifetime>(
             SymbolEqualityComparer.Default);
 
-        foreach (var reg in registrations)
+        foreach (var pair in map.Lifetimes)
+        {
+            lifetimeMap[pair.Key] = pair.Value;
+        }
+
+        foreach (var reg in registerDiEntries)
         {
             lifetimeMap[reg.ImplementationType] = reg.Lifetime;
         }
 
-        // For each Singleton, check constructor parameters.
-        foreach (var reg in registrations)
+        // DP062: Singleton constructor analysis for explicit registrations from the map.
+        foreach (var reg in map.Entries)
         {
             if (reg.Lifetime != Lifetime.Singleton || reg.SkipConstructorAnalysis)
+            {
+                continue;
+            }
+
+            AnalyzeSingleton(context, reg.ImplementationType, reg.Invocation, lifetimeMap);
+        }
+
+        // DP062: RegisterDi path still uses the private entry list.
+        foreach (var reg in registerDiEntries)
+        {
+            if (reg.Lifetime != Lifetime.Singleton)
             {
                 continue;
             }
@@ -725,47 +523,5 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                     paramType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
             }
         }
-    }
-
-    private static INamedTypeSymbol? ResolveTypeofArg(
-        ExpressionSyntax expr,
-        SemanticModel semanticModel)
-    {
-        if (expr is not TypeOfExpressionSyntax typeofExpr)
-        {
-            return null;
-        }
-
-        var typeInfo = semanticModel.GetTypeInfo(typeofExpr.Type);
-        return typeInfo.Type as INamedTypeSymbol;
-    }
-
-    private static bool IsFactoryOrInstanceArg(
-        ArgumentSyntax arg,
-        SemanticModel semanticModel)
-    {
-        var expr = arg.Expression;
-
-        // Lambda → factory
-        if (expr is SimpleLambdaExpressionSyntax or ParenthesizedLambdaExpressionSyntax)
-        {
-            return true;
-        }
-
-        // Check if it's a delegate type (Func<IServiceProvider, T>)
-        var typeInfo = semanticModel.GetTypeInfo(expr);
-        if (typeInfo.Type is not null &&
-            typeInfo.Type.TypeKind == TypeKind.Delegate)
-        {
-            return true;
-        }
-
-        // Object creation, method invocation → likely instance
-        if (expr is ObjectCreationExpressionSyntax or InvocationExpressionSyntax)
-        {
-            return true;
-        }
-
-        return false;
     }
 }
