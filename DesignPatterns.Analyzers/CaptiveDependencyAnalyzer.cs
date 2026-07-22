@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using DesignPatterns.Analyzers.Di;
 using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -35,13 +36,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(OnCompilationStart);
-    }
-
-    private enum Lifetime
-    {
-        Singleton = 0,
-        Scoped = 1,
-        Transient = 2,
     }
 
     /// <summary>
@@ -456,8 +450,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Third arg: ServiceLifetime.Singleton
-        var lifetime = ResolveLifetimeArg(descriptorArgs[2].Expression, context.SemanticModel);
+        // Third arg: lifetime constant (e.g. Singleton)
+        var lifetime = LifetimeResolution.TryResolve(descriptorArgs[2].Expression, context.SemanticModel);
         if (lifetime is null)
         {
             return;
@@ -513,7 +507,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
 
         // Resolve the lifetime value from the call arguments.
-        var lifetime = ResolveLifetimeFromArg(invocation, implLifetimeParam, context.SemanticModel);
+        var lifetime = LifetimeResolution.TryResolveArgument(
+            invocation, implLifetimeParam, context.SemanticModel);
         var containingTypeName = methodSymbol.ContainingType?.Name ?? "";
         if (lifetime is null)
         {
@@ -586,54 +581,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Resolves a ServiceLifetime argument from an invocation by parameter name.
-    /// </summary>
-    private static Lifetime? ResolveLifetimeFromArg(
-        InvocationExpressionSyntax invocation,
-        IParameterSymbol parameter,
-        SemanticModel semanticModel)
-    {
-        var argList = invocation.ArgumentList;
-        if (argList is null)
-        {
-            return null;
-        }
-
-        // Check named arguments first.
-        ArgumentSyntax? matchedArg = null;
-        foreach (var arg in argList.Arguments)
-        {
-            if (arg.NameColon is { Name.Identifier.ValueText: var name } &&
-                name == parameter.Name)
-            {
-                matchedArg = arg;
-                break;
-            }
-        }
-
-        // Fall back to positional argument.
-        if (matchedArg is null)
-        {
-            var index = parameter.Ordinal;
-            if (index < argList.Arguments.Count)
-            {
-                var arg = argList.Arguments[index];
-                if (arg.NameColon is null)
-                {
-                    matchedArg = arg;
-                }
-            }
-        }
-
-        if (matchedArg is null)
-        {
-            return null;
-        }
-
-        return ResolveLifetimeArg(matchedArg.Expression, semanticModel);
     }
 
     private static void AnalyzeRegistrations(
@@ -791,39 +738,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         var typeInfo = semanticModel.GetTypeInfo(typeofExpr.Type);
         return typeInfo.Type as INamedTypeSymbol;
-    }
-
-    private static Lifetime? ResolveLifetimeArg(
-        ExpressionSyntax expr,
-        SemanticModel semanticModel)
-    {
-        // Try constant value (enum member → int)
-        var constantValue = semanticModel.GetConstantValue(expr);
-        if (constantValue.HasValue && constantValue.Value is int intValue)
-        {
-            return intValue switch
-            {
-                0 => Lifetime.Singleton,
-                1 => Lifetime.Scoped,
-                2 => Lifetime.Transient,
-                _ => null,
-            };
-        }
-
-        // Try field symbol (ServiceLifetime.Singleton etc.)
-        var symbol = semanticModel.GetSymbolInfo(expr).Symbol;
-        if (symbol is IFieldSymbol field && field.HasConstantValue)
-        {
-            return field.ConstantValue switch
-            {
-                0 => Lifetime.Singleton,
-                1 => Lifetime.Scoped,
-                2 => Lifetime.Transient,
-                _ => null,
-            };
-        }
-
-        return null;
     }
 
     private static bool IsFactoryOrInstanceArg(
