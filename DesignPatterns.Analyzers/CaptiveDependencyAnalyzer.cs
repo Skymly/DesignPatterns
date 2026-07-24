@@ -38,40 +38,22 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(OnCompilationStart);
     }
 
-    /// <summary>
-    /// A Singleton factory delegate whose body is analyzed at compilation end
-    /// for resolutions of shorter-lived services (DP066).
-    /// </summary>
-    private sealed class FactoryDelegateEntry
-    {
-        public INamedTypeSymbol ServiceType { get; set; } = null!;
-        public AnonymousFunctionExpressionSyntax Lambda { get; set; } = null!;
-
-        /// <summary>Semantic model of the lambda's tree, captured at collection time.</summary>
-        public SemanticModel SemanticModel { get; set; } = null!;
-    }
-
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
         var attributedTypes = AttributedRegistration.CollectByCategory(context.Compilation);
         var mapBuilder = new DiRegistrationMapBuilder(attributedTypes);
-        var factoryDelegates = new List<FactoryDelegateEntry>();
 
         context.RegisterSyntaxNodeAction(
-            syntaxContext => CollectRegistration(
-                syntaxContext,
-                mapBuilder,
-                factoryDelegates),
+            syntaxContext => CollectRegistration(syntaxContext, mapBuilder),
             SyntaxKind.InvocationExpression);
 
         context.RegisterCompilationEndAction(
-            endContext => AnalyzeRegistrations(endContext, mapBuilder, factoryDelegates));
+            endContext => AnalyzeRegistrations(endContext, mapBuilder));
     }
 
     private static void CollectRegistration(
         SyntaxNodeAnalysisContext context,
-        DiRegistrationMapBuilder mapBuilder,
-        List<FactoryDelegateEntry> factoryDelegates)
+        DiRegistrationMapBuilder mapBuilder)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -85,83 +67,16 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd"
             or "RegisterType" or "Register" or "RegisterDi")
         {
-            if (mapBuilder.TryCollect(invocation, context.SemanticModel))
-            {
-                TryCollectFactoryDelegate(context, invocation, methodName, factoryDelegates);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Collects Singleton factory delegates for DP066. Lifetime map entries for
-    /// these registrations are owned by <see cref="DiRegistrationMapBuilder"/>.
-    /// </summary>
-    private static void TryCollectFactoryDelegate(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        string methodName,
-        List<FactoryDelegateEntry> factoryDelegates)
-    {
-        var args = invocation.ArgumentList?.Arguments ?? default;
-        if (args.Count == 0 || args[0].Expression is not AnonymousFunctionExpressionSyntax lambda)
-        {
-            return;
-        }
-
-        var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-        if (methodSymbol is null)
-        {
-            return;
-        }
-
-        if (methodName == "AddSingleton")
-        {
-            if (methodSymbol.TypeArguments.Length != 1 ||
-                methodSymbol.TypeArguments[0] is not INamedTypeSymbol serviceType ||
-                AutofacRegistration.IsOpenGeneric(serviceType))
-            {
-                return;
-            }
-
-            factoryDelegates.Add(new FactoryDelegateEntry
-            {
-                ServiceType = serviceType,
-                Lambda = lambda,
-                SemanticModel = context.SemanticModel,
-            });
-            return;
-        }
-
-        if (methodName == "Register" && AutofacRegistration.IsAutofacMethod(methodSymbol))
-        {
-            if (methodSymbol.TypeArguments.Length != 1 ||
-                methodSymbol.TypeArguments[0] is not INamedTypeSymbol serviceType ||
-                AutofacRegistration.IsOpenGeneric(serviceType))
-            {
-                return;
-            }
-
-            if (AutofacRegistration.ResolveChainLifetime(invocation) != Lifetime.Singleton)
-            {
-                return;
-            }
-
-            factoryDelegates.Add(new FactoryDelegateEntry
-            {
-                ServiceType = serviceType,
-                Lambda = lambda,
-                SemanticModel = context.SemanticModel,
-            });
+            mapBuilder.TryCollect(invocation, context.SemanticModel);
         }
     }
 
     private static void AnalyzeRegistrations(
         CompilationAnalysisContext context,
-        DiRegistrationMapBuilder mapBuilder,
-        List<FactoryDelegateEntry> factoryDelegates)
+        DiRegistrationMapBuilder mapBuilder)
     {
         var map = mapBuilder.Build();
-        if (map.Entries.Count == 0)
+        if (map.Entries.Count == 0 && map.FactoryDelegates.Count == 0)
         {
             return;
         }
@@ -187,8 +102,8 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             AnalyzeSingleton(context, reg.ImplementationType, reg.Invocation, lifetimeMap);
         }
 
-        // For each Singleton factory delegate, check resolved services (DP066).
-        foreach (var factory in factoryDelegates)
+        // DP066: Singleton factory delegates collected on the map.
+        foreach (var factory in map.FactoryDelegates)
         {
             AnalyzeFactoryDelegate(context, factory, lifetimeMap);
         }
@@ -204,7 +119,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private static void AnalyzeFactoryDelegate(
         CompilationAnalysisContext context,
-        FactoryDelegateEntry factory,
+        FactoryDelegateRegistration factory,
         Dictionary<INamedTypeSymbol, Lifetime> lifetimeMap)
     {
         var semanticModel = factory.SemanticModel;

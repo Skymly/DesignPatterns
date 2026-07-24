@@ -9,16 +9,19 @@ namespace DesignPatterns.Analyzers.Di;
 /// <summary>
 /// Type→lifetime map built from explicit container registrations
 /// (MSDI Add*/TryAdd, Autofac RegisterType/Register) and attributed
-/// <c>RegisterDi</c> expansions (holder-category matching).
+/// <c>RegisterDi</c> expansions (holder-category matching), plus Singleton
+/// factory-delegate registrations for DP066.
 /// </summary>
 internal sealed class DiRegistrationMap
 {
     private DiRegistrationMap(
         IReadOnlyList<DiRegistration> entries,
-        IReadOnlyDictionary<INamedTypeSymbol, Lifetime> lifetimes)
+        IReadOnlyDictionary<INamedTypeSymbol, Lifetime> lifetimes,
+        IReadOnlyList<FactoryDelegateRegistration> factoryDelegates)
     {
         Entries = entries;
         Lifetimes = lifetimes;
+        FactoryDelegates = factoryDelegates;
     }
 
     public IReadOnlyList<DiRegistration> Entries { get; }
@@ -29,6 +32,12 @@ internal sealed class DiRegistrationMap
     /// always applied after explicit container registrations.
     /// </summary>
     public IReadOnlyDictionary<INamedTypeSymbol, Lifetime> Lifetimes { get; }
+
+    /// <summary>
+    /// Singleton factory-delegate registrations collected from explicit
+    /// MSDI <c>AddSingleton</c> / Autofac <c>Register</c> lambda registrations.
+    /// </summary>
+    public IReadOnlyList<FactoryDelegateRegistration> FactoryDelegates { get; }
 
     /// <summary>
     /// Walks all invocation expressions in <paramref name="compilation"/> and
@@ -51,7 +60,9 @@ internal sealed class DiRegistrationMap
         return builder.Build();
     }
 
-    internal static DiRegistrationMap FromEntries(IEnumerable<DiRegistration> entries)
+    internal static DiRegistrationMap FromEntries(
+        IEnumerable<DiRegistration> entries,
+        IEnumerable<FactoryDelegateRegistration>? factoryDelegates = null)
     {
         var list = entries.ToImmutableArray();
         var lifetimes = new Dictionary<INamedTypeSymbol, Lifetime>(SymbolEqualityComparer.Default);
@@ -60,7 +71,9 @@ internal sealed class DiRegistrationMap
             lifetimes[entry.ImplementationType] = entry.Lifetime;
         }
 
-        return new DiRegistrationMap(list, lifetimes);
+        var delegates = factoryDelegates?.ToImmutableArray()
+            ?? ImmutableArray<FactoryDelegateRegistration>.Empty;
+        return new DiRegistrationMap(list, lifetimes, delegates);
     }
 }
 
@@ -72,6 +85,7 @@ internal sealed class DiRegistrationMapBuilder
 {
     private readonly List<DiRegistration> _explicitEntries = new();
     private readonly List<DiRegistration> _attributedEntries = new();
+    private readonly List<FactoryDelegateRegistration> _factoryDelegates = new();
     private readonly IReadOnlyDictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> _attributedTypesByCategory;
 
     public DiRegistrationMapBuilder(
@@ -95,6 +109,7 @@ internal sealed class DiRegistrationMapBuilder
         var methodName = memberAccess.Name.Identifier.ValueText;
         var beforeExplicit = _explicitEntries.Count;
         var beforeAttributed = _attributedEntries.Count;
+        var beforeFactoryDelegates = _factoryDelegates.Count;
 
         if (methodName is "AddSingleton" or "AddScoped" or "AddTransient")
         {
@@ -117,7 +132,9 @@ internal sealed class DiRegistrationMapBuilder
             CollectRegisterDiRegistration(invocation, semanticModel);
         }
 
-        return _explicitEntries.Count > beforeExplicit || _attributedEntries.Count > beforeAttributed;
+        return _explicitEntries.Count > beforeExplicit
+            || _attributedEntries.Count > beforeAttributed
+            || _factoryDelegates.Count > beforeFactoryDelegates;
     }
 
     /// <summary>
@@ -126,7 +143,9 @@ internal sealed class DiRegistrationMapBuilder
     /// type (behaviour freeze vs the pre-extraction Captive Dependency path).
     /// </summary>
     public DiRegistrationMap Build() =>
-        DiRegistrationMap.FromEntries(_explicitEntries.Concat(_attributedEntries));
+        DiRegistrationMap.FromEntries(
+            _explicitEntries.Concat(_attributedEntries),
+            _factoryDelegates);
 
     /// <summary>
     /// Collects registrations from generated <c>RegisterDi</c> calls.
@@ -245,6 +264,17 @@ internal sealed class DiRegistrationMapBuilder
                     lifetime,
                     invocation,
                     skipConstructorAnalysis: true));
+
+                // DP066 only analyzes Singleton factory lambdas (not instance args).
+                if (lifetime == Lifetime.Singleton &&
+                    args[0].Expression is AnonymousFunctionExpressionSyntax lambda)
+                {
+                    _factoryDelegates.Add(new FactoryDelegateRegistration(
+                        singleGeneric,
+                        lambda,
+                        semanticModel));
+                }
+
                 return;
             }
 
@@ -351,16 +381,26 @@ internal sealed class DiRegistrationMapBuilder
         }
 
         var args = invocation.ArgumentList?.Arguments ?? default;
-        if (args.Count == 0 || args[0].Expression is not AnonymousFunctionExpressionSyntax)
+        if (args.Count == 0 || args[0].Expression is not AnonymousFunctionExpressionSyntax lambda)
         {
             return;
         }
 
+        var lifetime = AutofacRegistration.ResolveChainLifetime(invocation);
         _explicitEntries.Add(new DiRegistration(
             serviceType,
-            AutofacRegistration.ResolveChainLifetime(invocation),
+            lifetime,
             invocation,
             skipConstructorAnalysis: true));
+
+        // DP066 only analyzes Singleton factory delegates.
+        if (lifetime == Lifetime.Singleton)
+        {
+            _factoryDelegates.Add(new FactoryDelegateRegistration(
+                serviceType,
+                lambda,
+                semanticModel));
+        }
     }
 
     private static INamedTypeSymbol? ResolveTypeofArg(
