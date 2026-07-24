@@ -8,7 +8,8 @@ namespace DesignPatterns.Analyzers.Di;
 
 /// <summary>
 /// Type→lifetime map built from explicit container registrations
-/// (MSDI Add*/TryAdd, Autofac RegisterType/Register).
+/// (MSDI Add*/TryAdd, Autofac RegisterType/Register) and attributed
+/// <c>RegisterDi</c> expansions (holder-category matching).
 /// </summary>
 internal sealed class DiRegistrationMap
 {
@@ -23,17 +24,21 @@ internal sealed class DiRegistrationMap
     public IReadOnlyList<DiRegistration> Entries { get; }
 
     /// <summary>
-    /// Last registration wins when the same implementation type appears more than once.
+    /// Lifetime by implementation type. When the same type appears more than
+    /// once, later entries win; attributed <c>RegisterDi</c> expansions are
+    /// always applied after explicit container registrations.
     /// </summary>
     public IReadOnlyDictionary<INamedTypeSymbol, Lifetime> Lifetimes { get; }
 
     /// <summary>
     /// Walks all invocation expressions in <paramref name="compilation"/> and
-    /// collects explicit container registrations into a map.
+    /// collects explicit container registrations plus attributed
+    /// <c>RegisterDi</c> expansions into a map.
     /// </summary>
     public static DiRegistrationMap Build(Compilation compilation)
     {
-        var builder = new DiRegistrationMapBuilder();
+        var attributedTypes = AttributedRegistration.CollectByCategory(compilation);
+        var builder = new DiRegistrationMapBuilder(attributedTypes);
         foreach (var tree in compilation.SyntaxTrees)
         {
             var model = compilation.GetSemanticModel(tree);
@@ -60,17 +65,25 @@ internal sealed class DiRegistrationMap
 }
 
 /// <summary>
-/// Incrementally collects explicit container registrations for
-/// <see cref="DiRegistrationMap"/>.
+/// Incrementally collects explicit container registrations and attributed
+/// <c>RegisterDi</c> expansions for <see cref="DiRegistrationMap"/>.
 /// </summary>
 internal sealed class DiRegistrationMapBuilder
 {
-    private readonly List<DiRegistration> _entries = new();
+    private readonly List<DiRegistration> _explicitEntries = new();
+    private readonly List<DiRegistration> _attributedEntries = new();
+    private readonly IReadOnlyDictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> _attributedTypesByCategory;
+
+    public DiRegistrationMapBuilder(
+        IReadOnlyDictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> attributedTypesByCategory)
+    {
+        _attributedTypesByCategory = attributedTypesByCategory;
+    }
 
     /// <summary>
-    /// Attempts to collect an explicit MSDI or Autofac registration from
-    /// <paramref name="invocation"/>. Returns <see langword="true"/> when an
-    /// entry was added. Does not handle attributed <c>RegisterDi</c> expansion.
+    /// Attempts to collect an explicit MSDI/Autofac registration or an
+    /// attributed <c>RegisterDi</c> expansion from <paramref name="invocation"/>.
+    /// Returns <see langword="true"/> when one or more entries were added.
     /// </summary>
     public bool TryCollect(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
     {
@@ -80,7 +93,8 @@ internal sealed class DiRegistrationMapBuilder
         }
 
         var methodName = memberAccess.Name.Identifier.ValueText;
-        var before = _entries.Count;
+        var beforeExplicit = _explicitEntries.Count;
+        var beforeAttributed = _attributedEntries.Count;
 
         if (methodName is "AddSingleton" or "AddScoped" or "AddTransient")
         {
@@ -98,11 +112,96 @@ internal sealed class DiRegistrationMapBuilder
         {
             CollectAutofacRegisterDelegate(invocation, semanticModel);
         }
+        else if (methodName == "RegisterDi")
+        {
+            CollectRegisterDiRegistration(invocation, semanticModel);
+        }
 
-        return _entries.Count > before;
+        return _explicitEntries.Count > beforeExplicit || _attributedEntries.Count > beforeAttributed;
     }
 
-    public DiRegistrationMap Build() => DiRegistrationMap.FromEntries(_entries);
+    /// <summary>
+    /// Builds the map with attributed <c>RegisterDi</c> entries after explicit
+    /// ones so RegisterDi lifetimes overlay explicit registrations for the same
+    /// type (behaviour freeze vs the pre-extraction Captive Dependency path).
+    /// </summary>
+    public DiRegistrationMap Build() =>
+        DiRegistrationMap.FromEntries(_explicitEntries.Concat(_attributedEntries));
+
+    /// <summary>
+    /// Collects registrations from generated <c>RegisterDi</c> calls.
+    /// Extracts the implementation lifetime and applies it to the types
+    /// bearing the DesignPatterns registration attribute that matches
+    /// the RegisterDi holder's pattern (Strategy/Factory/EventHandler/Decorator/Composite).
+    /// </summary>
+    private void CollectRegisterDiRegistration(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel)
+    {
+        var methodSymbol = semanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
+        if (methodSymbol is null || !methodSymbol.IsStatic || methodSymbol.Parameters.Length == 0)
+        {
+            return;
+        }
+
+        // The first parameter must be IServiceCollection.
+        var firstParamType = methodSymbol.Parameters[0].Type;
+        if (firstParamType.ToDisplayString() != "Microsoft.Extensions.DependencyInjection.IServiceCollection")
+        {
+            return;
+        }
+
+        // Find the implementation lifetime parameter by name.
+        // Two-lifetime overload: implementationLifetime + registryLifetime
+        // Single-lifetime overload: lifetime (StateTransition, Composite, Decorator, EventHandler)
+        var implLifetimeParam = methodSymbol.Parameters.FirstOrDefault(
+            p => p.Name == "implementationLifetime");
+        if (implLifetimeParam is null)
+        {
+            implLifetimeParam = methodSymbol.Parameters.FirstOrDefault(
+                p => p.Name == "lifetime");
+        }
+
+        if (implLifetimeParam is null)
+        {
+            return;
+        }
+
+        // Resolve the lifetime value from the call arguments.
+        var lifetime = LifetimeResolution.TryResolveArgument(
+            invocation, implLifetimeParam, semanticModel);
+        var containingTypeName = methodSymbol.ContainingType?.Name ?? "";
+        if (lifetime is null)
+        {
+            // Use default: Factory → Transient, others → Singleton.
+            lifetime = AttributedRegistration.DefaultLifetimeForHolder(containingTypeName);
+        }
+
+        // Match the RegisterDi holder type name to the correct attribute category.
+        // This prevents cross-pattern contamination (e.g. a Strategy RegisterDi call
+        // should not apply its lifetime to Factory implementation types).
+        var category = AttributedRegistration.MatchCategoryByHolderName(containingTypeName);
+        if (category is null)
+        {
+            return;
+        }
+
+        if (!_attributedTypesByCategory.TryGetValue(category.Value, out var typesForCategory))
+        {
+            return;
+        }
+
+        // Add only the implementation types of the matched category.
+        foreach (var implType in typesForCategory)
+        {
+            if (AutofacRegistration.IsOpenGeneric(implType))
+            {
+                continue;
+            }
+
+            _attributedEntries.Add(new DiRegistration(implType, lifetime.Value, invocation));
+        }
+    }
 
     private void CollectDirectRegistration(
         InvocationExpressionSyntax invocation,
@@ -141,7 +240,7 @@ internal sealed class DiRegistrationMapBuilder
                     return;
                 }
 
-                _entries.Add(new DiRegistration(
+                _explicitEntries.Add(new DiRegistration(
                     singleGeneric,
                     lifetime,
                     invocation,
@@ -157,7 +256,7 @@ internal sealed class DiRegistrationMapBuilder
             return;
         }
 
-        _entries.Add(new DiRegistration(implType, lifetime, invocation));
+        _explicitEntries.Add(new DiRegistration(implType, lifetime, invocation));
     }
 
     private void CollectTryAddRegistration(
@@ -195,7 +294,7 @@ internal sealed class DiRegistrationMapBuilder
             return;
         }
 
-        _entries.Add(new DiRegistration(implType, lifetime.Value, invocation));
+        _explicitEntries.Add(new DiRegistration(implType, lifetime.Value, invocation));
     }
 
     private void CollectAutofacRegisterType(
@@ -228,7 +327,7 @@ internal sealed class DiRegistrationMapBuilder
             return;
         }
 
-        _entries.Add(new DiRegistration(
+        _explicitEntries.Add(new DiRegistration(
             implType,
             AutofacRegistration.ResolveChainLifetime(invocation),
             invocation));
@@ -257,7 +356,7 @@ internal sealed class DiRegistrationMapBuilder
             return;
         }
 
-        _entries.Add(new DiRegistration(
+        _explicitEntries.Add(new DiRegistration(
             serviceType,
             AutofacRegistration.ResolveChainLifetime(invocation),
             invocation,

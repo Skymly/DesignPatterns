@@ -4,7 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace DesignPatterns.Analyzers.Di;
 
 /// <summary>
-/// A single explicit container registration contributing to the registration map.
+/// A single registration contributing to the registration map
+/// (explicit container registration or attributed <c>RegisterDi</c> expansion).
 /// </summary>
 internal sealed class DiRegistration
 {

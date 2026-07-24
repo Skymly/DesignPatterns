@@ -39,27 +39,6 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     }
 
     /// <summary>
-    /// Categories of DesignPatterns registration attributes.
-    /// Used to match attributed types to the correct RegisterDi call
-    /// based on the containing type name pattern.
-    /// </summary>
-    private enum RegistrationCategory
-    {
-        Strategy,
-        Factory,
-        EventHandler,
-        Decorator,
-        Composite,
-    }
-
-    private sealed class RegistrationEntry
-    {
-        public INamedTypeSymbol ImplementationType { get; set; } = null!;
-        public Lifetime Lifetime { get; set; }
-        public InvocationExpressionSyntax Invocation { get; set; } = null!;
-    }
-
-    /// <summary>
     /// A Singleton factory delegate whose body is analyzed at compilation end
     /// for resolutions of shorter-lived services (DP066).
     /// </summary>
@@ -74,89 +53,25 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var mapBuilder = new DiRegistrationMapBuilder();
-        var registerDiEntries = new List<RegistrationEntry>();
+        var attributedTypes = AttributedRegistration.CollectByCategory(context.Compilation);
+        var mapBuilder = new DiRegistrationMapBuilder(attributedTypes);
         var factoryDelegates = new List<FactoryDelegateEntry>();
-
-        // Phase 2: Pre-scan all types for DesignPatterns registration attributes.
-        // Types are grouped by category so each RegisterDi call only applies
-        // to the implementation types of its own pattern.
-        var attributedTypesByCategory = CollectAttributedImplementationTypes(context.Compilation);
 
         context.RegisterSyntaxNodeAction(
             syntaxContext => CollectRegistration(
                 syntaxContext,
                 mapBuilder,
-                registerDiEntries,
-                factoryDelegates,
-                attributedTypesByCategory),
+                factoryDelegates),
             SyntaxKind.InvocationExpression);
 
         context.RegisterCompilationEndAction(
-            endContext => AnalyzeRegistrations(endContext, mapBuilder, registerDiEntries, factoryDelegates));
-    }
-
-    /// <summary>
-    /// Scans all types in the compilation for DesignPatterns registration attributes
-    /// and groups them by category for matching to the correct RegisterDi call.
-    /// </summary>
-    private static Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> CollectAttributedImplementationTypes(
-        Compilation compilation)
-    {
-        var result = new Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>>
-        {
-            [RegistrationCategory.Strategy] = new(SymbolEqualityComparer.Default),
-            [RegistrationCategory.Factory] = new(SymbolEqualityComparer.Default),
-            [RegistrationCategory.EventHandler] = new(SymbolEqualityComparer.Default),
-            [RegistrationCategory.Decorator] = new(SymbolEqualityComparer.Default),
-            [RegistrationCategory.Composite] = new(SymbolEqualityComparer.Default),
-        };
-
-        foreach (var assembly in AnalyzerSymbolHelper.GetAssembliesInCompilation(compilation))
-        {
-            foreach (var typeSymbol in AnalyzerSymbolHelper.GetAllTypes(assembly.GlobalNamespace))
-            {
-                foreach (var attribute in typeSymbol.GetAttributes())
-                {
-                    var attrName = attribute.AttributeClass?.ToDisplayString();
-                    if (attrName is null)
-                    {
-                        continue;
-                    }
-
-                    var category = attrName switch
-                    {
-                        _ when attrName == StrategyAnalysisConstants.RegisterStrategyMetadataName =>
-                            RegistrationCategory.Strategy,
-                        _ when attrName == FactoryAnalysisConstants.RegisterFactoryMetadataName =>
-                            RegistrationCategory.Factory,
-                        _ when attrName == EventHandlerAnalysisConstants.RegisterEventHandlerMetadataName =>
-                            RegistrationCategory.EventHandler,
-                        "DesignPatterns.Structural.DecoratorAttribute" =>
-                            RegistrationCategory.Decorator,
-                        "DesignPatterns.Structural.CompositePartAttribute" =>
-                            RegistrationCategory.Composite,
-                        _ => (RegistrationCategory?)null,
-                    };
-
-                    if (category is { } cat)
-                    {
-                        result[cat].Add(typeSymbol);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return result;
+            endContext => AnalyzeRegistrations(endContext, mapBuilder, factoryDelegates));
     }
 
     private static void CollectRegistration(
         SyntaxNodeAnalysisContext context,
         DiRegistrationMapBuilder mapBuilder,
-        List<RegistrationEntry> registerDiEntries,
-        List<FactoryDelegateEntry> factoryDelegates,
-        Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> attributedTypesByCategory)
+        List<FactoryDelegateEntry> factoryDelegates)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -167,16 +82,13 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
 
         var methodName = memberAccess.Name.Identifier.ValueText;
 
-        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd" or "RegisterType" or "Register")
+        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd"
+            or "RegisterType" or "Register" or "RegisterDi")
         {
             if (mapBuilder.TryCollect(invocation, context.SemanticModel))
             {
                 TryCollectFactoryDelegate(context, invocation, methodName, factoryDelegates);
             }
-        }
-        else if (methodName == "RegisterDi")
-        {
-            CollectRegisterDiRegistration(context, invocation, attributedTypesByCategory, registerDiEntries);
         }
     }
 
@@ -243,139 +155,18 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    /// <summary>
-    /// Collects registrations from generated <c>RegisterDi</c> calls.
-    /// Extracts the implementation lifetime and applies it to the types
-    /// bearing the DesignPatterns registration attribute that matches
-    /// the RegisterDi holder's pattern (Strategy/Factory/EventHandler/Decorator/Composite).
-    /// </summary>
-    private static void CollectRegisterDiRegistration(
-        SyntaxNodeAnalysisContext context,
-        InvocationExpressionSyntax invocation,
-        Dictionary<RegistrationCategory, HashSet<INamedTypeSymbol>> attributedTypesByCategory,
-        List<RegistrationEntry> registrations)
-    {
-        var methodSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol as IMethodSymbol;
-        if (methodSymbol is null || !methodSymbol.IsStatic || methodSymbol.Parameters.Length == 0)
-        {
-            return;
-        }
-
-        // The first parameter must be IServiceCollection.
-        var firstParamType = methodSymbol.Parameters[0].Type;
-        if (firstParamType.ToDisplayString() != "Microsoft.Extensions.DependencyInjection.IServiceCollection")
-        {
-            return;
-        }
-
-        // Find the implementation lifetime parameter by name.
-        // Two-lifetime overload: implementationLifetime + registryLifetime
-        // Single-lifetime overload: lifetime (StateTransition, Composite, Decorator, EventHandler)
-        var implLifetimeParam = methodSymbol.Parameters.FirstOrDefault(
-            p => p.Name == "implementationLifetime");
-        if (implLifetimeParam is null)
-        {
-            implLifetimeParam = methodSymbol.Parameters.FirstOrDefault(
-                p => p.Name == "lifetime");
-        }
-
-        if (implLifetimeParam is null)
-        {
-            return;
-        }
-
-        // Resolve the lifetime value from the call arguments.
-        var lifetime = LifetimeResolution.TryResolveArgument(
-            invocation, implLifetimeParam, context.SemanticModel);
-        var containingTypeName = methodSymbol.ContainingType?.Name ?? "";
-        if (lifetime is null)
-        {
-            // Use default: Factory → Transient, others → Singleton.
-            lifetime = containingTypeName.Contains("Factory") ? Lifetime.Transient : Lifetime.Singleton;
-        }
-
-        // Match the RegisterDi holder type name to the correct attribute category.
-        // This prevents cross-pattern contamination (e.g. a Strategy RegisterDi call
-        // should not apply its lifetime to Factory implementation types).
-        var category = MatchCategoryByHolderName(containingTypeName);
-        if (category is null)
-        {
-            return;
-        }
-
-        if (!attributedTypesByCategory.TryGetValue(category.Value, out var typesForCategory))
-        {
-            return;
-        }
-
-        // Add only the implementation types of the matched category.
-        foreach (var implType in typesForCategory)
-        {
-            // Skip open generics
-            if (implType.IsUnboundGenericType ||
-                (implType.TypeParameters.Length > 0 && implType.IsDefinition))
-            {
-                continue;
-            }
-
-            registrations.Add(new RegistrationEntry
-            {
-                ImplementationType = implType,
-                Lifetime = lifetime.Value,
-                Invocation = invocation,
-            });
-        }
-    }
-
-    /// <summary>
-    /// Maps a RegisterDi holder type name to its registration category
-    /// based on naming conventions used by the source generators.
-    /// </summary>
-    private static RegistrationCategory? MatchCategoryByHolderName(string holderTypeName)
-    {
-        if (holderTypeName.Contains("Strategy"))
-        {
-            return RegistrationCategory.Strategy;
-        }
-
-        if (holderTypeName.Contains("Factory"))
-        {
-            return RegistrationCategory.Factory;
-        }
-
-        if (holderTypeName.Contains("EventHandler") || holderTypeName.Contains("EventAggregator"))
-        {
-            return RegistrationCategory.EventHandler;
-        }
-
-        if (holderTypeName.Contains("Decorator"))
-        {
-            return RegistrationCategory.Decorator;
-        }
-
-        if (holderTypeName.Contains("Composite"))
-        {
-            return RegistrationCategory.Composite;
-        }
-
-        return null;
-    }
-
     private static void AnalyzeRegistrations(
         CompilationAnalysisContext context,
         DiRegistrationMapBuilder mapBuilder,
-        List<RegistrationEntry> registerDiEntries,
         List<FactoryDelegateEntry> factoryDelegates)
     {
         var map = mapBuilder.Build();
-        if (map.Entries.Count == 0 && registerDiEntries.Count == 0)
+        if (map.Entries.Count == 0)
         {
             return;
         }
 
         // Build the registration map: type → lifetime (last wins).
-        // Explicit container registrations come from DiRegistrationMap;
-        // attributed RegisterDi entries are overlaid (still private until #234).
         var lifetimeMap = new Dictionary<INamedTypeSymbol, Lifetime>(
             SymbolEqualityComparer.Default);
 
@@ -384,26 +175,11 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
             lifetimeMap[pair.Key] = pair.Value;
         }
 
-        foreach (var reg in registerDiEntries)
-        {
-            lifetimeMap[reg.ImplementationType] = reg.Lifetime;
-        }
-
-        // DP062: Singleton constructor analysis for explicit registrations from the map.
+        // DP062: Singleton constructor analysis for all map entries
+        // (explicit container registrations and attributed RegisterDi).
         foreach (var reg in map.Entries)
         {
             if (reg.Lifetime != Lifetime.Singleton || reg.SkipConstructorAnalysis)
-            {
-                continue;
-            }
-
-            AnalyzeSingleton(context, reg.ImplementationType, reg.Invocation, lifetimeMap);
-        }
-
-        // DP062: RegisterDi path still uses the private entry list.
-        foreach (var reg in registerDiEntries)
-        {
-            if (reg.Lifetime != Lifetime.Singleton)
             {
                 continue;
             }

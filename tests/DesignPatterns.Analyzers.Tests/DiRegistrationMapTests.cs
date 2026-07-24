@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using DesignPatterns.Analyzers.Di;
+using DesignPatterns.Behavioral;
+using DesignPatterns.Creational;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.DependencyInjection;
@@ -207,7 +209,167 @@ public sealed class DiRegistrationMapTests
     }
 
     [Fact]
-    public void Build_ignores_register_di_calls()
+    public void Build_maps_strategy_register_di_default_singleton_for_attributed_type()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Behavioral;
+
+            public interface IPaymentStrategy { }
+
+            [RegisterStrategy("fast", typeof(IPaymentStrategy))]
+            public class FastStrategy : IPaymentStrategy { }
+
+            static class StrategyRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    StrategyRegistryHolder.RegisterDi(services);
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Singleton, GetLifetime(map, "FastStrategy"));
+        Assert.Single(map.Entries);
+    }
+
+    [Fact]
+    public void Build_maps_factory_register_di_default_transient_for_attributed_type()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Creational;
+
+            public interface IWidget { }
+
+            [RegisterFactory("widget", typeof(IWidget))]
+            public class WidgetFactory : IWidget { }
+
+            static class FactoryRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Transient,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    FactoryRegistryHolder.RegisterDi(services);
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Transient, GetLifetime(map, "WidgetFactory"));
+        Assert.Single(map.Entries);
+    }
+
+    [Fact]
+    public void Build_register_di_applies_lifetime_only_to_matching_holder_category()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Behavioral;
+            using DesignPatterns.Creational;
+
+            public interface IPaymentStrategy { }
+
+            [RegisterStrategy("fast", typeof(IPaymentStrategy))]
+            public class FastStrategy : IPaymentStrategy { }
+
+            public interface IWidget { }
+
+            [RegisterFactory("widget", typeof(IWidget))]
+            public class WidgetFactory : IWidget { }
+
+            static class StrategyRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            static class FactoryRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Transient,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    StrategyRegistryHolder.RegisterDi(services, implementationLifetime: ServiceLifetime.Singleton);
+                    FactoryRegistryHolder.RegisterDi(services, implementationLifetime: ServiceLifetime.Transient);
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Singleton, GetLifetime(map, "FastStrategy"));
+        Assert.Equal(Lifetime.Transient, GetLifetime(map, "WidgetFactory"));
+        Assert.Equal(2, map.Entries.Count);
+    }
+
+    [Fact]
+    public void Build_register_di_explicit_lifetime_overrides_default()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Behavioral;
+
+            public interface IPaymentStrategy { }
+
+            [RegisterStrategy("fast", typeof(IPaymentStrategy))]
+            public class FastStrategy : IPaymentStrategy { }
+
+            static class StrategyRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    StrategyRegistryHolder.RegisterDi(services, implementationLifetime: ServiceLifetime.Scoped);
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Scoped, GetLifetime(map, "FastStrategy"));
+    }
+
+    [Fact]
+    public void Build_register_di_without_attributed_types_adds_no_entries()
     {
         const string source = """
             using Microsoft.Extensions.DependencyInjection;
@@ -239,6 +401,44 @@ public sealed class DiRegistrationMapTests
         Assert.Single(map.Entries);
     }
 
+    [Fact]
+    public void Build_register_di_overlays_explicit_registration_regardless_of_call_order()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+            using DesignPatterns.Behavioral;
+
+            public interface IPaymentStrategy { }
+
+            [RegisterStrategy("fast", typeof(IPaymentStrategy))]
+            public class FastStrategy : IPaymentStrategy { }
+
+            static class StrategyRegistryHolder
+            {
+                public static IServiceCollection RegisterDi(
+                    IServiceCollection services,
+                    ServiceLifetime implementationLifetime = ServiceLifetime.Singleton,
+                    ServiceLifetime registryLifetime = ServiceLifetime.Singleton)
+                    => services;
+            }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    // RegisterDi before explicit AddTransient — attributed still overlays.
+                    StrategyRegistryHolder.RegisterDi(services, implementationLifetime: ServiceLifetime.Singleton);
+                    services.AddTransient<FastStrategy>();
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Singleton, GetLifetime(map, "FastStrategy"));
+        Assert.Equal(2, map.Entries.Count);
+    }
+
     private static Lifetime GetLifetime(DiRegistrationMap map, string typeName)
     {
         var type = map.Lifetimes.Keys.Single(t => t.Name == typeName);
@@ -255,6 +455,7 @@ public sealed class DiRegistrationMapTests
             MetadataReference.CreateFromFile(typeof(ServiceLifetime).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(ServiceCollection).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(Autofac.ContainerBuilder).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(RegisterStrategyAttribute).Assembly.Location),
         };
 
         var trustedPlatformAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
