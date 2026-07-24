@@ -185,6 +185,126 @@ public sealed class DiRegistrationMapTests
     }
 
     [Fact]
+    public void Build_collects_msdi_singleton_factory_delegate()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+
+            class SingletonService { }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    services.AddSingleton<SingletonService>(sp => new SingletonService());
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Singleton, GetLifetime(map, "SingletonService"));
+        var factory = Assert.Single(map.FactoryDelegates);
+        Assert.Equal("SingletonService", factory.ServiceType.Name);
+        Assert.NotNull(factory.Lambda);
+        Assert.NotNull(factory.SemanticModel);
+    }
+
+    [Fact]
+    public void Build_collects_autofac_singleton_factory_delegate()
+    {
+        const string source = """
+            using Autofac;
+
+            class SingletonService { }
+
+            static class Startup
+            {
+                public static void Configure(ContainerBuilder builder)
+                {
+                    builder.Register(c => new SingletonService()).SingleInstance();
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Singleton, GetLifetime(map, "SingletonService"));
+        var factory = Assert.Single(map.FactoryDelegates);
+        Assert.Equal("SingletonService", factory.ServiceType.Name);
+        Assert.NotNull(factory.Lambda);
+    }
+
+    [Fact]
+    public void Build_does_not_collect_scoped_msdi_factory_delegate()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+
+            class ScopedService { }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    services.AddScoped<ScopedService>(sp => new ScopedService());
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Scoped, GetLifetime(map, "ScopedService"));
+        Assert.Empty(map.FactoryDelegates);
+    }
+
+    [Fact]
+    public void Build_does_not_collect_non_singleton_autofac_factory_delegate()
+    {
+        const string source = """
+            using Autofac;
+
+            class ScopedService { }
+
+            static class Startup
+            {
+                public static void Configure(ContainerBuilder builder)
+                {
+                    builder.Register(c => new ScopedService()).InstancePerLifetimeScope();
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Scoped, GetLifetime(map, "ScopedService"));
+        Assert.Empty(map.FactoryDelegates);
+    }
+
+    [Fact]
+    public void Build_does_not_collect_instance_registration_as_factory_delegate()
+    {
+        const string source = """
+            using Microsoft.Extensions.DependencyInjection;
+
+            class SingletonService { }
+
+            static class Startup
+            {
+                public static void Configure(IServiceCollection services)
+                {
+                    services.AddSingleton(new SingletonService());
+                }
+            }
+            """;
+
+        var map = DiRegistrationMap.Build(CreateCompilation(source));
+
+        Assert.Equal(Lifetime.Singleton, GetLifetime(map, "SingletonService"));
+        Assert.Empty(map.FactoryDelegates);
+    }
+
+    [Fact]
     public void Build_last_registration_wins_for_same_type()
     {
         const string source = """
