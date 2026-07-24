@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Singleton Lifecycle registration map**: Singleton Lifecycle analysis (**DP068** / **DP071**) obtains Singleton DI membership from `DiRegistrationMap` instead of a private parallel collector. Behaviour freeze for existing DP068–DP071 Verify coverage.
 - **Registration map factory delegates**: `DiRegistrationMap` now exposes Singleton factory-delegate registrations (`FactoryDelegates`); Captive Dependency **DP066** reads those entries from the map instead of a private parallel collection. Behaviour freeze for existing DP066 Verify coverage.
 
 ## [0.2.3-preview2] - 2026-07-20

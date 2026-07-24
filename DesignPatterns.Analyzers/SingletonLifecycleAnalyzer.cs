@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using DesignPatterns.Analyzers.Di;
 using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -39,45 +40,51 @@ public sealed class SingletonLifecycleAnalyzer : DiagnosticAnalyzer
 
     private static void OnCompilationStart(CompilationStartAnalysisContext context)
     {
-        var singletonRegistrations = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var attributedTypes = AttributedRegistration.CollectByCategory(context.Compilation);
+        var mapBuilder = new DiRegistrationMapBuilder(attributedTypes);
+
         context.RegisterSyntaxNodeAction(
-            syntaxContext => CollectSingletonRegistration(syntaxContext, singletonRegistrations),
+            syntaxContext => CollectRegistration(syntaxContext, mapBuilder),
             SyntaxKind.InvocationExpression);
-        context.RegisterCompilationEndAction(endContext => Analyze(endContext, singletonRegistrations));
+
+        context.RegisterCompilationEndAction(
+            endContext => Analyze(endContext, mapBuilder));
     }
 
-    private static void CollectSingletonRegistration(
+    private static void CollectRegistration(
         SyntaxNodeAnalysisContext context,
-        HashSet<INamedTypeSymbol> registrations)
+        DiRegistrationMapBuilder mapBuilder)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol method)
+
+        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
         {
             return;
         }
 
-        var isMsDiSingleton = method.Name == "AddSingleton" &&
-            method.ContainingNamespace.ToDisplayString().StartsWith("Microsoft.Extensions.DependencyInjection", StringComparison.Ordinal);
-        var isAutofacRegistration = method.Name == "RegisterType" &&
-            method.ContainingNamespace.ToDisplayString().StartsWith("Autofac", StringComparison.Ordinal) &&
-            HasSingleInstanceInChain(invocation);
+        var methodName = memberAccess.Name.Identifier.ValueText;
 
-        if (!isMsDiSingleton && !isAutofacRegistration)
+        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd"
+            or "RegisterType" or "Register" or "RegisterDi")
         {
-            return;
-        }
-
-        var implementation = method.TypeArguments.LastOrDefault() as INamedTypeSymbol;
-        if (implementation is not null)
-        {
-            registrations.Add(implementation);
+            mapBuilder.TryCollect(invocation, context.SemanticModel);
         }
     }
 
     private static void Analyze(
         CompilationAnalysisContext context,
-        HashSet<INamedTypeSymbol> registrations)
+        DiRegistrationMapBuilder mapBuilder)
     {
+        var map = mapBuilder.Build();
+        var singletonRegistrations = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (var pair in map.Lifetimes)
+        {
+            if (pair.Value == Lifetime.Singleton)
+            {
+                singletonRegistrations.Add(pair.Key);
+            }
+        }
+
         foreach (var type in AnalyzerSymbolHelper.GetAllTypes(context.Compilation.Assembly.GlobalNamespace))
         {
             var generatedSingleton = type.GetAttributes()
@@ -85,10 +92,10 @@ public sealed class SingletonLifecycleAnalyzer : DiagnosticAnalyzer
 
             if (generatedSingleton is not null)
             {
-                AnalyzeGeneratedSingleton(context, type, generatedSingleton, registrations);
+                AnalyzeGeneratedSingleton(context, type, generatedSingleton, singletonRegistrations);
             }
 
-            AnalyzeStaticMutableSingleton(context, type, registrations);
+            AnalyzeStaticMutableSingleton(context, type, singletonRegistrations);
         }
     }
 
@@ -168,11 +175,6 @@ public sealed class SingletonLifecycleAnalyzer : DiagnosticAnalyzer
                 type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
         }
     }
-
-    private static bool HasSingleInstanceInChain(InvocationExpressionSyntax invocation) =>
-        invocation.Parent is MemberAccessExpressionSyntax memberAccess &&
-        memberAccess.Parent is InvocationExpressionSyntax parent &&
-        (memberAccess.Name.Identifier.ValueText == "SingleInstance" || HasSingleInstanceInChain(parent));
 
     private static bool IsSingletonName(string name) =>
         name.IndexOf("instance", StringComparison.OrdinalIgnoreCase) >= 0 ||
