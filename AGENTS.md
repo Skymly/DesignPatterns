@@ -155,16 +155,25 @@ dotnet test DesignPatterns.slnx -c Release
 | DP064 | Composite child type not allowed（生成器；子节点实现类型不在父节点 `AllowedChildTypes` 集合中 Error） |
 | DP065 | Composite node count exceeded（生成器；`[CompositeSchema(MaxNodes)]` 约束被超过 Warning） |
 | DP066 | Factory delegate captive dependency（Analyzer；Singleton 工厂委托内解析 Scoped/Transient 服务 Warning） |
+| DP067 | GenerateSingleton InitializeAsync 签名非法（生成器；ADR-008） |
+| DP068 | GenerateSingleton 与 DI 双重单例注册（Analyzer；ADR-008） |
+| DP069 | 非线程安全 Singleton 含可变实例状态（Analyzer；ADR-008） |
+| DP070 | 静态可变单例启发式（Analyzer；ADR-008） |
+| DP071 | 静态可变单例与 DI 双重注册（Analyzer；ADR-008） |
+| DP072 | 未注册 CommandHandler（Analyzer；实现 `ICommandHandler<T>` 但未标注 `[RegisterCommandHandler]` — 保留 ID，行为随 Analyzers 票落地） |
+| DP073 | RegisterCommandHandler 重复命令（生成器；同一 command type 多个 handler） |
+| DP074 | RegisterCommandHandler 契约不匹配（生成器；标注但未实现 `ICommandHandler<T>` / `ICommandHandler<T,TResult>`） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP067**；ID 一经发布不复用、不改语义（DP067–DP071 已由 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) 预留）。
+- 下一个可用 ID：**DP075**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
-- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 属 **Analyzer**；其余属**生成器**。
+- 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 / DP068 / DP069 / DP070 / DP071 / DP072 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
 - DP038（action 方法非 static）因 C# 编译器 CS0708 先于生成器拒绝 static 类中的实例成员，无法通过生成器测试触发；诊断保留供完整性。
+- Docs follow-up：`docs/ROADMAP.md` 中「下一个可用 ID」仍写 DP067，由 Docs 票（Command Router Design Doc / #260）同步为 DP075，不在本 Diagnostics PR 改 Docs 模块。
 
 ---
 

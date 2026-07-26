@@ -73,3 +73,6 @@ DP068    | DesignPatterns.Analyzers | Warning  | Generated singleton is also reg
 DP069    | DesignPatterns.Analyzers | Info     | Non-thread-safe singleton has mutable instance state
 DP070    | DesignPatterns.Analyzers | Info     | Static mutable singleton candidate
 DP071    | DesignPatterns.Analyzers | Warning  | Static mutable singleton is also registered with DI
+DP072    | DesignPatterns.Analyzers | Info     | Command handler implementation missing RegisterCommandHandler attribute
+DP073    | DesignPatterns.Generators | Error    | Duplicate command handler registration for the same command type
+DP074    | DesignPatterns.Generators | Error    | Command handler does not implement ICommandHandler for command type

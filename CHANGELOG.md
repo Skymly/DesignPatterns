@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Command Router diagnostic IDs**: reserved **DP072** (unregistered command handler, Analyzer) and registered **DP073** / **DP074** (duplicate command handler / contract mismatch, generator) for the upcoming Command Router domain. No runtime or generator behavior yet ([#257](https://github.com/Skymly/DesignPatterns/issues/257)).
+
 ### Changed
 
 - **F3 admission shortlist**: `docs/ROADMAP.md` F3 now records the Wayfinder Top-3 new pattern domains (Command Router, Builder, Fork–Join Work Graph), a watch list, and a rejection appendix ([#244](https://github.com/Skymly/DesignPatterns/issues/244)).
