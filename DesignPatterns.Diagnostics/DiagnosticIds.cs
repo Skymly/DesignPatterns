@@ -76,4 +76,7 @@ public static class DiagnosticIds
     public const string GenerateSingletonNonThreadSafeMutableState = "DP069";
     public const string StaticMutableSingleton = "DP070";
     public const string StaticMutableSingletonDiDoubleRegistration = "DP071";
+    public const string CommandHandlerUnregisteredImplementation = "DP072";
+    public const string RegisterCommandHandlerDuplicateCommand = "DP073";
+    public const string RegisterCommandHandlerContractMismatch = "DP074";
 }

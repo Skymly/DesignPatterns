@@ -617,6 +617,32 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // Command Router (DP072–DP074)
+
+    public static DiagnosticDescriptor CommandHandlerUnregisteredImplementation { get; } = Create(
+        DiagnosticIds.CommandHandlerUnregisteredImplementation,
+        "Command handler implementation is not registered",
+        "Type '{0}' implements ICommandHandler<{1}> (or ICommandHandler<{1}, TResult>) but has no [RegisterCommandHandler] attribute. Add [RegisterCommandHandler(typeof({1}))] (or the generic form) to register it for command dispatch.",
+        "Concrete command handler types should be registered when a command router registry is in use.",
+        DiagnosticSeverity.Info,
+        AnalyzerCategory);
+
+    public static DiagnosticDescriptor RegisterCommandHandlerDuplicateCommand { get; } = Create(
+        DiagnosticIds.RegisterCommandHandlerDuplicateCommand,
+        "Duplicate command handler registration",
+        "Command type '{0}' is already registered to handler '{1}'. Handler '{2}' also declares [RegisterCommandHandler] for the same command. Remove one of the attributes so exactly one handler remains.",
+        "Command Router requires a 1:1 command↔handler bijection; each command type may have at most one registered handler.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor RegisterCommandHandlerContractMismatch { get; } = Create(
+        DiagnosticIds.RegisterCommandHandlerContractMismatch,
+        "Command handler does not implement ICommandHandler for command type",
+        "Type '{0}' does not implement ICommandHandler<{1}> (or ICommandHandler<{1}, TResult>). Implement the handler contract or fix the [RegisterCommandHandler] command type argument.",
+        "RegisterCommandHandler implementations must implement ICommandHandler<TCommand> or ICommandHandler<TCommand, TResult> for the declared command type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,
