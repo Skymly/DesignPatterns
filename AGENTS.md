@@ -216,7 +216,7 @@ dotnet test DesignPatterns.slnx -c Release
 
 | Workflow | 触发 | 作用 |
 |----------|------|------|
-| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | **Ci** + sibling **Samples** + **CiPack**（**不** 发布 NuGet） |
+| [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push `main` / `workflow_dispatch` | **Ci** + **CiPack**（**不** 发布 NuGet；Samples 由 sibling 仓自身 CI 负责） |
 | [`.github/workflows/release.yml`](.github/workflows/release.yml) | push tag `v*` / `workflow_dispatch` | **Publish**（须 Secrets + 维护者 actor；**不** 创建 GitHub Release） |
 
 提交前：本地 `./build.ps1 --target Ci --configuration Release`（或 `CiPack` 若改打包）。

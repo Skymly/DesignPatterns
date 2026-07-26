@@ -75,7 +75,7 @@ DesignPatterns.slnx
 | 仓库 | 说明 |
 |------|------|
 | [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) | 用户文档站（VitePress，[GitHub Pages](https://skymly.github.io/DesignPatterns.Docs/)） |
-| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 可运行示例（10 个控制台项目；主仓 CI 会 checkout 并 build + run） |
+| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 可运行示例（10 个控制台项目；由 Samples 仓自身 CI 构建/运行） |
 
 本地工作区建议并列克隆：`DesignPatterns/`、`DesignPatterns.Samples/`、`DesignPatterns.Docs/`。
 

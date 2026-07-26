@@ -55,40 +55,6 @@ jobs:
           path: TestResults/**/coverage.cobertura.xml
           if-no-files-found: warn
 
-  samples:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout DesignPatterns
-        uses: actions/checkout@v4
-        with:
-          path: DesignPatterns
-
-      - name: Checkout DesignPatterns.Samples
-        uses: actions/checkout@v4
-        with:
-          repository: Skymly/DesignPatterns.Samples
-          # Paired PR branches share a name; main pushes use main.
-          ref: ${{ github.head_ref || github.ref_name }}
-          path: DesignPatterns.Samples
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-dp-samples-${{ hashFiles('DesignPatterns.Samples/**/*.csproj', 'DesignPatterns.Samples/global.json', 'DesignPatterns/**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-dp-samples-
-            ${{ runner.os }}-nuget-
-
-      - name: Run sibling samples via Nuke
-        working-directory: DesignPatterns.Samples
-        run: dotnet run --project build/_build.csproj -- --root . --target Ci --configuration Release
-
   build-test-net48:
     runs-on: windows-latest
     steps:
@@ -120,7 +86,7 @@ jobs:
 
   pack:
     runs-on: ubuntu-latest
-    needs: [build-test, build-test-net48, samples]
+    needs: [build-test, build-test-net48]
     steps:
       - uses: actions/checkout@v4
 
