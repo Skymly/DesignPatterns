@@ -81,10 +81,14 @@ public sealed class CommandRouter : ICommandRouter
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!_handlers.TryGetValue(typeof(TCommand), out var registered)
-            || registered is not ICommandHandler<TCommand> handler)
+        if (!_handlers.TryGetValue(typeof(TCommand), out var registered))
         {
             return new ValueTask<bool>(false);
+        }
+
+        if (registered is not ICommandHandler<TCommand> handler)
+        {
+            throw CreateHandlerContractMismatchException(typeof(TCommand), expected: $"ICommandHandler<{typeof(TCommand).Name}>");
         }
 
         return InvokeVoidAsync(handler, command, cancellationToken);
@@ -97,10 +101,16 @@ public sealed class CommandRouter : ICommandRouter
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!_handlers.TryGetValue(typeof(TCommand), out var registered)
-            || registered is not ICommandHandler<TCommand, TResult> handler)
+        if (!_handlers.TryGetValue(typeof(TCommand), out var registered))
         {
             return new ValueTask<CommandSendAttempt<TResult>>(CommandSendAttempt<TResult>.Failed);
+        }
+
+        if (registered is not ICommandHandler<TCommand, TResult> handler)
+        {
+            throw CreateHandlerContractMismatchException(
+                typeof(TCommand),
+                expected: $"ICommandHandler<{typeof(TCommand).Name}, {typeof(TResult).Name}>");
         }
 
         return InvokeResultAsync(handler, command, cancellationToken);

@@ -142,6 +142,20 @@ public sealed class CommandRouterTests
     }
 
     [Fact]
+    public async Task TrySendAsync_RegisteredAsVoid_WrongResultOverload_ThrowsContractMismatch()
+    {
+        var router = new CommandRouterBuilder()
+            .Register(new TrackingVoidHandler())
+            .Build();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => router.TrySendAsync<PingCommand, string>(new PingCommand("x")).AsTask());
+
+        Assert.Contains(nameof(PingCommand), ex.Message, StringComparison.Ordinal);
+        Assert.Contains("ICommandHandler", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Register_DuplicateCommandType_Throws()
     {
         var builder = new CommandRouterBuilder()

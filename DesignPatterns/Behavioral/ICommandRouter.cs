@@ -48,6 +48,9 @@ public interface ICommandRouter
     /// <returns>
     /// <see langword="true"/> when a handler was found and invoked; otherwise <see langword="false"/>.
     /// </returns>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown when a handler is registered for <typeparamref name="TCommand"/> but does not match the void-style contract.
+    /// </exception>
     ValueTask<bool> TrySendAsync<TCommand>(TCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -59,6 +62,10 @@ public interface ICommandRouter
     /// <param name="command">The command instance.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     /// <returns>A send attempt describing success or missing-handler failure.</returns>
+    /// <exception cref="System.InvalidOperationException">
+    /// Thrown when a handler is registered for <typeparamref name="TCommand"/> but does not match the
+    /// <c>ICommandHandler&lt;TCommand, TResult&gt;</c> contract.
+    /// </exception>
     ValueTask<CommandSendAttempt<TResult>> TrySendAsync<TCommand, TResult>(
         TCommand command,
         CancellationToken cancellationToken = default);
