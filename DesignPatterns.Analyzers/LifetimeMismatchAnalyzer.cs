@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using DesignPatterns.Analyzers.Di;
 using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -32,13 +33,6 @@ public sealed class LifetimeMismatchAnalyzer : DiagnosticAnalyzer
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
         context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
-    }
-
-    private enum Lifetime
-    {
-        Singleton = 0,
-        Scoped = 1,
-        Transient = 2,
     }
 
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
@@ -81,8 +75,10 @@ public sealed class LifetimeMismatchAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var implementationLifetime = ResolveLifetime(invocation, implementationLifetimeParam, context.SemanticModel);
-        var registryLifetime = ResolveLifetime(invocation, registryLifetimeParam, context.SemanticModel);
+        var implementationLifetime = LifetimeResolution.TryResolveArgument(
+            invocation, implementationLifetimeParam, context.SemanticModel);
+        var registryLifetime = LifetimeResolution.TryResolveArgument(
+            invocation, registryLifetimeParam, context.SemanticModel);
 
         // If either lifetime cannot be resolved (e.g. user passed a variable), use the default.
         implementationLifetime ??= GetDefaultLifetime(methodSymbol);
@@ -116,74 +112,6 @@ public sealed class LifetimeMismatchAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static Lifetime? ResolveLifetime(
-        InvocationExpressionSyntax invocation,
-        IParameterSymbol parameter,
-        SemanticModel semanticModel)
-    {
-        var argument = FindArgument(invocation.ArgumentList, parameter);
-        if (argument is null)
-        {
-            return null;
-        }
-
-        // Try constant value first (e.g. ServiceLifetime.Singleton → 0).
-        var constantValue = semanticModel.GetConstantValue(argument.Expression);
-        if (constantValue.HasValue && constantValue.Value is int intValue)
-        {
-            return intValue switch
-            {
-                0 => Lifetime.Singleton,
-                1 => Lifetime.Scoped,
-                2 => Lifetime.Transient,
-                _ => null,
-            };
-        }
-
-        // Try resolving as a field/property reference (ServiceLifetime.Singleton etc.).
-        var symbol = semanticModel.GetSymbolInfo(argument.Expression).Symbol;
-        if (symbol is IFieldSymbol fieldSymbol && fieldSymbol.HasConstantValue)
-        {
-            return fieldSymbol.ConstantValue switch
-            {
-                0 => Lifetime.Singleton,
-                1 => Lifetime.Scoped,
-                2 => Lifetime.Transient,
-                _ => null,
-            };
-        }
-
-        return null;
-    }
-
-    private static ArgumentSyntax? FindArgument(
-        ArgumentListSyntax argumentList,
-        IParameterSymbol parameter)
-    {
-        // Check named arguments first.
-        foreach (var arg in argumentList.Arguments)
-        {
-            if (arg.NameColon is { Name.Identifier.ValueText: var name } &&
-                name == parameter.Name)
-            {
-                return arg;
-            }
-        }
-
-        // Fall back to positional argument.
-        var index = parameter.Ordinal;
-        if (index < argumentList.Arguments.Count)
-        {
-            var arg = argumentList.Arguments[index];
-            if (arg.NameColon is null)
-            {
-                return arg;
-            }
-        }
-
-        return null;
-    }
-
     private static Lifetime GetDefaultLifetime(IMethodSymbol methodSymbol)
     {
         // Factory RegisterDi defaults to Transient; others default to Singleton.
@@ -212,4 +140,3 @@ public sealed class LifetimeMismatchAnalyzer : DiagnosticAnalyzer
             _ => lifetime.ToString(),
         };
 }
-
