@@ -70,7 +70,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
 | `tests/DesignPatterns.Analyzers.Tests/` | Analyzer / CodeFix 测试 |
 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests/` | DI 注册与解析测试 |
-| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 每个模式一个可运行控制台示例（含 `RegisterDi`）；主仓 CI checkout 并 build + run |
+| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 每个模式一个可运行控制台示例（含 `RegisterDi`）；由 Samples 仓自身 CI 负责；本地可并列 clone 验证 |
 
 命名空间根：`DesignPatterns`（运行时）、`DesignPatterns.Analyzers`（编译期）。
 
@@ -173,7 +173,7 @@ dotnet test DesignPatterns.slnx
 - 修复分支：`fix/<short-description>`
 - 提交信息：祈使句、**英语**，需说明 **why**（例：`Add RegisterStrategy source generator for strategy registry`）。语言规则以 [`../AGENTS.md`](../AGENTS.md) 为准。
 
-CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test；checkout [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 并 build + run；pack 校验）。
+CI：GitHub Actions [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)（`main` push/PR：restore、Release build、test、pack 校验）。[DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 由 sibling 仓自身 CI 构建/运行，本仓 CI 不再 checkout Samples。
 
 NuGet 消费者 smoke test：[`eng/nuget-smoke/`](../eng/nuget-smoke/)（`MetaPackage.Consumer` net8.0、`MetaPackage.Consumer.Net48` net48；`CiPack` 使用本地 pack；对 nuget.org 已发包运行 `NuGetConsumerSmokePublished --consumer-feed Published`）。
 

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **CI decoupled from Samples**: GitHub Actions CI no longer checkouts or builds [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples); sample regression stays on the Samples repo's own CI. `pack` now depends only on `build-test` and `build-test-net48`.
 - **F3 admission shortlist**: `docs/ROADMAP.md` F3 now records the Wayfinder Top-3 new pattern domains (Command Router, Builder, Fork–Join Work Graph), a watch list, and a rejection appendix ([#244](https://github.com/Skymly/DesignPatterns/issues/244)).
 - **Singleton Lifecycle registration map**: Singleton Lifecycle analysis (**DP068** / **DP071**) obtains Singleton DI membership from `DiRegistrationMap` instead of a private parallel collector. Behaviour freeze for existing DP068–DP071 Verify coverage.
 - **Registration map factory delegates**: `DiRegistrationMap` now exposes Singleton factory-delegate registrations (`FactoryDelegates`); Captive Dependency **DP066** reads those entries from the map instead of a private parallel collection. Behaviour freeze for existing DP066 Verify coverage.
