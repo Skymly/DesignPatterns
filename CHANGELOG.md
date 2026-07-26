@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Command Router diagnostic IDs**: reserved **DP072** (unregistered command handler, Analyzer) and registered **DP073** / **DP074** (duplicate command handler / contract mismatch, generator) for the upcoming Command Router domain. No runtime or generator behavior yet ([#257](https://github.com/Skymly/DesignPatterns/issues/257)).
+- **Command Router runtime primitives**: `ICommand` / `ICommand<TResult>`, `ICommandHandler<T>` / `ICommandHandler<T,TResult>`, `ICommandRouter` with `SendAsync` / `TrySendAsync`, `CommandRouterBuilder`, `CommandHandlerNotFoundException`, and `[RegisterCommandHandler]` (manual 1:1 CLR-type dispatch; no generator yet) ([#258](https://github.com/Skymly/DesignPatterns/issues/258)).
+- **Command Router diagnostic IDs**: reserved **DP072** (unregistered command handler, Analyzer) and registered **DP073** / **DP074** (duplicate command handler / contract mismatch, generator) for the upcoming Command Router domain ([#257](https://github.com/Skymly/DesignPatterns/issues/257)).
 
 ### Changed
 
