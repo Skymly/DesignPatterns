@@ -97,9 +97,42 @@
 - 在源生成 / 诊断 / DI 集成等编译期能力上具备**技术探索价值**（哪怕运行时能力与现有库重叠）；
 - 有真实使用场景与至少一个 Sample 设想。
 
-候选池（仅登记，未排期）：Observer / 轻量 pub-sub 扩展、Builder 生成器、ObjectPool（探索源生成池化策略）、Resilience primitive（探索编译期策略组合）、Command 路由（探索与 MediatR 的差异点）。**范围包含 GoF 但不局限于 GoF**：并发模式、反应式模式、函数式模式等候选同样欢迎。**未通过准入前不实现。**
+过线后按**编译期协同深度**排序（场景清晰度为辅）。**未通过准入前不实现。** 准入短名单决策见 Wayfinder 地图 [#244](https://github.com/Skymly/DesignPatterns/issues/244)（硬门槛 [#251](https://github.com/Skymly/DesignPatterns/issues/251)、Top-3 [#253](https://github.com/Skymly/DesignPatterns/issues/253)）。**范围包含 GoF 但不局限于 GoF**：并发 / 反应式 / 函数式等新模式域同样在评审范围内；**现有模式增强**仍走下方长期探索表 / F2+，不进本短名单。
 
-长期探索候选（高潜力、高复杂度，需 Issue + ADR 评审）：
+#### 准入 Top-3（建议实现顺序）
+
+| 名次 | 候选 | 说明 | 状态 |
+|------|------|------|------|
+| 1 | **Command Router** | 1:1 `Send`/`TrySend` + `[RegisterCommandHandler]`；命令↔handler 双射与缺/重诊断；可选 pipeline / stream 作为**域内能力**（非独立域）；探索与 MediatR 的差异点 | [ ] |
+| 2 | **Builder** | 声明式步骤 → 生成 fluent `*Builder`；缺步 / 不完整 `Build` 的编译期证明与诊断 | [ ] |
+| 3 | **Fork–Join Work Graph** | 属性声明的工作 DAG；生成器校验环 / 孤儿依赖并生成拓扑波次编排 | [ ] |
+
+#### 观望（已过硬门槛，未进 Top-3）
+
+| 候选 | 说明 |
+|------|------|
+| Compile-time Resilience Pipeline | 属性序冷冻弹性管线（vs Polly 运行时 builder）；Circuit / Fallback 作**步骤**而非独立域 |
+| Specification | `ISpecification<T>` + And/Or/Not；命名组合图完整性与 Keys；Interpreter / Query Object 并入本域 |
+| Channel Pipeline | 阶段 `TIn`/`TOut` 边类型校验 + BCL `Channel<T>` 接线 |
+| Proxy | 访问/懒加载门面生成 + 转发完备性 / guard（≠ Decorator 多层栈） |
+
+#### 出局附录（本轮不作为新模式域推进）
+
+| 候选 | 原因 |
+|------|------|
+| Observer / 轻量 pub-sub 扩展 | 相对 Event Aggregator 为增强，非新域 |
+| ObjectPool | Factory Registry 已有池化（`IPooledFactoryRegistry` / DP053–055） |
+| Named Resilience Policy Registry | 形态接近 Strategy 注册表，非独立域 |
+| Phased Barrier Coordination | BCL `Barrier`/`CountdownEvent` 薄封装，编译期胶水过薄 |
+| Interpreter / Query Object | 并入 Specification |
+| Circuit Breaker Gate / Fallback Provider Chain | 并入 Resilience Pipeline 步骤 |
+| Request Pipeline Behaviors / Stream Request Router | 并入 Command Router 域内能力 |
+| Correlated Request/Reply Messenger | 编译期表面偏薄 |
+| Abstract Factory | 与 Factory Registry「不做产品族」立场冲突 |
+| Actor Mailbox | 难保持轻量 primitive |
+| Production Ruleset | Specification + 有序副作用，独立域价值不足 |
+
+长期探索候选（**现有模式增强** / 横切，高潜力、高复杂度，需 Issue + ADR 评审；**不是**上方新模式域短名单）：
 
 | 候选 | 说明 | 探索价值 |
 |------|------|----------|
