@@ -242,6 +242,64 @@ public static class DesignPatternsServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers an <see cref="ICommandRouter"/> built by the provided configuration delegate.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Call generated <c>{Command}CommandHandlerRegistry.RegisterDi</c> for each command family
+    /// before building the provider so handlers are available for resolution. Handlers default to
+    /// <see cref="ServiceLifetime.Transient"/> via <c>RegisterDi</c>.
+    /// </para>
+    /// <para>
+    /// <strong>Lifetime pitfall (captive dependency):</strong> the default router lifetime is
+    /// <see cref="ServiceLifetime.Singleton"/>. Generated
+    /// <c>RegisterAll(CommandRouterBuilder, IServiceProvider)</c> resolves handlers once when the
+    /// router is built and freezes them into the immutable map—the same capture shape as Event
+    /// Aggregator <c>SubscribeAll(aggregator, provider)</c>. A Transient registration therefore
+    /// does <em>not</em> yield a new handler instance per <c>Send</c>; it only affects the instance
+    /// captured at build time. Prefer Transient (default) or Singleton handlers that are
+    /// thread-safe and effectively immutable. Prefer matching router and handler lifetimes, or
+    /// register the router as Transient/Scoped when handlers must follow a shorter lifetime.
+    /// Related vocabulary: DP060–DP062 / DP066 captive-dependency diagnostics.
+    /// </para>
+    /// </remarks>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">
+    /// A delegate that registers handlers onto a <see cref="CommandRouterBuilder"/> using the
+    /// resolving <see cref="IServiceProvider"/> (typically via generated
+    /// <c>RegisterAll(builder, serviceProvider)</c>).
+    /// </param>
+    /// <param name="lifetime">The router service lifetime. Defaults to <see cref="ServiceLifetime.Singleton"/>.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddCommandRouter(
+        this IServiceCollection services,
+        Action<CommandRouterBuilder, IServiceProvider> configure,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        services.TryAdd(new ServiceDescriptor(
+            typeof(ICommandRouter),
+            sp =>
+            {
+                var builder = new CommandRouterBuilder();
+                configure(builder, sp);
+                return builder.Build();
+            },
+            lifetime));
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers a pre-built <see cref="ITransitionTable{TState,TTrigger}"/> instance as a singleton.
     /// </summary>
     /// <remarks>
