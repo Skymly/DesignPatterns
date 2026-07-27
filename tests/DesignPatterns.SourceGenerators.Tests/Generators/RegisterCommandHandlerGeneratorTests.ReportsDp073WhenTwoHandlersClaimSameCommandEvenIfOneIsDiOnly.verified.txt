@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP073,
+    Message: Command type 'TestAssembly.MixedCommand' is already registered to handler 'InjectedHandler'. Handler 'ParameterlessHandler' also declares [RegisterCommandHandler] for the same command. Remove one of the attributes so exactly one handler remains.
+  }
+]

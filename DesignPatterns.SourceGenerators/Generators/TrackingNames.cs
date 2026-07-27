@@ -36,6 +36,10 @@ internal static class TrackingNames
     public const string EventHandlerNonGenericTransform = nameof(EventHandlerNonGenericTransform);
     public const string EventHandlerGenericTransform = nameof(EventHandlerGenericTransform);
 
+    // RegisterCommandHandlerGenerator
+    public const string CommandHandlerNonGenericTransform = nameof(CommandHandlerNonGenericTransform);
+    public const string CommandHandlerGenericTransform = nameof(CommandHandlerGenericTransform);
+
     // Collect + Combine stages (shared naming: {Generator}Collect, {Generator}Combine)
     public const string SingletonCollect = nameof(SingletonCollect);
 
@@ -59,4 +63,7 @@ internal static class TrackingNames
 
     public const string EventHandlerCollect = nameof(EventHandlerCollect);
     public const string EventHandlerCombine = nameof(EventHandlerCombine);
+
+    public const string CommandHandlerCollect = nameof(CommandHandlerCollect);
+    public const string CommandHandlerCombine = nameof(CommandHandlerCombine);
 }
