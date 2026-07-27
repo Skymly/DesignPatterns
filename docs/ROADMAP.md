@@ -18,9 +18,10 @@
 | Decorator | `{Contract}DecoratorStack.Build(core)`、`{Contract}DecoratorOrder` |
 | Factory | `{Contract}Keys`、`{Contract}Registry` |
 | Event Aggregator | `{Event}EventHandlerRegistry` |
+| Command Router | `{Command}CommandHandlerRegistry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
 
-新增生成器必须沿用此命名风格（详见 [Decorator.md](design/Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP067**，DP067–DP071 已由 [ADR-008](adr/ADR-008-singleton-lifecycle-diagnostics.md) 预留（DP066 为 Singleton 工厂委托 captive dependency，DP063–DP065 为 Composite 树 schema 校验，DP060–DP062 为 DI 生命周期校验，DP056–DP059 为 State hierarchy，DP053–DP055 为 Factory async + pooling 签名/池化校验，DP050–DP052 为 Handler guard 签名校验，DP047–DP049 为 Strategy guard 签名校验，DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
+新增生成器必须沿用此命名风格（详见 [Decorator.md](design/Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP075**（DP072–DP074 为 Command Router：未注册 Analyzer、重复命令、契约不匹配；DP067–DP071 专属 [ADR-008](adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派；DP066 为 Singleton 工厂委托 captive dependency，DP063–DP065 为 Composite 树 schema 校验，DP060–DP062 为 DI 生命周期校验，DP056–DP059 为 State hierarchy，DP053–DP055 为 Factory async + pooling 签名/池化校验，DP050–DP052 为 Handler guard 签名校验，DP047–DP049 为 Strategy guard 签名校验，DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
 
 诊断 ID 预分配（F2+ 增强项，登记后不提前占用，实现时按序领取）：
 
@@ -103,7 +104,7 @@
 
 | 名次 | 候选 | 说明 | 状态 |
 |------|------|------|------|
-| 1 | **Command Router** | 1:1 `Send`/`TrySend` + `[RegisterCommandHandler]`；命令↔handler 双射与缺/重诊断；可选 pipeline / stream 作为**域内能力**（非独立域）；探索与 MediatR 的差异点 | [ ] |
+| 1 | **Command Router** | MVP 已落地：1:1 `SendAsync`/`TrySendAsync` + `[RegisterCommandHandler]` + DP072–074 + `AddCommandRouter` + [Design Doc](design/CommandRouter.md)（#257–#262、#260）。可选 pipeline / stream 仍为**域内能力**（非独立域；#264/#265）；Autofac 对等扩展 #263、Samples #266；探索与 MediatR 的差异点见 Design Doc | [~] |
 | 2 | **Builder** | 声明式步骤 → 生成 fluent `*Builder`；缺步 / 不完整 `Build` 的编译期证明与诊断 | [ ] |
 | 3 | **Fork–Join Work Graph** | 属性声明的工作 DAG；生成器校验环 / 孤儿依赖并生成拓扑波次编排 | [ ] |
 

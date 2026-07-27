@@ -174,8 +174,6 @@ dotnet test DesignPatterns.slnx -c Release
 - 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 / DP068 / DP069 / DP070 / DP071 / DP072 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。
 - DP038（action 方法非 static）因 C# 编译器 CS0708 先于生成器拒绝 static 类中的实例成员，无法通过生成器测试触发；诊断保留供完整性。
-- Docs follow-up：`docs/ROADMAP.md` 中「下一个可用 ID」仍写 DP067，由 Docs 票（Command Router Design Doc / #260）同步为 DP075，不在本 Diagnostics PR 改 Docs 模块。
-
 ---
 
 ## 编码标准
