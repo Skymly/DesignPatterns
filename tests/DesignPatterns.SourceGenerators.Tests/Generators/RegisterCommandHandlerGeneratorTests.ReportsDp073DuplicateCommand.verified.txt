@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP073,
+    Message: Command type 'TestAssembly.DuplicateCommand' is already registered to handler 'FirstHandler'. Handler 'SecondHandler' also declares [RegisterCommandHandler] for the same command. Remove one of the attributes so exactly one handler remains.
+  }
+]

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Command Router source generator**: `[RegisterCommandHandler]` / `[RegisterCommandHandler<TCommand>]` drives `RegisterCommandHandlerGenerator`, emitting `{Command}CommandHandlerRegistry` with static `RegisterAll` / `CreateRouter` (parameterless-ctor path) and optional DI/Autofac glue when integration flags are set. Enforces 1:1 bijection via **DP073** (duplicate command) and **DP074** (contract mismatch) ([#259](https://github.com/Skymly/DesignPatterns/issues/259)).
 - **Command Router runtime primitives**: `ICommand` / `ICommand<TResult>`, `ICommandHandler<T>` / `ICommandHandler<T,TResult>`, `ICommandRouter` with `SendAsync` / `TrySendAsync`, `CommandRouterBuilder`, `CommandHandlerNotFoundException`, and `[RegisterCommandHandler]` (manual 1:1 CLR-type dispatch; no generator yet) ([#258](https://github.com/Skymly/DesignPatterns/issues/258)).
 - **Command Router diagnostic IDs**: reserved **DP072** (unregistered command handler, Analyzer) and registered **DP073** / **DP074** (duplicate command handler / contract mismatch, generator) for the upcoming Command Router domain ([#257](https://github.com/Skymly/DesignPatterns/issues/257)).
 
