@@ -15,4 +15,5 @@
 | Factory Registry | [FactoryRegistry.md](FactoryRegistry.md) | — |
 | Decorator | [Decorator.md](Decorator.md) | — |
 | Event Aggregator | [EventAggregator.md](EventAggregator.md) | — |
+| Command Router | [CommandRouter.md](CommandRouter.md) | — |
 | State Transition Table | [StateTransitionTable.md](StateTransitionTable.md) | [ADR-005](../adr/ADR-005-state-transition-table.md) |
