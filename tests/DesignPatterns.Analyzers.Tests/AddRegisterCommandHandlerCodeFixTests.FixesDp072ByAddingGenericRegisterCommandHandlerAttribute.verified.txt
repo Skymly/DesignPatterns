@@ -1,0 +1,23 @@
+﻿using System.Threading;
+using System.Threading.Tasks;
+using DesignPatterns.Behavioral;
+
+namespace TestAssembly;
+
+public sealed class PingCommand : ICommand
+{
+}
+
+[RegisterCommandHandler<PingCommand>]
+public sealed class RegisteredPingHandler : ICommandHandler<PingCommand>
+{
+    public ValueTask HandleAsync(PingCommand command, CancellationToken cancellationToken = default) =>
+        default;
+}
+
+[RegisterCommandHandler<PingCommand>]
+public sealed class OrphanPingHandler : ICommandHandler<PingCommand>
+{
+    public ValueTask HandleAsync(PingCommand command, CancellationToken cancellationToken = default) =>
+        default;
+}

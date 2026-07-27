@@ -52,6 +52,18 @@ internal static class CodeFixHelpers
             return false;
         }
 
+        if (diagnostic.Id == DiagnosticIds.CommandHandlerUnregisteredImplementation)
+        {
+            var commandMatch = Regex.Match(message, @"ICommandHandler<([^>,]+)", RegexOptions.CultureInvariant);
+            if (commandMatch.Success)
+            {
+                contractTypeName = commandMatch.Groups[1].Value.Trim();
+                return !string.IsNullOrWhiteSpace(contractTypeName);
+            }
+
+            return false;
+        }
+
         if (diagnostic.Id == DiagnosticIds.CompositePartMissingBuildable)
         {
             var buildableMatch = Regex.Match(message, @"ICompositeBuildable<([^>]+)>", RegexOptions.CultureInvariant);
