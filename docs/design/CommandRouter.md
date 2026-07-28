@@ -152,6 +152,17 @@ services.AddCommandRouter((builder, sp) =>
 
 `AddCommandRouter` 默认将 `ICommandRouter` 注册为 **Singleton**：构建时冻结 handler 映射。`RegisterDi` 默认 Transient **不**表示每次 `Send` 新实例——Singleton router 在 `Build` 时解析并持有 handler（captive 语义与 Event Aggregator 的 `SubscribeAll(aggregator, provider)` 同类；相关诊断见 DP060–DP062 / DP066）。
 
+#### Autofac 路径（两步）
+
+```csharp
+var builder = new ContainerBuilder();
+PingCommandHandlerRegistry.RegisterAutofac(builder); // 默认 InstancePerDependency
+builder.RegisterCommandRouter((routerBuilder, scope) =>
+    PingCommandHandlerRegistry.RegisterAll(routerBuilder, scope));
+```
+
+`RegisterCommandRouter` 默认 `InstanceSharing.Shared`（singleton），captive 语义与 MSDI `AddCommandRouter` / Event Aggregator Autofac `SubscribeAll(aggregator, lifetimeScope)` 同类。
+
 ## 诊断
 
 | ID | 级别 | 归属 | 触发条件 | 消息要点 |
@@ -182,7 +193,7 @@ CodeFix：在 C# 11+ 且元数据可用时优先插入 `[RegisterCommandHandler<
 - netstandard2.0 / net8.0（运行时核心，两者均须可用并随包分发）
 - Roslyn 组件基线 4.8.0
 - DI：独立包 `DesignPatterns.Extensions.DependencyInjection`，`services.AddCommandRouter(...)`
-- Autofac：**生成器**可发 `RegisterAutofac` / `RegisterAll(..., ILifetimeScope)`；打包扩展 `AddCommandRouter` 对等 API 见后续票 [#263](https://github.com/Skymly/DesignPatterns/issues/263)
+- Autofac：独立包 `DesignPatterns.Extensions.Autofac`，生成器 `RegisterAutofac` / `RegisterAll(..., ILifetimeScope)` + 打包扩展 `RegisterCommandRouter(...)`（[#263](https://github.com/Skymly/DesignPatterns/issues/263)）
 
 ## 实现概览
 
@@ -242,7 +253,7 @@ Command Router 在构建后冻结映射，适合「启动时装配、运行时�
 | 重复语义 | DP073：异 handler 同命令 → Error | DP045：同 handler 同事件重复标注 → Error；**允许多 handler** |
 | 未注册 | DP072（peer-presence） | DP044（peer-presence） |
 | 契约 | DP074 | DP046 |
-| DI | `AddCommandRouter(configure)` | `AddEventAggregator()` |
+| DI / Autofac | `AddCommandRouter` / `RegisterCommandRouter` | `AddEventAggregator`（Autofac 仅生成器 `SubscribeAll`） |
 
 ### vs MediatR（生态）
 
@@ -260,7 +271,6 @@ Command Router 在构建后冻结映射，适合「启动时装配、运行时�
 - 不做跨进程 / 持久化 / 重试策略
 - 不做请求/响应关联 ID
 - **MVP 不含** pipeline behaviors、stream send、traced send（后续域内能力，见 ROADMAP 出局附录「并入 Command Router」与 #264 / #265）
-- Autofac 生成器胶水已有；打包扩展对等 API 待 [#263](https://github.com/Skymly/DesignPatterns/issues/263)
 - Samples 在 sibling 仓跟踪 [#266](https://github.com/Skymly/DesignPatterns/issues/266)
 
 ## 参考
@@ -271,4 +281,4 @@ Command Router 在构建后冻结映射，适合「启动时装配、运行时�
 - [docs/DEVELOPMENT.md](../DEVELOPMENT.md) — 通用开发约定
 - [docs/ROADMAP.md](../ROADMAP.md) F3 Top-1
 - Spec：[#256](https://github.com/Skymly/DesignPatterns/issues/256)
-- 落地切片：#257–#262（Diagnostics → Runtime → Generator → Analyzer → DI）
+- 落地切片：#257–#263（Diagnostics → Runtime → Generator → Analyzer → DI → Autofac）

@@ -104,7 +104,7 @@
 
 | 名次 | 候选 | 说明 | 状态 |
 |------|------|------|------|
-| 1 | **Command Router** | MVP 已落地：1:1 `SendAsync`/`TrySendAsync` + `[RegisterCommandHandler]` + DP072–074 + `AddCommandRouter` + [Design Doc](design/CommandRouter.md)（#257–#262、#260）。可选 pipeline / stream 仍为**域内能力**（非独立域；#264/#265）；Autofac 对等扩展 #263、Samples #266；探索与 MediatR 的差异点见 Design Doc | [~] |
+| 1 | **Command Router** | MVP 已落地：1:1 `SendAsync`/`TrySendAsync` + `[RegisterCommandHandler]` + DP072–074 + `AddCommandRouter` / Autofac `RegisterCommandRouter` + [Design Doc](design/CommandRouter.md)（#257–#263、#260）。可选 pipeline / stream 仍为**域内能力**（非独立域；#264/#265）；Samples #266；探索与 MediatR 的差异点见 Design Doc | [~] |
 | 2 | **Builder** | 声明式步骤 → 生成 fluent `*Builder`；缺步 / 不完整 `Build` 的编译期证明与诊断 | [ ] |
 | 3 | **Fork–Join Work Graph** | 属性声明的工作 DAG；生成器校验环 / 孤儿依赖并生成拓扑波次编排 | [ ] |
 

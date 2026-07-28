@@ -89,6 +89,7 @@ public sealed class AlphaProviderModule : Module
 |------|------|
 | `InstanceSharing` | `Shared` / `None` 生命周期枚举 |
 | `ComponentContextStrategyRegistry<TKey,TStrategy>` | 从 `ILifetimeScope` 延迟解析策略实现 |
+| `AutofacCommandRouterExtensions.RegisterCommandRouter` | 配置委托 + `ILifetimeScope` 注册 `ICommandRouter`（默认 Shared；对等 MSDI `AddCommandRouter`） |
 
 注册表持有 **`ILifetimeScope`**（非 `IComponentContext`），避免 Autofac 在解析结束后上下文失效。
 
@@ -117,4 +118,4 @@ public sealed class AlphaProviderModule : Module
 
 ## 测试
 
-`tests/DesignPatterns.Extensions.Autofac.Tests` — Strategy / Factory / Handler 的 `RegisterAutofac` 解析、生命周期与 Keyed 注册表。
+`tests/DesignPatterns.Extensions.Autofac.Tests` — Strategy / Factory / Handler 的 `RegisterAutofac` 解析、生命周期与 Keyed 注册表；Command Router 的 `RegisterCommandRouter` + `SendAsync` 集成。
