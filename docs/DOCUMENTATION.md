@@ -55,8 +55,10 @@
 2. `DesignPatterns.Diagnostics/DiagnosticIds.cs` + descriptors + `AnalyzerReleases.*.md`
 3. `AGENTS.md` 诊断表（若新增 `DP###`）
 4. `CHANGELOG.md` `[Unreleased]`
-5. 用户向文档：[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs)（**独立 PR**）
-6. 示例：[DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)（若行为可见变化）
+5. 用户向文档：[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs)（**独立 Issue + 独立 PR**；勿在本仓开用户站执行票）
+6. 示例：[DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)（若行为可见变化；**独立 Issue + 独立 PR**）
+
+跨仓跟踪约定见 [agents/issue-tracker.md](agents/issue-tracker.md)：执行票跟仓走；父票 / wayfinder map 可留本仓并用 URL checklist 关联。
 
 ## 6. 目录结构
 
@@ -65,6 +67,10 @@ docs/
 ├── DOCUMENTATION.md
 ├── README.md
 ├── ROADMAP.md
+├── agents/                 ← mattpocock/skills 配置（Issue 路由 / triage）
+│   ├── issue-tracker.md
+│   ├── triage-labels.md
+│   └── domain.md
 ├── adr/
 │   ├── README.md
 │   ├── _template.md

@@ -163,6 +163,17 @@ builder.RegisterCommandRouter((routerBuilder, scope) =>
 
 `RegisterCommandRouter` 默认 `InstanceSharing.Shared`（singleton），captive 语义与 MSDI `AddCommandRouter` / Event Aggregator Autofac `SubscribeAll(aggregator, lifetimeScope)` 同类。
 
+### Pipeline behaviors（选型已锁定；实现见 #275–#277）
+
+按 [ADR-009](../adr/ADR-009-command-router-pipeline-onion.md)：
+
+- **Chain-like `next` 洋葱**（不做 Decorator wrap；不复用 `HandlerPipeline`）
+- 双接口对齐 handler：`ICommandPipelineBehavior<TCommand>` / `ICommandPipelineBehavior<TCommand, TResult>`
+- 按命令封闭注册：`[CommandPipelineBehavior<TCommand>(order)]`（`AllowMultiple`）；越小越先 inbound
+- 短路：void 不调 `next` 即停；result 用返回值（MediatR 形）
+- 手动 `CommandRouterBuilder` 一等支持；本批**不做** behavior DI / 未注册 Analyzer
+- 生成器 Error：重复 order、孤儿 behavior、契约不匹配（DP075+，见 #276）
+
 ## 诊断
 
 | ID | 级别 | 归属 | 触发条件 | 消息要点 |
@@ -262,7 +273,7 @@ Command Router 在构建后冻结映射，适合「启动时装配、运行时�
 | 范围 | 进程内、编译期双射 + 显式 Try* | 请求/通知、行为管道、流式请求等完整媒介 |
 | 路由 | CLR 命令类型 → 单 handler | Request/Notification + pipeline behaviors |
 | 编译期 | `[RegisterCommandHandler]` + DP072–074 | 通常约定扫描或显式注册；诊断模型不同 |
-| 管道 / 流 | **未**进入 MVP；规划为**本域内能力**（非独立模式域），见 [#264](https://github.com/Skymly/DesignPatterns/issues/264) / [#265](https://github.com/Skymly/DesignPatterns/issues/265) | `IPipelineBehavior`、`IStreamRequest` 等一等公民 |
+| 管道 / 流 | Pipeline：**Chain-like `next`**（[ADR-009](../adr/ADR-009-command-router-pipeline-onion.md)，实现中 #275–#277）；Stream：规划见 [#265](https://github.com/Skymly/DesignPatterns/issues/265) | `IPipelineBehavior`、`IStreamRequest` 等一等公民 |
 
 重叠被允许：本域的探索重点是「编译期双射证明 + 显式失败 primitives」，而非替代 MediatR 产品面。
 
@@ -270,7 +281,7 @@ Command Router 在构建后冻结映射，适合「启动时装配、运行时�
 
 - 不做跨进程 / 持久化 / 重试策略
 - 不做请求/响应关联 ID
-- **MVP 不含** pipeline behaviors、stream send、traced send（后续域内能力，见 ROADMAP 出局附录「并入 Command Router」与 #264 / #265）
+- **MVP 不含** stream send、traced send（后续域内能力，见 ROADMAP 出局附录「并入 Command Router」与 #265）；**pipeline behaviors** 选型已锁定为 Chain-like `next`（[ADR-009](../adr/ADR-009-command-router-pipeline-onion.md)），实现切片 #275–#277 / #264
 - Samples 在 sibling 仓跟踪 [#266](https://github.com/Skymly/DesignPatterns/issues/266)
 
 ## 参考

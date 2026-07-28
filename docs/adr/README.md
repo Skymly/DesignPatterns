@@ -18,7 +18,8 @@
 | [ADR-006](ADR-006-composite-parallel-traversal.md) | Composite parallel traversal | Accepted | 2026-06-30 | — |
 | [ADR-007](ADR-007-composite-tree-schema-validation.md) | Composite tree schema validation | Accepted | 2026-07-07 | — |
 | [ADR-008](ADR-008-singleton-lifecycle-diagnostics.md) | Singleton lifecycle diagnostics | Accepted | 2026-07-08 | — |
+| [ADR-009](ADR-009-command-router-pipeline-onion.md) | Command Router pipeline uses Chain-like next onion | Accepted | 2026-07-28 | #264 / #275–#277 |
 
 ## 下一个可用编号
 
-**ADR-009**
+**ADR-010**

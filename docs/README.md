@@ -9,6 +9,7 @@
 | 文档 | 说明 |
 |------|------|
 | [DOCUMENTATION.md](DOCUMENTATION.md) | 文档约定 |
+| [agents/](agents/issue-tracker.md) | Agent skills：Issue 路由 / triage / domain |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | 环境、构建、测试、架构约定 |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | 贡献流程 |
 | [PUBLISHING.md](PUBLISHING.md) | NuGet 发版流程 |
