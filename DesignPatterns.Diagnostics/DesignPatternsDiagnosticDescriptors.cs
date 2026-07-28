@@ -617,7 +617,7 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
-    // Command Router (DP072–DP074)
+    // Command Router (DP072–DP074) + pipeline behaviors (DP075–DP077)
 
     public static DiagnosticDescriptor CommandHandlerUnregisteredImplementation { get; } = Create(
         DiagnosticIds.CommandHandlerUnregisteredImplementation,
@@ -640,6 +640,30 @@ public static class DesignPatternsDiagnosticDescriptors
         "Command handler does not implement ICommandHandler for command type",
         "Type '{0}' does not implement ICommandHandler<{1}> (or ICommandHandler<{1}, TResult>). Implement the handler contract or fix the [RegisterCommandHandler] command type argument.",
         "RegisterCommandHandler implementations must implement ICommandHandler<TCommand> or ICommandHandler<TCommand, TResult> for the declared command type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor CommandPipelineBehaviorDuplicateOrder { get; } = Create(
+        DiagnosticIds.CommandPipelineBehaviorDuplicateOrder,
+        "Duplicate command pipeline behavior order",
+        "Behavior order '{0}' is already used for command '{1}'. Assign a unique order value or remove the duplicate [CommandPipelineBehavior] attribute.",
+        "Command pipeline behavior order values must be unique per command type so onion ordering stays deterministic.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor CommandPipelineBehaviorOrphan { get; } = Create(
+        DiagnosticIds.CommandPipelineBehaviorOrphan,
+        "Command pipeline behavior has no terminal handler",
+        "Type '{0}' declares [CommandPipelineBehavior] for command '{1}' but no [RegisterCommandHandler] terminal handler is registered for that command. Register a handler for '{1}' or remove the behavior attribute.",
+        "Pipeline behaviors wrap a terminal command handler; each attributed behavior requires a matching registered handler for the same command type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor CommandPipelineBehaviorContractMismatch { get; } = Create(
+        DiagnosticIds.CommandPipelineBehaviorContractMismatch,
+        "Command pipeline behavior does not implement ICommandPipelineBehavior for command type",
+        "Type '{0}' does not implement ICommandPipelineBehavior<{1}> (or ICommandPipelineBehavior<{1}, TResult>). Implement the behavior contract or fix the [CommandPipelineBehavior] command type argument.",
+        "CommandPipelineBehavior implementations must implement ICommandPipelineBehavior<TCommand> or ICommandPipelineBehavior<TCommand, TResult> for the declared command type.",
         DiagnosticSeverity.Error,
         GeneratorCategory);
 

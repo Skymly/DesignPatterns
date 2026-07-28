@@ -79,4 +79,7 @@ public static class DiagnosticIds
     public const string CommandHandlerUnregisteredImplementation = "DP072";
     public const string RegisterCommandHandlerDuplicateCommand = "DP073";
     public const string RegisterCommandHandlerContractMismatch = "DP074";
+    public const string CommandPipelineBehaviorDuplicateOrder = "DP075";
+    public const string CommandPipelineBehaviorOrphan = "DP076";
+    public const string CommandPipelineBehaviorContractMismatch = "DP077";
 }

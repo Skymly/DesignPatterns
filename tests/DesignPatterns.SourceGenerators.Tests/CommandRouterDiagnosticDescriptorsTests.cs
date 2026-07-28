@@ -4,8 +4,9 @@ using Microsoft.CodeAnalysis;
 namespace DesignPatterns.SourceGenerators.Tests;
 
 /// <summary>
-/// Seam: public DiagnosticIds + DesignPatternsDiagnosticDescriptors for Command Router (issue #257).
-/// No analyzer/generator behavior is exercised here — only stable DP### identities and descriptor contracts.
+/// Seam: public DiagnosticIds + DesignPatternsDiagnosticDescriptors for Command Router
+/// (issues #257, #276). No analyzer/generator behavior is exercised here — only stable
+/// DP### identities and descriptor contracts.
 /// </summary>
 public sealed class CommandRouterDiagnosticDescriptorsTests
 {
@@ -15,6 +16,9 @@ public sealed class CommandRouterDiagnosticDescriptorsTests
         Assert.Equal("DP072", DiagnosticIds.CommandHandlerUnregisteredImplementation);
         Assert.Equal("DP073", DiagnosticIds.RegisterCommandHandlerDuplicateCommand);
         Assert.Equal("DP074", DiagnosticIds.RegisterCommandHandlerContractMismatch);
+        Assert.Equal("DP075", DiagnosticIds.CommandPipelineBehaviorDuplicateOrder);
+        Assert.Equal("DP076", DiagnosticIds.CommandPipelineBehaviorOrphan);
+        Assert.Equal("DP077", DiagnosticIds.CommandPipelineBehaviorContractMismatch);
 
         Assert.Equal("DP067", DiagnosticIds.GenerateSingletonInitializeAsyncInvalid);
         Assert.Equal("DP071", DiagnosticIds.StaticMutableSingletonDiDoubleRegistration);
@@ -62,5 +66,50 @@ public sealed class CommandRouterDiagnosticDescriptorsTests
         Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
         Assert.Contains("ICommandHandler", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
         Assert.Contains("[RegisterCommandHandler]", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Duplicate_pipeline_behavior_order_descriptor_is_generator_error_with_actionable_message()
+    {
+        var descriptor = DesignPatternsDiagnosticDescriptors.CommandPipelineBehaviorDuplicateOrder;
+
+        Assert.Equal(DiagnosticIds.CommandPipelineBehaviorDuplicateOrder, descriptor.Id);
+        Assert.Equal(DiagnosticSeverity.Error, descriptor.DefaultSeverity);
+        Assert.Equal("DesignPatterns.Generators", descriptor.Category);
+        Assert.Equal(DiagnosticHelpLinks.For(descriptor.Id), descriptor.HelpLinkUri);
+        Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
+        Assert.Contains("[CommandPipelineBehavior]", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.Contains("{0}", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.Contains("{1}", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Orphan_pipeline_behavior_descriptor_is_generator_error_with_actionable_message()
+    {
+        var descriptor = DesignPatternsDiagnosticDescriptors.CommandPipelineBehaviorOrphan;
+
+        Assert.Equal(DiagnosticIds.CommandPipelineBehaviorOrphan, descriptor.Id);
+        Assert.Equal(DiagnosticSeverity.Error, descriptor.DefaultSeverity);
+        Assert.Equal("DesignPatterns.Generators", descriptor.Category);
+        Assert.Equal(DiagnosticHelpLinks.For(descriptor.Id), descriptor.HelpLinkUri);
+        Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
+        Assert.Contains("[CommandPipelineBehavior]", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.Contains("[RegisterCommandHandler]", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.Contains("{0}", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.Contains("{1}", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Pipeline_behavior_contract_mismatch_descriptor_is_generator_error_with_actionable_message()
+    {
+        var descriptor = DesignPatternsDiagnosticDescriptors.CommandPipelineBehaviorContractMismatch;
+
+        Assert.Equal(DiagnosticIds.CommandPipelineBehaviorContractMismatch, descriptor.Id);
+        Assert.Equal(DiagnosticSeverity.Error, descriptor.DefaultSeverity);
+        Assert.Equal("DesignPatterns.Generators", descriptor.Category);
+        Assert.Equal(DiagnosticHelpLinks.For(descriptor.Id), descriptor.HelpLinkUri);
+        Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
+        Assert.Contains("ICommandPipelineBehavior", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.Contains("[CommandPipelineBehavior]", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
     }
 }
