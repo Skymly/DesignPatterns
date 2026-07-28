@@ -164,12 +164,15 @@ dotnet test DesignPatterns.slnx -c Release
 | DP072 | 未注册 CommandHandler（Analyzer + CodeFix；实现 `ICommandHandler<T>` / `ICommandHandler<T,TResult>` 但未标注 `[RegisterCommandHandler]`，peer-presence 规则同 DP044） |
 | DP073 | RegisterCommandHandler 重复命令（生成器；同一 command type 多个 handler） |
 | DP074 | RegisterCommandHandler 契约不匹配（生成器；标注但未实现 `ICommandHandler<T>` / `ICommandHandler<T,TResult>`） |
+| DP075 | CommandPipelineBehavior 重复 order（生成器；同一 command type 多个 behavior 共用同一 order） |
+| DP076 | CommandPipelineBehavior 孤儿 behavior（生成器；behavior 声明的 command 无终端 `[RegisterCommandHandler]`） |
+| DP077 | CommandPipelineBehavior 契约不匹配（生成器；标注但未实现 `ICommandPipelineBehavior<T>` / `ICommandPipelineBehavior<T,TResult>`） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP075**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
+- 下一个可用 ID：**DP078**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 / DP068 / DP069 / DP070 / DP071 / DP072 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。

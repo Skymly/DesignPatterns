@@ -172,7 +172,7 @@ builder.RegisterCommandRouter((routerBuilder, scope) =>
 - 按命令封闭注册：`[CommandPipelineBehavior<TCommand>(order)]`（`AllowMultiple`）；越小越先 inbound
 - 短路：void 不调 `next` 即停；result 用返回值（MediatR 形）
 - 手动 `CommandRouterBuilder` 一等支持；本批**不做** behavior DI / 未注册 Analyzer
-- 生成器 Error：重复 order、孤儿 behavior、契约不匹配（DP075+，见 #276）
+- 生成器 Error：重复 order（DP075）、孤儿 behavior（DP076）、契约不匹配（DP077）；ID 已在 #276 登记，生成器行为见 #264
 
 ## 诊断
 
@@ -181,6 +181,9 @@ builder.RegisterCommandRouter((routerBuilder, scope) =>
 | DP072 | Info | Analyzer + CodeFix | 实现 `ICommandHandler<*>` 但未标 `[RegisterCommandHandler]`，且编译内已存在该命令类型的**同伴**注册 | 提示补特性 |
 | DP073 | Error | Generator | 两个**不同** handler 声明同一命令类型 | 保持 1:1 双射 |
 | DP074 | Error | Generator | 标注了特性但未实现对应 `ICommandHandler` 契约 | 修正契约或 `For` 类型 |
+| DP075 | Error | Generator | 同一 command 上多个 `[CommandPipelineBehavior]` 共用同一 `order` | 保持洋葱顺序确定 |
+| DP076 | Error | Generator | `[CommandPipelineBehavior]` 声明的 command 无终端 `[RegisterCommandHandler]` | 补 handler 或移除 behavior |
+| DP077 | Error | Generator | 标注了特性但未实现对应 `ICommandPipelineBehavior` 契约 | 修正契约或命令类型参数 |
 
 ### DP072 peer-presence（与 DP044 同构）
 
@@ -230,6 +233,9 @@ CodeFix：在 C# 11+ 且元数据可用时优先插入 `[RegisterCommandHandler<
 | DP072 | Analyzer | 未注册实现（peer-presence Info）+ CodeFix |
 | DP073 | Generator | 重复命令（双射破坏） |
 | DP074 | Generator | 契约不匹配 |
+| DP075 | Generator | pipeline behavior 重复 order |
+| DP076 | Generator | pipeline behavior 无终端 handler（孤儿） |
+| DP077 | Generator | pipeline behavior 契约不匹配 |
 
 ## 设计权衡
 
