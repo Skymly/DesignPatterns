@@ -70,7 +70,7 @@ dotnet build DesignPatterns/DesignPatterns.csproj
 | `tests/DesignPatterns.SourceGenerators.Tests/` | 生成器 Verify 快照与诊断测试 |
 | `tests/DesignPatterns.Analyzers.Tests/` | Analyzer / CodeFix 测试 |
 | `tests/DesignPatterns.Extensions.DependencyInjection.Tests/` | DI 注册与解析测试 |
-| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 每个模式一个可运行控制台示例（含 `RegisterDi`）；由 Samples 仓自身 CI 负责；本地可并列 clone 验证 |
+| [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) | 每个模式一个可运行控制台示例（含 `RegisterDi`）；由 Samples 仓自身 CI 负责；本地路径 `C:\Code\Skymly\DesignPatterns\DesignPatterns.Samples`；执行 Issue 开在 Samples 仓（见 [agents/issue-tracker.md](agents/issue-tracker.md)） |
 
 命名空间根：`DesignPatterns`（运行时）、`DesignPatterns.Analyzers`（编译期）。
 

@@ -11,7 +11,7 @@
 | **许可证** | [MIT](LICENSE) |
 | **阶段** | **早期预览**：公共 API、生成器产出与 `DP###` 诊断**尚未稳定**（见 [README.md](README.md)） |
 | **NuGet** | 元包 **`Skymly.DesignPatterns`**；当前 **`0.2.3-preview2`**；`release.yml` + Nuke `Publish` → nuget.org + GitHub Packages |
-| **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 工作区路径 `Skymly/DesignPatterns/DesignPatterns.Samples/`、`Skymly/DesignPatterns/DesignPatterns.Docs/` |
+| **Sibling 仓库** | [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)、[DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs) — 本地并列路径 `C:\Code\Skymly\DesignPatterns\DesignPatterns.Samples`、`C:\Code\Skymly\DesignPatterns\DesignPatterns.Docs` |
 
 ## 项目是什么
 
@@ -61,7 +61,7 @@ DesignPatterns.slnx
 | **DependencyInjection** | `DesignPatterns.Extensions.DependencyInjection/`、`build/*.targets` |
 | **Autofac** | `DesignPatterns.Extensions.Autofac/`、`build/*.targets` |
 | **Package** | `DesignPatterns.Package/` |
-| **Docs** | 本仓 `docs/`（维护者/中文设计笔记）；用户文档站 [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs)（VitePress，分 PR） |
+| **Docs** | **仅**本仓 `docs/`（ADR、Design Doc、ROADMAP、维护者笔记、`docs/agents/`）。用户文档站工作在 [DesignPatterns.Docs](https://github.com/Skymly/DesignPatterns.Docs)（独立 Issue + PR） |
 | **Repository (root README)** | 根 `README.md`、`CONTRIBUTING.md` |
 | **Repository** | `.github/`、`DesignPatterns.slnx`、`global.json`、`Directory.Build.props`、`build/` |
 
@@ -345,6 +345,22 @@ git push origin v0.1.0-preview3
 模式文档索引：[docs/design/README.md](docs/design/README.md)。
 
 ---
+
+## Agent skills（mattpocock/skills）
+
+配置目录：[docs/agents/](docs/agents/)（`issue-tracker.md`、`triage-labels.md`、`domain.md`）。`/to-tickets`、`/to-spec`、`/triage`、`/wayfinder`、`/qa` 须遵守其中的 Issue 路由。
+
+### Sibling Issue 路由
+
+| 变更落点 | 执行 Issue 仓库 | 本地 clone |
+|----------|-----------------|------------|
+| 本仓库代码 / 本仓 `docs/`（ADR、Design Doc、ROADMAP、`AGENTS.md`） | `Skymly/DesignPatterns` | `C:\Code\Skymly\DesignPatterns\DesignPatterns` |
+| 用户 VitePress 站 | `Skymly/DesignPatterns.Docs` | `C:\Code\Skymly\DesignPatterns\DesignPatterns.Docs` |
+| 可运行示例 | `Skymly/DesignPatterns.Samples` | `C:\Code\Skymly\DesignPatterns\DesignPatterns.Samples` |
+
+- **执行票跟仓走**：只改 Docs 站或 Samples 时，**不要**在本仓开执行 Issue。
+- **跨仓关联**：父票 / `wayfinder:map` 可留在本仓，checklist 链到 sibling Issue URL；子票正文顶部写 `Relates to` / `Blocked by`（全 URL）。**禁止**两边各开一份完整验收标准副本。
+- 标题 `Docs: …` 在本仓仅表示维护者文档；用户站工作开在 Docs 仓。
 
 ## Git / Issue / PR / Commit
 
