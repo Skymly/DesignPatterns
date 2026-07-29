@@ -116,7 +116,7 @@ internal static class CommandRouterSyntaxFactory
                         .WithArgumentList(SyntaxFactory.ArgumentList()))));
         }
 
-        AddUseBehaviorStatements(statements, commandTypeName, behaviors);
+        AddUseBehaviorStatements(statements, commandTypeName, resultTypeName, behaviors);
 
         statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("builder")));
 
@@ -356,14 +356,17 @@ internal static class CommandRouterSyntaxFactory
     private static void AddUseBehaviorStatements(
         List<StatementSyntax> statements,
         string commandTypeName,
+        string? handlerResultTypeName,
         IReadOnlyList<CommandPipelineBehaviorEmit> behaviors)
     {
         foreach (var behavior in behaviors)
         {
+            // Use the terminal handler's void/TResult contract for UseBehavior generics so a
+            // mismatched behavior interface fails at C# compile time instead of Build().
             statements.Add(SyntaxFactory.ExpressionStatement(
                 CreateUseBehaviorInvocation(
                     commandTypeName,
-                    behavior.ResultTypeFullyQualifiedDisplayString,
+                    handlerResultTypeName,
                     behavior.BehaviorFullyQualifiedDisplayString,
                     behavior.Order)));
         }

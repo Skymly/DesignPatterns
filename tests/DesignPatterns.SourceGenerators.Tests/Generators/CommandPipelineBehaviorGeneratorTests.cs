@@ -92,6 +92,44 @@ public sealed class CommandPipelineBehaviorGeneratorTests
     }
 
     [Fact]
+    public Task EmitsUseBehaviorUsingHandlerContractWhenBehaviorResultDiffers()
+    {
+        // Void terminal handler + result-shaped behavior: UseBehavior must follow the
+        // handler contract so the consumer compilation fails instead of Build().
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed record PingCommand;
+
+            [RegisterCommandHandler<PingCommand>]
+            public sealed class PingHandler : ICommandHandler<PingCommand>
+            {
+                public ValueTask HandleAsync(PingCommand command, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+
+            [CommandPipelineBehavior<PingCommand>(1)]
+            public sealed class MismatchedResultBehavior : ICommandPipelineBehavior<PingCommand, int>
+            {
+                public ValueTask<int> InvokeAsync(
+                    PingCommand command,
+                    CommandPipelineDelegate<PingCommand, int> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(command, cancellationToken);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterCommandHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task ReportsDp075DuplicateOrder()
     {
         const string source = """
