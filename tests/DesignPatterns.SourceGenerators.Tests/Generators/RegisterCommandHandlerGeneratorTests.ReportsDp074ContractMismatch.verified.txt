@@ -1,6 +1,6 @@
 ﻿[
   {
     Id: DP074,
-    Message: Type 'BrokenHandler' does not implement ICommandHandler<TestAssembly.MismatchCommand> (or ICommandHandler<TestAssembly.MismatchCommand, TResult>). Implement the handler contract or fix the [RegisterCommandHandler] command type argument.
+    Message: Type 'BrokenHandler' does not implement ICommandHandler<TestAssembly.MismatchCommand>, ICommandHandler<TestAssembly.MismatchCommand, TResult>, or IStreamCommandHandler<TestAssembly.MismatchCommand, TItem>. Implement the handler contract or fix the [RegisterCommandHandler] command type argument.
   }
 ]

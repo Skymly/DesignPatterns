@@ -637,9 +637,9 @@ public static class DesignPatternsDiagnosticDescriptors
 
     public static DiagnosticDescriptor RegisterCommandHandlerContractMismatch { get; } = Create(
         DiagnosticIds.RegisterCommandHandlerContractMismatch,
-        "Command handler does not implement ICommandHandler for command type",
-        "Type '{0}' does not implement ICommandHandler<{1}> (or ICommandHandler<{1}, TResult>). Implement the handler contract or fix the [RegisterCommandHandler] command type argument.",
-        "RegisterCommandHandler implementations must implement ICommandHandler<TCommand> or ICommandHandler<TCommand, TResult> for the declared command type.",
+        "Command handler does not implement a handler contract for command type",
+        "Type '{0}' does not implement ICommandHandler<{1}>, ICommandHandler<{1}, TResult>, or IStreamCommandHandler<{1}, TItem>. Implement the handler contract or fix the [RegisterCommandHandler] command type argument.",
+        "RegisterCommandHandler implementations must implement ICommandHandler<TCommand>, ICommandHandler<TCommand, TResult>, or IStreamCommandHandler<TCommand, TItem> for the declared command type.",
         DiagnosticSeverity.Error,
         GeneratorCategory);
 

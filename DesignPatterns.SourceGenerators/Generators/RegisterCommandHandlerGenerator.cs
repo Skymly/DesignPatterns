@@ -24,6 +24,9 @@ internal sealed record CommandInfo(
 
 /// <summary>
 /// Immutable handler registration model collected by the incremental pipeline.
+/// <see cref="ResultTypeFullyQualifiedDisplayString"/> holds <c>TResult</c> or stream
+/// <c>TItem</c>; <see cref="IsStream"/> is set for <c>IStreamCommandHandler&lt;,&gt;</c>
+/// (no pipeline behaviors are emitted for stream terminals).
 /// </summary>
 internal sealed record CommandHandlerRegistration(
     CommandInfo Command,
@@ -31,6 +34,7 @@ internal sealed record CommandHandlerRegistration(
     string HandlerFullyQualifiedDisplayString,
     bool ImplementsHandlerInterface,
     string? ResultTypeFullyQualifiedDisplayString,
+    bool IsStream,
     bool HasPublicParameterlessConstructor,
     LocationInfo Location);
 
@@ -62,6 +66,8 @@ internal sealed record CommandPipelineBehaviorEmit(
 /// Each registry exposes <c>RegisterAll(CommandRouterBuilder)</c> /
 /// <c>CreateRouter()</c> for the static path and, when DI integration is enabled,
 /// <c>RegisterDi</c> plus provider-based <c>RegisterAll</c>.
+/// Stream handlers (<c>IStreamCommandHandler&lt;,&gt;</c>) emit arity-2 <c>Register</c>
+/// bindings without pipeline behaviors.
 /// </summary>
 /// <remarks>
 /// Ticket ownership (#259 / #264): static parameterless-ctor wiring is always emitted
@@ -88,6 +94,7 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
 
     private const string VoidHandlerInterfaceMetadataName = "ICommandHandler`1";
     private const string ResultHandlerInterfaceMetadataName = "ICommandHandler`2";
+    private const string StreamHandlerInterfaceMetadataName = "IStreamCommandHandler`2";
     private const string VoidBehaviorInterfaceMetadataName = "ICommandPipelineBehavior`1";
     private const string ResultBehaviorInterfaceMetadataName = "ICommandPipelineBehavior`2";
     private const string HandlerInterfaceNamespace = "DesignPatterns.Behavioral";
@@ -176,7 +183,11 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
             }
 
             var commandInfo = CreateCommandInfo(commandType);
-            var implements = TryGetHandlerContract(handler, commandType, out var resultTypeDisplay);
+            var implements = TryGetHandlerContract(
+                handler,
+                commandType,
+                out var resultTypeDisplay,
+                out var isStream);
 
             var location = new LocationInfo(context.TargetNode.GetLocation());
             result.Add(new CommandHandlerRegistration(
@@ -185,6 +196,7 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
                 handler.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 implements,
                 resultTypeDisplay,
+                isStream,
                 HasPublicParameterlessConstructor(handler),
                 location));
         }
@@ -263,7 +275,8 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
             return;
         }
 
-        // Report DP074 (contract mismatch) for handlers that do not implement ICommandHandler.
+        // Report DP074 (contract mismatch) for handlers that do not implement
+        // ICommandHandler / ICommandHandler<,> / IStreamCommandHandler<,>.
         foreach (var registration in handlers.Where(static r => !r.ImplementsHandlerInterface))
         {
             context.ReportDiagnostic(Diagnostic.Create(
@@ -375,10 +388,13 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
 
             var diHandlerTypeNames = new List<string> { winner.HandlerFullyQualifiedDisplayString };
 
-            var behaviorEmits = SelectBehaviorsForEmit(
-                behaviorsByCommand.TryGetValue(winner.Command.FullyQualifiedName, out var commandBehaviors)
-                    ? commandBehaviors
-                    : (IReadOnlyList<CommandPipelineBehaviorRegistration>)Array.Empty<CommandPipelineBehaviorRegistration>());
+            // Stream handlers have no pipeline behaviors (runtime forbids UseBehavior on streams).
+            var behaviorEmits = winner.IsStream
+                ? (IReadOnlyList<CommandPipelineBehaviorEmit>)Array.Empty<CommandPipelineBehaviorEmit>()
+                : SelectBehaviorsForEmit(
+                    behaviorsByCommand.TryGetValue(winner.Command.FullyQualifiedName, out var commandBehaviors)
+                        ? commandBehaviors
+                        : (IReadOnlyList<CommandPipelineBehaviorRegistration>)Array.Empty<CommandPipelineBehaviorRegistration>());
 
             EmitRegistry(
                 context,
@@ -460,11 +476,14 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
     private static bool TryGetHandlerContract(
         INamedTypeSymbol handler,
         INamedTypeSymbol commandType,
-        out string? resultTypeFullyQualifiedDisplayString)
+        out string? resultTypeFullyQualifiedDisplayString,
+        out bool isStream)
     {
         resultTypeFullyQualifiedDisplayString = null;
+        isStream = false;
         INamedTypeSymbol? voidMatch = null;
         INamedTypeSymbol? resultMatch = null;
+        INamedTypeSymbol? streamMatch = null;
 
         foreach (var iface in handler.AllInterfaces)
         {
@@ -479,6 +498,12 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
             {
                 resultMatch = iface;
             }
+            else if (iface.MetadataName == StreamHandlerInterfaceMetadataName &&
+                     iface.TypeArguments.Length == 2 &&
+                     SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], commandType))
+            {
+                streamMatch = iface;
+            }
             else if (iface.MetadataName == VoidHandlerInterfaceMetadataName &&
                      iface.TypeArguments.Length == 1 &&
                      SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], commandType))
@@ -487,10 +512,19 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
             }
         }
 
+        // Prefer non-stream contracts when a type implements both (unusual); then stream; then void.
         if (resultMatch is not null)
         {
             resultTypeFullyQualifiedDisplayString =
                 resultMatch.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return true;
+        }
+
+        if (streamMatch is not null)
+        {
+            resultTypeFullyQualifiedDisplayString =
+                streamMatch.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            isStream = true;
             return true;
         }
 

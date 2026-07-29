@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP073,
+    Message: Command type 'TestAssembly.MixedKindCommand' is already registered to handler 'StreamMixedHandler'. Handler 'VoidMixedHandler' also declares [RegisterCommandHandler] for the same command. Remove one of the attributes so exactly one handler remains.
+  }
+]
