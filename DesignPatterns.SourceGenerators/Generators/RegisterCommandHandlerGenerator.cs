@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace DesignPatterns.SourceGenerators.Generators;
 
 /// <summary>
-/// Immutable command-type-level metadata extracted from <c>[RegisterCommandHandler]</c> attributes.
+/// Immutable command-type-level metadata extracted from command router attributes.
 /// </summary>
 internal sealed record CommandInfo(
     string FullyQualifiedName,
@@ -35,16 +35,38 @@ internal sealed record CommandHandlerRegistration(
     LocationInfo Location);
 
 /// <summary>
+/// Immutable pipeline behavior registration model collected by the incremental pipeline.
+/// </summary>
+internal sealed record CommandPipelineBehaviorRegistration(
+    CommandInfo Command,
+    int Order,
+    string BehaviorName,
+    string BehaviorFullyQualifiedDisplayString,
+    bool ImplementsBehaviorInterface,
+    string? ResultTypeFullyQualifiedDisplayString,
+    bool HasPublicParameterlessConstructor,
+    LocationInfo Location);
+
+/// <summary>
+/// Static behavior entry emitted into <c>RegisterAll</c> via <c>UseBehavior</c>.
+/// </summary>
+internal sealed record CommandPipelineBehaviorEmit(
+    string BehaviorFullyQualifiedDisplayString,
+    int Order,
+    string? ResultTypeFullyQualifiedDisplayString);
+
+/// <summary>
 /// Generates <c>{Command}CommandHandlerRegistry</c> static classes for
-/// <c>[RegisterCommandHandler]</c>-attributed handler implementations.
+/// <c>[RegisterCommandHandler]</c>-attributed handler implementations and
+/// <c>[CommandPipelineBehavior]</c>-attributed pipeline behaviors.
 /// Each registry exposes <c>RegisterAll(CommandRouterBuilder)</c> /
 /// <c>CreateRouter()</c> for the static path and, when DI integration is enabled,
 /// <c>RegisterDi</c> plus provider-based <c>RegisterAll</c>.
 /// </summary>
 /// <remarks>
-/// Ticket ownership (#259): static parameterless-ctor wiring is always emitted.
-/// DI / Autofac glue is gated by MSBuild integration flags; packaged
-/// <c>AddCommandRouter</c> extensions remain a DependencyInjection / Autofac follow-up.
+/// Ticket ownership (#259 / #264): static parameterless-ctor wiring is always emitted
+/// for handlers and behaviors. DI / Autofac glue is gated by MSBuild integration flags
+/// and applies to handlers only (no behavior <c>RegisterDi</c>).
 /// Handlers without a public parameterless constructor are omitted from the static path;
 /// when DI/Autofac flags are also off, no registry source is emitted for those handlers
 /// (enable <c>DesignPatterns_EnableDiIntegration</c> / Autofac integration to register them).
@@ -58,40 +80,71 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
     /// <summary>Metadata name for generic <c>RegisterCommandHandlerAttribute&lt;TCommand&gt;</c>.</summary>
     public const string RegisterCommandHandlerGenericMetadataName = "DesignPatterns.Behavioral.RegisterCommandHandlerAttribute`1";
 
+    /// <summary>Metadata name for non-generic <c>CommandPipelineBehaviorAttribute</c>.</summary>
+    public const string CommandPipelineBehaviorMetadataName = "DesignPatterns.Behavioral.CommandPipelineBehaviorAttribute";
+
+    /// <summary>Metadata name for generic <c>CommandPipelineBehaviorAttribute&lt;TCommand&gt;</c>.</summary>
+    public const string CommandPipelineBehaviorGenericMetadataName = "DesignPatterns.Behavioral.CommandPipelineBehaviorAttribute`1";
+
     private const string VoidHandlerInterfaceMetadataName = "ICommandHandler`1";
     private const string ResultHandlerInterfaceMetadataName = "ICommandHandler`2";
+    private const string VoidBehaviorInterfaceMetadataName = "ICommandPipelineBehavior`1";
+    private const string ResultBehaviorInterfaceMetadataName = "ICommandPipelineBehavior`2";
     private const string HandlerInterfaceNamespace = "DesignPatterns.Behavioral";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var nonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
+        var handlerNonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             RegisterCommandHandlerMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: false))
+            static (ctx, _) => TransformHandler(ctx, isGenericAttribute: false))
             .WithTrackingName(TrackingNames.CommandHandlerNonGenericTransform);
 
-        var generic = context.SyntaxProvider.ForAttributeWithMetadataName(
+        var handlerGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
             RegisterCommandHandlerGenericMetadataName,
             static (node, _) => node is ClassDeclarationSyntax,
-            static (ctx, _) => Transform(ctx, isGenericAttribute: true))
+            static (ctx, _) => TransformHandler(ctx, isGenericAttribute: true))
             .WithTrackingName(TrackingNames.CommandHandlerGenericTransform);
+
+        var behaviorNonGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
+            CommandPipelineBehaviorMetadataName,
+            static (node, _) => node is ClassDeclarationSyntax,
+            static (ctx, _) => TransformBehavior(ctx, isGenericAttribute: false))
+            .WithTrackingName(TrackingNames.CommandPipelineBehaviorNonGenericTransform);
+
+        var behaviorGeneric = context.SyntaxProvider.ForAttributeWithMetadataName(
+            CommandPipelineBehaviorGenericMetadataName,
+            static (node, _) => node is ClassDeclarationSyntax,
+            static (ctx, _) => TransformBehavior(ctx, isGenericAttribute: true))
+            .WithTrackingName(TrackingNames.CommandPipelineBehaviorGenericTransform);
 
         var integrationOptions = GeneratorConfigHelper.CreateIntegrationOptionsProvider(context);
 
+        var handlers = handlerNonGeneric.Collect().Combine(handlerGeneric.Collect())
+            .WithTrackingName(TrackingNames.CommandHandlerCombine);
+
+        var behaviors = behaviorNonGeneric.Collect().Combine(behaviorGeneric.Collect())
+            .WithTrackingName(TrackingNames.CommandPipelineBehaviorCombine);
+
         context.RegisterSourceOutput(
-            nonGeneric.Collect().Combine(generic.Collect())
-                .WithTrackingName(TrackingNames.CommandHandlerCombine)
-                .Combine(integrationOptions)
-                .WithTrackingName(TrackingNames.CommandHandlerCombine),
-            (spc, source) => Execute(
-                spc,
-                source.Left.Left.SelectMany(static list => list).ToImmutableArray(),
-                source.Left.Right.SelectMany(static list => list).ToImmutableArray(),
-                source.Right));
+            handlers.Combine(behaviors).Combine(integrationOptions)
+                .WithTrackingName(TrackingNames.CommandHandlerPipelineCombine),
+            (spc, source) =>
+            {
+                var handlerLeft = source.Left.Left;
+                var behaviorLeft = source.Left.Right;
+                Execute(
+                    spc,
+                    handlerLeft.Left.SelectMany(static list => list).ToImmutableArray(),
+                    handlerLeft.Right.SelectMany(static list => list).ToImmutableArray(),
+                    behaviorLeft.Left.SelectMany(static list => list).ToImmutableArray(),
+                    behaviorLeft.Right.SelectMany(static list => list).ToImmutableArray(),
+                    source.Right);
+            });
     }
 
-    private static List<CommandHandlerRegistration> Transform(
+    private static List<CommandHandlerRegistration> TransformHandler(
         GeneratorAttributeSyntaxContext context,
         bool isGenericAttribute)
     {
@@ -122,14 +175,7 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var commandInfo = new CommandInfo(
-                commandType.ToDisplayString(),
-                commandType.Name,
-                commandType.ContainingNamespace.IsGlobalNamespace
-                    ? null
-                    : commandType.ContainingNamespace.ToDisplayString(),
-                commandType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-
+            var commandInfo = CreateCommandInfo(commandType);
             var implements = TryGetHandlerContract(handler, commandType, out var resultTypeDisplay);
 
             var location = new LocationInfo(context.TargetNode.GetLocation());
@@ -146,20 +192,79 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
         return result;
     }
 
+    private static List<CommandPipelineBehaviorRegistration> TransformBehavior(
+        GeneratorAttributeSyntaxContext context,
+        bool isGenericAttribute)
+    {
+        var result = new List<CommandPipelineBehaviorRegistration>();
+
+        if (context.TargetSymbol is not INamedTypeSymbol behavior)
+        {
+            return result;
+        }
+
+        foreach (var attribute in context.Attributes)
+        {
+            if (attribute.ConstructorArguments.Length == 0 ||
+                attribute.ConstructorArguments[0].Value is not int order)
+            {
+                continue;
+            }
+
+            INamedTypeSymbol? commandType = null;
+            if (isGenericAttribute)
+            {
+                if (attribute.AttributeClass is { IsGenericType: true, TypeArguments.Length: > 0 })
+                {
+                    commandType = attribute.AttributeClass.TypeArguments[0] as INamedTypeSymbol;
+                }
+            }
+            else if (attribute.ConstructorArguments.Length > 1)
+            {
+                commandType = attribute.ConstructorArguments[1].Value as INamedTypeSymbol;
+            }
+
+            if (commandType is null || commandType.TypeKind == TypeKind.Error)
+            {
+                continue;
+            }
+
+            var commandInfo = CreateCommandInfo(commandType);
+            var implements = TryGetBehaviorContract(behavior, commandType, out var resultTypeDisplay);
+
+            var location = new LocationInfo(context.TargetNode.GetLocation());
+            result.Add(new CommandPipelineBehaviorRegistration(
+                commandInfo,
+                order,
+                behavior.Name,
+                behavior.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                implements,
+                resultTypeDisplay,
+                HasPublicParameterlessConstructor(behavior),
+                location));
+        }
+
+        return result;
+    }
+
     private static void Execute(
         SourceProductionContext context,
-        ImmutableArray<CommandHandlerRegistration> nonGeneric,
-        ImmutableArray<CommandHandlerRegistration> generic,
+        ImmutableArray<CommandHandlerRegistration> handlerNonGeneric,
+        ImmutableArray<CommandHandlerRegistration> handlerGeneric,
+        ImmutableArray<CommandPipelineBehaviorRegistration> behaviorNonGeneric,
+        ImmutableArray<CommandPipelineBehaviorRegistration> behaviorGeneric,
         GeneratorIntegrationOptions integrationOptions)
     {
-        var registrations = nonGeneric.Concat(generic).ToList();
-        if (registrations.Count == 0)
+        var handlers = handlerNonGeneric.Concat(handlerGeneric).ToList();
+        var behaviors = behaviorNonGeneric.Concat(behaviorGeneric).ToList();
+
+        if (handlers.Count == 0 && behaviors.Count == 0)
         {
             return;
         }
 
         // Report DP074 (contract mismatch) for handlers that do not implement ICommandHandler.
-        foreach (var registration in registrations.Where(static r => !r.ImplementsHandlerInterface))
+        foreach (var registration in handlers.Where(static r => !r.ImplementsHandlerInterface))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 DesignPatternsDiagnosticDescriptors.RegisterCommandHandlerContractMismatch,
@@ -168,20 +273,69 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
                 registration.Command.FullyQualifiedName));
         }
 
-        // Detect command type name collisions for HintName qualification.
-        var commandNamesWithCollisions = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var g in registrations.GroupBy(static r => r.Command.Name, StringComparer.Ordinal))
+        // Report DP077 (behavior contract mismatch).
+        foreach (var registration in behaviors.Where(static r => !r.ImplementsBehaviorInterface))
         {
-            var distinctFqns = g.Select(static r => r.Command.FullyQualifiedName).Distinct(StringComparer.Ordinal).ToList();
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.CommandPipelineBehaviorContractMismatch,
+                registration.Location.ToLocation(),
+                registration.BehaviorName,
+                registration.Command.FullyQualifiedName));
+        }
+
+        var commandsWithHandlerAttribute = new HashSet<string>(
+            handlers.Select(static h => h.Command.FullyQualifiedName),
+            StringComparer.Ordinal);
+
+        // Report DP076 (orphan behavior — no terminal [RegisterCommandHandler]).
+        foreach (var registration in behaviors.Where(r => !commandsWithHandlerAttribute.Contains(r.Command.FullyQualifiedName)))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DesignPatternsDiagnosticDescriptors.CommandPipelineBehaviorOrphan,
+                registration.Location.ToLocation(),
+                registration.BehaviorName,
+                registration.Command.FullyQualifiedName));
+        }
+
+        // Report DP075 (duplicate order) among contract-matching behaviors per command.
+        foreach (var group in behaviors
+            .Where(static r => r.ImplementsBehaviorInterface)
+            .GroupBy(static r => r.Command.FullyQualifiedName, StringComparer.Ordinal))
+        {
+            foreach (var orderGroup in group.GroupBy(static r => r.Order).Where(static g => g.Count() > 1))
+            {
+                foreach (var duplicate in orderGroup.Skip(1))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        DesignPatternsDiagnosticDescriptors.CommandPipelineBehaviorDuplicateOrder,
+                        duplicate.Location.ToLocation(),
+                        duplicate.Order,
+                        duplicate.Command.FullyQualifiedName));
+                }
+            }
+        }
+
+        // Detect command type name collisions for HintName qualification.
+        var allCommandInfos = handlers.Select(static h => h.Command)
+            .Concat(behaviors.Select(static b => b.Command))
+            .ToList();
+        var commandNamesWithCollisions = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var g in allCommandInfos.GroupBy(static c => c.Name, StringComparer.Ordinal))
+        {
+            var distinctFqns = g.Select(static c => c.FullyQualifiedName).Distinct(StringComparer.Ordinal).ToList();
             if (distinctFqns.Count > 1)
             {
                 commandNamesWithCollisions.Add(g.Key);
             }
         }
 
-        // Group by command type. Deduplicate same-handler dual attributes; report DP073 when
+        var behaviorsByCommand = behaviors
+            .GroupBy(static r => r.Command.FullyQualifiedName, StringComparer.Ordinal)
+            .ToDictionary(static g => g.Key, static g => g.ToList(), StringComparer.Ordinal);
+
+        // Group handlers by command type. Deduplicate same-handler dual attributes; report DP073 when
         // distinct handlers claim the same command (bijection violation).
-        var byCommand = registrations
+        var byCommand = handlers
             .GroupBy(static r => r.Command.FullyQualifiedName, StringComparer.Ordinal);
 
         foreach (var group in byCommand)
@@ -221,15 +375,39 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
 
             var diHandlerTypeNames = new List<string> { winner.HandlerFullyQualifiedDisplayString };
 
+            var behaviorEmits = SelectBehaviorsForEmit(
+                behaviorsByCommand.TryGetValue(winner.Command.FullyQualifiedName, out var commandBehaviors)
+                    ? commandBehaviors
+                    : (IReadOnlyList<CommandPipelineBehaviorRegistration>)Array.Empty<CommandPipelineBehaviorRegistration>());
+
             EmitRegistry(
                 context,
                 winner.Command,
                 winner.ResultTypeFullyQualifiedDisplayString,
                 staticHandlerTypeNames,
                 diHandlerTypeNames,
+                behaviorEmits,
                 integrationOptions,
                 commandNamesWithCollisions.Contains(winner.Command.Name));
         }
+    }
+
+    private static IReadOnlyList<CommandPipelineBehaviorEmit> SelectBehaviorsForEmit(
+        IReadOnlyList<CommandPipelineBehaviorRegistration> commandBehaviors)
+    {
+        return commandBehaviors
+            .Where(static r => r.ImplementsBehaviorInterface)
+            .Where(static r => r.HasPublicParameterlessConstructor)
+            .GroupBy(static r => r.Order)
+            .Where(static g => g.Count() == 1)
+            .Select(static g => g.First())
+            .OrderBy(static r => r.Order)
+            .ThenBy(static r => r.BehaviorFullyQualifiedDisplayString, StringComparer.Ordinal)
+            .Select(static r => new CommandPipelineBehaviorEmit(
+                r.BehaviorFullyQualifiedDisplayString,
+                r.Order,
+                r.ResultTypeFullyQualifiedDisplayString))
+            .ToList();
     }
 
     private static void EmitRegistry(
@@ -238,6 +416,7 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
         string? resultTypeFullyQualifiedDisplayString,
         IReadOnlyList<string> staticHandlerTypeNames,
         IReadOnlyList<string> diHandlerTypeNames,
+        IReadOnlyList<CommandPipelineBehaviorEmit> behaviors,
         GeneratorIntegrationOptions integrationOptions,
         bool qualifyHintName)
     {
@@ -258,6 +437,7 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
             resultTypeFullyQualifiedDisplayString,
             staticHandlerTypeNames,
             diHandlerTypeNames,
+            behaviors,
             integrationOptions);
 
         var hintPrefix = qualifyHintName
@@ -267,6 +447,15 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
             $"{hintPrefix}.{registryClassName}.g.cs",
             SourceText.From(registryUnit.ToFullString(), Encoding.UTF8));
     }
+
+    private static CommandInfo CreateCommandInfo(INamedTypeSymbol commandType) =>
+        new(
+            commandType.ToDisplayString(),
+            commandType.Name,
+            commandType.ContainingNamespace.IsGlobalNamespace
+                ? null
+                : commandType.ContainingNamespace.ToDisplayString(),
+            commandType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
 
     private static bool TryGetHandlerContract(
         INamedTypeSymbol handler,
@@ -291,6 +480,46 @@ public sealed class RegisterCommandHandlerGenerator : IIncrementalGenerator
                 resultMatch = iface;
             }
             else if (iface.MetadataName == VoidHandlerInterfaceMetadataName &&
+                     iface.TypeArguments.Length == 1 &&
+                     SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], commandType))
+            {
+                voidMatch = iface;
+            }
+        }
+
+        if (resultMatch is not null)
+        {
+            resultTypeFullyQualifiedDisplayString =
+                resultMatch.TypeArguments[1].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            return true;
+        }
+
+        return voidMatch is not null;
+    }
+
+    private static bool TryGetBehaviorContract(
+        INamedTypeSymbol behavior,
+        INamedTypeSymbol commandType,
+        out string? resultTypeFullyQualifiedDisplayString)
+    {
+        resultTypeFullyQualifiedDisplayString = null;
+        INamedTypeSymbol? voidMatch = null;
+        INamedTypeSymbol? resultMatch = null;
+
+        foreach (var iface in behavior.AllInterfaces)
+        {
+            if (iface.ContainingNamespace.ToDisplayString() != HandlerInterfaceNamespace)
+            {
+                continue;
+            }
+
+            if (iface.MetadataName == ResultBehaviorInterfaceMetadataName &&
+                iface.TypeArguments.Length == 2 &&
+                SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], commandType))
+            {
+                resultMatch = iface;
+            }
+            else if (iface.MetadataName == VoidBehaviorInterfaceMetadataName &&
                      iface.TypeArguments.Length == 1 &&
                      SymbolEqualityComparer.Default.Equals(iface.TypeArguments[0], commandType))
             {

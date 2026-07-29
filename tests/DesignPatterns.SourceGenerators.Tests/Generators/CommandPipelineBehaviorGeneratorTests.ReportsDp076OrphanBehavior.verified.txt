@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP076,
+    Message: Type 'OrphanBehavior' declares [CommandPipelineBehavior] for command 'TestAssembly.OrphanCommand' but no [RegisterCommandHandler] terminal handler is registered for that command. Register a handler for 'TestAssembly.OrphanCommand' or remove the behavior attribute.
+  }
+]

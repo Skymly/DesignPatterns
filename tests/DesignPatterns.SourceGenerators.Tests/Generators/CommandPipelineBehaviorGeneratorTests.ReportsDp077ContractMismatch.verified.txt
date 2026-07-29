@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP077,
+    Message: Type 'BrokenBehavior' does not implement ICommandPipelineBehavior<TestAssembly.PingCommand> (or ICommandPipelineBehavior<TestAssembly.PingCommand, TResult>). Implement the behavior contract or fix the [CommandPipelineBehavior] command type argument.
+  }
+]
