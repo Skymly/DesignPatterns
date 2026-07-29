@@ -112,7 +112,7 @@ dotnet test DesignPatterns.slnx -c Release
 | Composite | `[CompositePart]` | `CompositePartGenerator` |
 | Decorator | `[Decorator]` | `DecoratorGenerator` |
 | Event Aggregator | `IEventAggregator`、`[RegisterEventHandler]` | `RegisterEventHandlerGenerator` |
-| Command Router | `ICommandRouter`、`[RegisterCommandHandler]` | `RegisterCommandHandlerGenerator` |
+| Command Router | `ICommandRouter`、`IStreamCommandHandler`、`[RegisterCommandHandler]` | `RegisterCommandHandlerGenerator` |
 | State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
 | DI Health Checks | `AddDesignPatternsHealthChecks`、`IHealthCheck` | —（运行时扩展） |
 
