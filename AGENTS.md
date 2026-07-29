@@ -163,7 +163,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP071 | 静态可变单例与 DI 双重注册（Analyzer；ADR-008） |
 | DP072 | 未注册 CommandHandler（Analyzer + CodeFix；实现 `ICommandHandler<T>` / `ICommandHandler<T,TResult>` 但未标注 `[RegisterCommandHandler]`，peer-presence 规则同 DP044） |
 | DP073 | RegisterCommandHandler 重复命令（生成器；同一 command type 多个 handler） |
-| DP074 | RegisterCommandHandler 契约不匹配（生成器；标注但未实现 `ICommandHandler<T>` / `ICommandHandler<T,TResult>`） |
+| DP074 | RegisterCommandHandler 契约不匹配（生成器；标注但未实现 `ICommandHandler<T>` / `ICommandHandler<T,TResult>` / `IStreamCommandHandler<T,TItem>`） |
 | DP075 | CommandPipelineBehavior 重复 order（生成器；同一 command type 多个 behavior 共用同一 order） |
 | DP076 | CommandPipelineBehavior 孤儿 behavior（生成器；behavior 声明的 command 无终端 `[RegisterCommandHandler]`） |
 | DP077 | CommandPipelineBehavior 契约不匹配（生成器；标注但未实现 `ICommandPipelineBehavior<T>` / `ICommandPipelineBehavior<T,TResult>`） |

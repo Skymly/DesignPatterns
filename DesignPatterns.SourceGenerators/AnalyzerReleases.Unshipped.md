@@ -75,7 +75,7 @@ DP070    | DesignPatterns.Analyzers | Info     | Static mutable singleton candid
 DP071    | DesignPatterns.Analyzers | Warning  | Static mutable singleton is also registered with DI
 DP072    | DesignPatterns.Analyzers | Info     | Command handler implementation missing RegisterCommandHandler attribute
 DP073    | DesignPatterns.Generators | Error    | Duplicate command handler registration for the same command type
-DP074    | DesignPatterns.Generators | Error    | Command handler does not implement ICommandHandler for command type
+DP074    | DesignPatterns.Generators | Error    | Command handler does not implement a handler contract for command type
 DP075    | DesignPatterns.Generators | Error    | Duplicate command pipeline behavior order for the same command type
 DP076    | DesignPatterns.Generators | Error    | Command pipeline behavior has no terminal handler for command type
 DP077    | DesignPatterns.Generators | Error    | Command pipeline behavior does not implement ICommandPipelineBehavior for command type

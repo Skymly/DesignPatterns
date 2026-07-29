@@ -324,4 +324,156 @@ public sealed class RegisterCommandHandlerGeneratorTests
         Assert.Empty(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
     }
+
+    [Fact]
+    public Task GeneratesStreamHandlerRegistry()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed record StreamItemsCommand(int Count);
+
+            [RegisterCommandHandler<StreamItemsCommand>]
+            public sealed class StreamItemsHandler : IStreamCommandHandler<StreamItemsCommand, string>
+            {
+                public async IAsyncEnumerable<string> HandleAsync(
+                    StreamItemsCommand command,
+                    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+                {
+                    for (var i = 0; i < command.Count; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        yield return $"item-{i}";
+                        await System.Threading.Tasks.Task.Yield();
+                    }
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterCommandHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task EmitsRegisterDiForStreamHandlerWhenDiIntegrationEnabled()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed record StreamInvoiceCommand(string InvoiceId);
+
+            [RegisterCommandHandler<StreamInvoiceCommand>]
+            public sealed class StreamInvoiceHandler : IStreamCommandHandler<StreamInvoiceCommand, byte>
+            {
+                public async IAsyncEnumerable<byte> HandleAsync(
+                    StreamInvoiceCommand command,
+                    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+                {
+                    yield return 1;
+                    await System.Threading.Tasks.Task.Yield();
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterCommandHandlerGenerator>(
+            enableDiIntegration: true,
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp073WhenStreamAndNonStreamHandlersClaimSameCommand()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed record MixedKindCommand(int Value);
+
+            [RegisterCommandHandler<MixedKindCommand>]
+            public sealed class VoidMixedHandler : ICommandHandler<MixedKindCommand>
+            {
+                public ValueTask HandleAsync(MixedKindCommand command, CancellationToken cancellationToken = default) =>
+                    default;
+            }
+
+            [RegisterCommandHandler<MixedKindCommand>]
+            public sealed class StreamMixedHandler : IStreamCommandHandler<MixedKindCommand, int>
+            {
+                public async IAsyncEnumerable<int> HandleAsync(
+                    MixedKindCommand command,
+                    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+                {
+                    yield return command.Value;
+                    await Task.Yield();
+                }
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterCommandHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task DoesNotEmitBehaviorsForStreamHandler()
+    {
+        const string source = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed record StreamOnlyCommand;
+
+            [RegisterCommandHandler<StreamOnlyCommand>]
+            public sealed class StreamOnlyHandler : IStreamCommandHandler<StreamOnlyCommand, string>
+            {
+                public async IAsyncEnumerable<string> HandleAsync(
+                    StreamOnlyCommand command,
+                    [EnumeratorCancellation] CancellationToken cancellationToken = default)
+                {
+                    yield return "x";
+                    await Task.Yield();
+                }
+            }
+
+            [CommandPipelineBehavior<StreamOnlyCommand>(10)]
+            public sealed class IgnoredStreamBehavior : ICommandPipelineBehavior<StreamOnlyCommand>
+            {
+                public ValueTask InvokeAsync(
+                    StreamOnlyCommand command,
+                    CommandPipelineDelegate<StreamOnlyCommand> next,
+                    CancellationToken cancellationToken = default) =>
+                    next(command, cancellationToken);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<RegisterCommandHandlerGenerator>(
+            ("Handlers.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
 }
