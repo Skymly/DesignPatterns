@@ -11,9 +11,11 @@ namespace DesignPatterns.Behavioral;
 /// </summary>
 /// <remarks>
 /// The builder is not thread-safe. The router returned by <see cref="Build"/> is safe for
-/// concurrent <see cref="ICommandRouter.SendAsync{TCommand}"/> / <c>TrySendAsync</c> calls.
-/// Pipeline behaviors are frozen into the handler map at <see cref="Build"/> time.
-/// Lower behavior <c>order</c> values run first (outermost inbound).
+/// concurrent <see cref="ICommandRouter.SendAsync{TCommand}"/> / <c>TrySendAsync</c> /
+/// <c>SendStreamAsync</c> / <c>TrySendStreamAsync</c> calls.
+/// A command CLR type may register either a void, result, or stream handler — not more than one.
+/// Pipeline behaviors apply to void/result handlers only and are frozen into the handler map at
+/// <see cref="Build"/> time. Lower behavior <c>order</c> values run first (outermost inbound).
 /// </remarks>
 public sealed class CommandRouterBuilder
 {
@@ -50,6 +52,26 @@ public sealed class CommandRouterBuilder
     /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">A handler is already registered for <typeparamref name="TCommand"/>.</exception>
     public CommandRouterBuilder Register<TCommand, TResult>(ICommandHandler<TCommand, TResult> handler)
+    {
+        if (handler is null)
+        {
+            throw new ArgumentNullException(nameof(handler));
+        }
+
+        AddHandler(typeof(TCommand), handler);
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a stream handler for <typeparamref name="TCommand"/>.
+    /// </summary>
+    /// <typeparam name="TCommand">The command CLR type used as the routing key.</typeparam>
+    /// <typeparam name="TItem">The item type yielded by the stream.</typeparam>
+    /// <param name="handler">The stream handler instance.</param>
+    /// <returns>This builder for chaining.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="handler"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException">A handler is already registered for <typeparamref name="TCommand"/>.</exception>
+    public CommandRouterBuilder Register<TCommand, TItem>(IStreamCommandHandler<TCommand, TItem> handler)
     {
         if (handler is null)
         {

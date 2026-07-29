@@ -116,6 +116,51 @@ public sealed class CommandRouter : ICommandRouter
         return InvokeResultAsync(handler, command, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public IAsyncEnumerable<TItem> SendStreamAsync<TCommand, TItem>(
+        TCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!_handlers.TryGetValue(typeof(TCommand), out var registered))
+        {
+            throw CommandHandlerNotFoundException.ForCommand<TCommand>();
+        }
+
+        if (registered is not IStreamCommandHandler<TCommand, TItem> handler)
+        {
+            throw CreateHandlerContractMismatchException(
+                typeof(TCommand),
+                expected: $"IStreamCommandHandler<{typeof(TCommand).Name}, {typeof(TItem).Name}>");
+        }
+
+        return handler.HandleAsync(command, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public CommandSendAttempt<IAsyncEnumerable<TItem>> TrySendStreamAsync<TCommand, TItem>(
+        TCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!_handlers.TryGetValue(typeof(TCommand), out var registered))
+        {
+            return CommandSendAttempt<IAsyncEnumerable<TItem>>.Failed;
+        }
+
+        if (registered is not IStreamCommandHandler<TCommand, TItem> handler)
+        {
+            throw CreateHandlerContractMismatchException(
+                typeof(TCommand),
+                expected: $"IStreamCommandHandler<{typeof(TCommand).Name}, {typeof(TItem).Name}>");
+        }
+
+        return CommandSendAttempt<IAsyncEnumerable<TItem>>.FromResult(
+            handler.HandleAsync(command, cancellationToken));
+    }
+
     private static async ValueTask<bool> InvokeVoidAsync<TCommand>(
         ICommandHandler<TCommand> handler,
         TCommand command,
@@ -150,5 +195,5 @@ public sealed class CommandRouter : ICommandRouter
     private static InvalidOperationException CreateHandlerContractMismatchException(Type commandType, string expected) =>
         new(
             $"Command type '{commandType}' is registered, but not as {expected}. " +
-            "Register a matching handler contract or call the matching SendAsync overload.");
+            "Register a matching handler contract or call the matching SendAsync / SendStreamAsync overload.");
 }

@@ -185,7 +185,7 @@ public sealed class CommandRouterTests
         Assert.Throws<ArgumentNullException>(
             () => builder.Register<PingCommand>(null!));
         Assert.Throws<ArgumentNullException>(
-            () => builder.Register<AddCommand, int>(null!));
+            () => builder.Register<AddCommand, int>((ICommandHandler<AddCommand, int>)null!));
     }
 
     [Fact]
