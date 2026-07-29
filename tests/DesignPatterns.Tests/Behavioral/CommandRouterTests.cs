@@ -237,6 +237,21 @@ public sealed class CommandRouterTests
         Assert.Throws<ArgumentNullException>(() => new RegisterCommandHandlerAttribute(null!));
     }
 
+    [Fact]
+    public void CommandPipelineBehaviorAttribute_StoresOrderAndCommandType()
+    {
+        var attribute = new CommandPipelineBehaviorAttribute(10, typeof(PingCommand));
+
+        Assert.Equal(10, attribute.Order);
+        Assert.Equal(typeof(PingCommand), attribute.For);
+    }
+
+    [Fact]
+    public void CommandPipelineBehaviorAttribute_NullFor_Throws()
+    {
+        Assert.Throws<ArgumentNullException>(() => new CommandPipelineBehaviorAttribute(0, null!));
+    }
+
     private sealed record PingCommand(string Message) : ICommand;
 
     private sealed record AddCommand(int Left, int Right) : ICommand<int>;

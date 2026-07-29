@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DesignPatterns.SourceGenerators;
+using DesignPatterns.SourceGenerators.Generators;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,13 +28,14 @@ internal static class CommandRouterSyntaxFactory
         string? resultTypeName,
         IReadOnlyList<string> staticHandlerTypeNames,
         IReadOnlyList<string> diHandlerTypeNames,
+        IReadOnlyList<CommandPipelineBehaviorEmit> behaviors,
         GeneratorIntegrationOptions integrationOptions)
     {
         var members = new List<MemberDeclarationSyntax>();
 
         if (staticHandlerTypeNames.Count > 0)
         {
-            members.Add(CreateRegisterAllStaticMethod(commandTypeName, resultTypeName, staticHandlerTypeNames));
+            members.Add(CreateRegisterAllStaticMethod(commandTypeName, resultTypeName, staticHandlerTypeNames, behaviors));
             members.Add(CreateCreateRouterMethod());
         }
 
@@ -97,7 +99,8 @@ internal static class CommandRouterSyntaxFactory
     private static MethodDeclarationSyntax CreateRegisterAllStaticMethod(
         string commandTypeName,
         string? resultTypeName,
-        IReadOnlyList<string> handlerTypeNames)
+        IReadOnlyList<string> handlerTypeNames,
+        IReadOnlyList<CommandPipelineBehaviorEmit> behaviors)
     {
         var builderParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("builder"))
             .WithType(SyntaxFactory.ParseTypeName("global::DesignPatterns.Behavioral.CommandRouterBuilder"));
@@ -113,7 +116,13 @@ internal static class CommandRouterSyntaxFactory
                         .WithArgumentList(SyntaxFactory.ArgumentList()))));
         }
 
+        AddUseBehaviorStatements(statements, commandTypeName, behaviors);
+
         statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName("builder")));
+
+        var summary = behaviors.Count > 0
+            ? "Registers all parameterless command handlers and pipeline behaviors onto the builder."
+            : "Registers all parameterless command handlers onto the builder.";
 
         return GeneratedCodeHelper.WithXmlDoc(
             SyntaxFactory.MethodDeclaration(
@@ -125,7 +134,7 @@ internal static class CommandRouterSyntaxFactory
                         SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
                 .AddParameterListParameters(builderParam)
                 .WithBody(SyntaxFactory.Block(statements)),
-            "Registers all parameterless command handlers onto the builder.");
+            summary);
     }
 
     private static MethodDeclarationSyntax CreateCreateRouterMethod()
@@ -342,6 +351,69 @@ internal static class CommandRouterSyntaxFactory
                 .AddParameterListParameters(builderParam, lifetimeScopeParam)
                 .WithBody(SyntaxFactory.Block(statements)),
             "Registers all command handlers resolved from the Autofac lifetime scope onto the builder.");
+    }
+
+    private static void AddUseBehaviorStatements(
+        List<StatementSyntax> statements,
+        string commandTypeName,
+        IReadOnlyList<CommandPipelineBehaviorEmit> behaviors)
+    {
+        foreach (var behavior in behaviors)
+        {
+            statements.Add(SyntaxFactory.ExpressionStatement(
+                CreateUseBehaviorInvocation(
+                    commandTypeName,
+                    behavior.ResultTypeFullyQualifiedDisplayString,
+                    behavior.BehaviorFullyQualifiedDisplayString,
+                    behavior.Order)));
+        }
+    }
+
+    private static InvocationExpressionSyntax CreateUseBehaviorInvocation(
+        string commandTypeName,
+        string? resultTypeName,
+        string behaviorTypeName,
+        int order)
+    {
+        SimpleNameSyntax useBehaviorName;
+        if (resultTypeName is null)
+        {
+            useBehaviorName = SyntaxFactory.GenericName(SyntaxFactory.Identifier("UseBehavior"))
+                .WithTypeArgumentList(
+                    SyntaxFactory.TypeArgumentList(
+                        SyntaxFactory.SingletonSeparatedList<TypeSyntax>(
+                            SyntaxFactory.ParseTypeName(commandTypeName))));
+        }
+        else
+        {
+            useBehaviorName = SyntaxFactory.GenericName(SyntaxFactory.Identifier("UseBehavior"))
+                .WithTypeArgumentList(
+                    SyntaxFactory.TypeArgumentList(
+                        SyntaxFactory.SeparatedList<TypeSyntax>(
+                            new[]
+                            {
+                                SyntaxFactory.ParseTypeName(commandTypeName),
+                                SyntaxFactory.ParseTypeName(resultTypeName),
+                            })));
+        }
+
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName("builder"),
+                useBehaviorName),
+            SyntaxFactory.ArgumentList(
+                SyntaxFactory.SeparatedList<ArgumentSyntax>(
+                    new[]
+                    {
+                        SyntaxFactory.Argument(
+                            SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(behaviorTypeName))
+                                .WithArgumentList(SyntaxFactory.ArgumentList())),
+                        SyntaxFactory.Argument(
+                            SyntaxFactory.LiteralExpression(
+                                SyntaxKind.NumericLiteralExpression,
+                                SyntaxFactory.Literal(order))),
+                    })));
     }
 
     private static InvocationExpressionSyntax CreateRegisterInvocation(
