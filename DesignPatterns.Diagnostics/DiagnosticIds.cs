@@ -82,4 +82,13 @@ public static class DiagnosticIds
     public const string CommandPipelineBehaviorDuplicateOrder = "DP075";
     public const string CommandPipelineBehaviorOrphan = "DP076";
     public const string CommandPipelineBehaviorContractMismatch = "DP077";
+    public const string GenerateBuilderRequiredStepCapExceeded = "DP078";
+    public const string GenerateBuilderMissingAssemble = "DP079";
+    public const string GenerateBuilderAssembleParameterMismatch = "DP080";
+    public const string GenerateBuilderMutexConflict = "DP081";
+    public const string GenerateBuilderPartialOrderViolation = "DP082";
+    public const string GenerateBuilderDuplicateStep = "DP083";
+    public const string GenerateBuilderUnknownStepReference = "DP084";
+    public const string GenerateBuilderInvalidHolder = "DP085";
+    public const string GenerateBuilderAssembleContractMismatch = "DP086";
 }

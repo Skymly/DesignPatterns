@@ -167,12 +167,21 @@ dotnet test DesignPatterns.slnx -c Release
 | DP075 | CommandPipelineBehavior 重复 order（生成器；同一 command type 多个 behavior 共用同一 order） |
 | DP076 | CommandPipelineBehavior 孤儿 behavior（生成器；behavior 声明的 command 无终端 `[RegisterCommandHandler]`） |
 | DP077 | CommandPipelineBehavior 契约不匹配（生成器；标注但未实现 `ICommandPipelineBehavior<T>` / `ICommandPipelineBehavior<T,TResult>`） |
+| DP078 | GenerateBuilder 必填步上限（生成器；必填 `[BuilderStep]` 超过 8；可选步不计入） |
+| DP079 | GenerateBuilder 缺少装配方法（生成器；无 `[BuilderAssemble]`） |
+| DP080 | GenerateBuilder 装配参数名不匹配（生成器；assemble 参数无法绑定到步骤） |
+| DP081 | GenerateBuilder 互斥冲突（生成器；同一 mutex 组冲突） |
+| DP082 | GenerateBuilder 偏序违规（生成器；After/Before 约束被违反） |
+| DP083 | GenerateBuilder 重复步骤（生成器；同名 `[BuilderStep]` 重复） |
+| DP084 | GenerateBuilder 未知步骤引用（生成器；After/Before 指向不存在的步骤） |
+| DP085 | GenerateBuilder holder 非法（生成器；`[GenerateBuilder]` 目标类型不合法） |
+| DP086 | GenerateBuilder 装配契约不匹配（生成器；assemble 签名/重复标注非法） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP078**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
+- 下一个可用 ID：**DP087**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 / DP068 / DP069 / DP070 / DP071 / DP072 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。

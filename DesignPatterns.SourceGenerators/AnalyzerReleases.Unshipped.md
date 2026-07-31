@@ -79,3 +79,12 @@ DP074    | DesignPatterns.Generators | Error    | Command handler does not imple
 DP075    | DesignPatterns.Generators | Error    | Duplicate command pipeline behavior order for the same command type
 DP076    | DesignPatterns.Generators | Error    | Command pipeline behavior has no terminal handler for command type
 DP077    | DesignPatterns.Generators | Error    | Command pipeline behavior does not implement ICommandPipelineBehavior for command type
+DP078    | DesignPatterns.Generators | Error    | GenerateBuilder required-step cap exceeded (more than 8 required steps)
+DP079    | DesignPatterns.Generators | Error    | GenerateBuilder assemble method is missing
+DP080    | DesignPatterns.Generators | Error    | GenerateBuilder assemble parameter does not bind to a step
+DP081    | DesignPatterns.Generators | Error    | GenerateBuilder mutex group conflict
+DP082    | DesignPatterns.Generators | Error    | GenerateBuilder partial-order constraint violated
+DP083    | DesignPatterns.Generators | Error    | GenerateBuilder duplicate step declaration
+DP084    | DesignPatterns.Generators | Error    | GenerateBuilder After/Before references unknown step
+DP085    | DesignPatterns.Generators | Error    | GenerateBuilder holder is invalid
+DP086    | DesignPatterns.Generators | Error    | GenerateBuilder assemble method contract is invalid

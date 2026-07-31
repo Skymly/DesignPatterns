@@ -667,6 +667,80 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // Step Builder / GenerateBuilder (DP078–DP086)
+
+    public static DiagnosticDescriptor GenerateBuilderRequiredStepCapExceeded { get; } = Create(
+        DiagnosticIds.GenerateBuilderRequiredStepCapExceeded,
+        "GenerateBuilder required-step cap exceeded",
+        "Holder '{0}' declares {1} required [BuilderStep] methods, but at most 8 required steps are allowed. Mark excess steps as optional (Required = false) or split the schema across holders.",
+        "Required type-state markers are bounded at eight per holder; optional steps do not count toward the cap.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderMissingAssemble { get; } = Create(
+        DiagnosticIds.GenerateBuilderMissingAssemble,
+        "GenerateBuilder assemble method is missing",
+        "Holder '{0}' has [GenerateBuilder] but no [BuilderAssemble] method. Add a [BuilderAssemble] method that receives step values and returns the product.",
+        "GenerateBuilder discovers the product factory via [BuilderAssemble]; without it the generated builder cannot materialize a product.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderAssembleParameterMismatch { get; } = Create(
+        DiagnosticIds.GenerateBuilderAssembleParameterMismatch,
+        "GenerateBuilder assemble parameter does not bind to a step",
+        "Assemble parameter '{0}' on holder '{1}' does not match any [BuilderStep] method name (including With-stripped forms). Rename the parameter to match a step or add the missing step.",
+        "Assemble parameters bind to steps by name so Build can pass captured values without generator-invented mapping.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderMutexConflict { get; } = Create(
+        DiagnosticIds.GenerateBuilderMutexConflict,
+        "GenerateBuilder mutex group conflict",
+        "Steps '{0}' and '{1}' both belong to mutex group '{2}' on holder '{3}'. Keep at most one step in the group required, or remove one from the group, or apply only one of the steps.",
+        "Named mutex groups allow at most one applied step; conflicting schema or application is reported as an Error.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderPartialOrderViolation { get; } = Create(
+        DiagnosticIds.GenerateBuilderPartialOrderViolation,
+        "GenerateBuilder partial-order constraint violated",
+        "Step '{0}' on holder '{1}' violates an After/Before constraint relative to '{2}'. Reorder the applied steps or fix the After/Before metadata on [BuilderStep].",
+        "Optional After/Before constraints enforce a partial order via diagnostics rather than type-state.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderDuplicateStep { get; } = Create(
+        DiagnosticIds.GenerateBuilderDuplicateStep,
+        "GenerateBuilder duplicate step declaration",
+        "Step name '{0}' is declared more than once on holder '{1}'. Rename one of the [BuilderStep] methods so each step name is unique.",
+        "Each named construction step may appear at most once in the schema so at-most-once fluent methods stay unambiguous.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderUnknownStepReference { get; } = Create(
+        DiagnosticIds.GenerateBuilderUnknownStepReference,
+        "GenerateBuilder After/Before references unknown step",
+        "Step '{0}' on holder '{1}' references unknown step '{2}' via After or Before. Use nameof of a sibling [BuilderStep] method or remove the constraint.",
+        "Partial-order metadata must name steps that exist on the same GenerateBuilder holder.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderInvalidHolder { get; } = Create(
+        DiagnosticIds.GenerateBuilderInvalidHolder,
+        "GenerateBuilder holder is invalid",
+        "[GenerateBuilder] cannot be applied to '{0}'. Apply it to an eligible non-generic class that can host [BuilderStep] and [BuilderAssemble] methods.",
+        "GenerateBuilder schema holders must be types the source generator can augment with a typed step builder.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor GenerateBuilderAssembleContractMismatch { get; } = Create(
+        DiagnosticIds.GenerateBuilderAssembleContractMismatch,
+        "GenerateBuilder assemble method contract is invalid",
+        "Method '{0}' on holder '{1}' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning a non-void product type). Fix the signature or remove duplicate [BuilderAssemble] attributes.",
+        "The assemble method is the sole product factory for the generated builder and must return the product type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,
