@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP079,
+    Message: Holder 'MissingAssembleSchema' has [GenerateBuilder] but no [BuilderAssemble] method. Add a [BuilderAssemble] method that receives step values and returns the product.
+  }
+]

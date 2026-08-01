@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP082,
+    Message: Step 'WithB' on holder 'CycleSchema' violates an After/Before constraint relative to 'WithA'. Reorder the applied steps or fix the After/Before metadata on [BuilderStep].
+  }
+]

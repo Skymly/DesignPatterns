@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP086,
+    Message: Method 'Assemble' on holder 'VoidAssembleSchema' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning a non-void product type). Fix the signature or remove duplicate [BuilderAssemble] attributes.
+  }
+]
