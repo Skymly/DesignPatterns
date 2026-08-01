@@ -303,6 +303,24 @@ internal static class GenerateBuilderSyntaxFactory
             }
         }
 
+        // Before=X means this step must be applied before X; reject if X is already applied.
+        if (!string.IsNullOrEmpty(step.Before))
+        {
+            var before = allSteps.FirstOrDefault(s =>
+                string.Equals(s.MethodName, step.Before, StringComparison.Ordinal)
+                || string.Equals(s.BindingName, step.Before, StringComparison.OrdinalIgnoreCase));
+            if (before.MethodName is not null)
+            {
+                sb.Append(indent).AppendLine(
+                    $"        if (state.AppliedOrder.Contains(\"{before.MethodName}\"))");
+                sb.Append(indent).AppendLine("        {");
+                sb.Append(indent).AppendLine(
+                    $"            throw new InvalidOperationException(\"Step '{step.MethodName}' violates an After/Before constraint relative to '{before.MethodName}'.\");");
+                sb.Append(indent).AppendLine("        }");
+            }
+        }
+
+        // Incoming Before edges: other steps that must precede this one.
         foreach (var predecessor in allSteps.Where(s =>
                      !string.IsNullOrEmpty(s.Before)
                      && (string.Equals(s.Before, step.MethodName, StringComparison.Ordinal)
