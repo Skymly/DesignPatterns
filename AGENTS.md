@@ -114,6 +114,7 @@ dotnet test DesignPatterns.slnx -c Release
 | Event Aggregator | `IEventAggregator`、`[RegisterEventHandler]` | `RegisterEventHandlerGenerator` |
 | Command Router | `ICommandRouter`、`IStreamCommandHandler`、`[RegisterCommandHandler]` | `RegisterCommandHandlerGenerator` |
 | State（M1–M2） | `ITransitionTable`、`[StateMachine]`、`[Transition]` | `StateTransitionGenerator` |
+| Step Builder | `[GenerateBuilder]`、`[BuilderStep]`、`[BuilderAssemble]`、`BuilderStepState` | `GenerateBuilderGenerator` |
 | DI Health Checks | `AddDesignPatternsHealthChecks`、`IHealthCheck` | —（运行时扩展） |
 
 模式文档见 [docs/design/](docs/design/README.md)。横切约定见 [docs/FactoryKeyConventions.md](docs/FactoryKeyConventions.md)。架构决策见 [docs/adr/](docs/adr/README.md)。

@@ -20,6 +20,7 @@
 | Event Aggregator | `{Event}EventHandlerRegistry` |
 | Command Router | `{Command}CommandHandlerRegistry` |
 | State | `{StateEnum}TransitionTable`、partial `{Holder}` 便捷方法 |
+| Step Builder | `{Holder}Builder` / `{Holder}Builder<…>`（type-state） |
 
 新增生成器必须沿用此命名风格（详见 [Decorator.md](design/Decorator.md)）。诊断 ID 续接现有区段，下一个可用 ID 为 **DP087**（DP078–DP086 为 Step Builder / GenerateBuilder：必填步上限、缺装配、参数绑定、互斥、偏序、重复步骤、未知步骤引用、非法 holder、装配契约；DP075–DP077 为 Command Router pipeline behaviors：重复 order、孤儿 behavior、契约不匹配；DP072–DP074 为 Command Router：未注册 Analyzer、重复命令、契约不匹配；DP067–DP071 专属 [ADR-008](adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派；DP066 为 Singleton 工厂委托 captive dependency，DP063–DP065 为 Composite 树 schema 校验，DP060–DP062 为 DI 生命周期校验，DP056–DP059 为 State hierarchy，DP053–DP055 为 Factory async + pooling 签名/池化校验，DP050–DP052 为 Handler guard 签名校验，DP047–DP049 为 Strategy guard 签名校验，DP044–DP046 为 EventAggregator 源生成器 + Analyzer 诊断，DP042–DP043 为 Decorator DI + async 签名校验，DP040–DP041 为 Composite DI + visitor 覆盖校验，DP037–DP039 为 State entry/exit action 诊断，DP032–DP035 为 State guard 诊断，DP036 为 State 字面量边校验；ID 一经发布不复用，详见 [AGENTS.md](../AGENTS.md)）。
 
@@ -105,7 +106,7 @@
 | 名次 | 候选 | 说明 | 状态 |
 |------|------|------|------|
 | 1 | **Command Router** | MVP + 域内增强已落地：1:1 `SendAsync`/`TrySendAsync`/`SendStreamAsync`/`TrySendStreamAsync` + `[RegisterCommandHandler]`（含 `IStreamCommandHandler`）+ DP072–077 + pipeline（ADR-009）+ `AddCommandRouter` / Autofac `RegisterCommandRouter` + [Design Doc](design/CommandRouter.md)（#257–#265、#275–#277、#282–#283）。Samples #266；探索与 MediatR 的差异点见 Design Doc | [~] |
-| 2 | **Builder** | 声明式步骤 → 生成 fluent `*Builder`；缺步 / 不完整 `Build` 的编译期证明与诊断 | [ ] |
+| 2 | **Builder**（Step Builder） | MVP 已落地：`[GenerateBuilder]` / `[BuilderStep]` / `[BuilderAssemble]` + 泛型 type-state `{Holder}Builder`（[ADR-010](adr/ADR-010-step-builder-type-state-markers.md)）+ DP078–DP086 + [Design Doc](design/StepBuilder.md)（#288–#291）。Samples 待 sibling；async / DI 为 Phase 2+ | [~] |
 | 3 | **Fork–Join Work Graph** | 属性声明的工作 DAG；生成器校验环 / 孤儿依赖并生成拓扑波次编排 | [ ] |
 
 #### 观望（已过硬门槛，未进 Top-3）
