@@ -1,6 +1,6 @@
 # Design Doc: Step Builder
 
-> **版本**：v0.2.3-preview2
+> **版本**：v0.2.4-preview1
 > **关联 ADR**：[ADR-010](../adr/ADR-010-step-builder-type-state-markers.md)
 > **关联 Issue**：[#287](https://github.com/Skymly/DesignPatterns/issues/287)（Spec）、[#291](https://github.com/Skymly/DesignPatterns/issues/291)（本 Design Doc）；落地 #288–#290
 
