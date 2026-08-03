@@ -227,13 +227,14 @@ var request = HttpRequestSchemaBuilder.Create()
 - **无** 互斥的 type-state 擦除（仅诊断 + 运行时拒绝）
 - **无** Analyzer 主门闩或 interface-per-subset 默认编码
 - **无** 合并/重命名既有注册 `*Builder` API
-- Samples（HTTP 请求示例）在 sibling [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples) 跟踪，不在本仓 Docs 票内
+
+HTTP 请求示例已落地于 sibling [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23) / [PR#24](https://github.com/Skymly/DesignPatterns.Samples/pull/24)。
 
 ## 参考
 
 - [ADR-010](../adr/ADR-010-step-builder-type-state-markers.md) — type-state + 必填上限 8
 - Spec：[Builder / Step Builder (#287)](https://github.com/Skymly/DesignPatterns/issues/287)
-- 落地：#288 Runtime → #289 Diagnostics（DP078–DP086）→ #290 SourceGenerators → #291 Docs
+- 落地：#288 Runtime → #289 Diagnostics（DP078–DP086）→ #290 SourceGenerators → #291 Docs → Samples [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23)
 - [docs/ROADMAP.md](../ROADMAP.md) F3 Top-2
 - [AGENTS.md](../../AGENTS.md) — 模式摘要与诊断表
 - [FactoryRegistry.md](FactoryRegistry.md) — 注册 `FactoryRegistryBuilder` 对照
