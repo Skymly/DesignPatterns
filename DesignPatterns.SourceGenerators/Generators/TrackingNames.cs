@@ -9,6 +9,9 @@ internal static class TrackingNames
     // GenerateSingletonGenerator
     public const string SingletonTransform = nameof(SingletonTransform);
 
+    // GenerateBuilderGenerator
+    public const string GenerateBuilderTransform = nameof(GenerateBuilderTransform);
+
     // RegisterFactoryGenerator
     public const string FactoryNonGenericTransform = nameof(FactoryNonGenericTransform);
     public const string FactoryGenericTransform = nameof(FactoryGenericTransform);

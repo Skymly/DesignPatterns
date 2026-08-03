@@ -105,9 +105,12 @@ public sealed class GenerateBuilderAttributeTests
         }
     }
 
-    /// <summary>Compile-time annotation smoke: holder + required/optional steps + assemble.</summary>
+    /// <summary>
+    /// Compile-time annotation smoke: holder + required/optional steps + assemble.
+    /// Internal (not private) so <c>GenerateBuilderGenerator</c> can emit a peer builder.
+    /// </summary>
     [GenerateBuilder]
-    private static class AnnotatedHolder
+    internal static class AnnotatedHolder
     {
         [BuilderStep]
         public static void WithUrl(string url)

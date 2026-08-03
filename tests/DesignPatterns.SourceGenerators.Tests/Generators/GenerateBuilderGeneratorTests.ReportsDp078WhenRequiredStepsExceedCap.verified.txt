@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP078,
+    Message: Holder 'TooManyRequiredSchema' declares 9 required [BuilderStep] methods, but at most 8 required steps are allowed. Mark excess steps as optional (Required = false) or split the schema across holders.
+  }
+]

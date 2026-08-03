@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP081,
+    Message: Steps 'WithBearerToken' and 'WithBasicAuth' both belong to mutex group 'Auth' on holder 'MutexSchema'. Keep at most one step in the group required, or remove one from the group, or apply only one of the steps.
+  }
+]

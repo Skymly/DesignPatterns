@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP085,
+    Message: [GenerateBuilder] cannot be applied to 'GenericHolder'. Apply it to an eligible non-generic class that can host [BuilderStep] and [BuilderAssemble] methods.
+  }
+]
