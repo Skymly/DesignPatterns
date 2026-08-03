@@ -1,6 +1,6 @@
 # Design Doc: Command Router
 
-> **版本**：v0.2.3-preview2
+> **版本**：v0.2.4-preview1
 > **关联 Issue**：[#256](https://github.com/Skymly/DesignPatterns/issues/256)（Spec）、[#260](https://github.com/Skymly/DesignPatterns/issues/260)（本 Design Doc）、[#282](https://github.com/Skymly/DesignPatterns/issues/282) / [#265](https://github.com/Skymly/DesignPatterns/issues/265) / [#283](https://github.com/Skymly/DesignPatterns/issues/283)（stream send）
 
 ## 概述

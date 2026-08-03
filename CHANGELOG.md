@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4-preview1] - 2026-08-03
+
 ### Added
 
 - **Step Builder Design Doc + ADR-010**: `docs/design/StepBuilder.md` documents attributes, generated `{Holder}Builder` type-state proof model, DP078–DP086, non-goals, and explicit comparison vs registration/assembly `*Builder` types; [ADR-010](docs/adr/ADR-010-step-builder-type-state-markers.md) records generic type-state + required-step cap 8; design index, ROADMAP F3 Top-2, and AGENTS pattern summary updated ([#291](https://github.com/Skymly/DesignPatterns/issues/291), Spec [#287](https://github.com/Skymly/DesignPatterns/issues/287)).
