@@ -106,7 +106,7 @@
 | 名次 | 候选 | 说明 | 状态 |
 |------|------|------|------|
 | 1 | **Command Router** | MVP + 域内增强已落地：1:1 `SendAsync`/`TrySendAsync`/`SendStreamAsync`/`TrySendStreamAsync` + `[RegisterCommandHandler]`（含 `IStreamCommandHandler`）+ DP072–077 + pipeline（ADR-009）+ `AddCommandRouter` / Autofac `RegisterCommandRouter` + [Design Doc](design/CommandRouter.md)（#257–#265、#275–#277、#282–#283）。Samples #266；探索与 MediatR 的差异点见 Design Doc | [~] |
-| 2 | **Builder**（Step Builder） | MVP 已落地：`[GenerateBuilder]` / `[BuilderStep]` / `[BuilderAssemble]` + 泛型 type-state `{Holder}Builder`（[ADR-010](adr/ADR-010-step-builder-type-state-markers.md)）+ DP078–DP086 + [Design Doc](design/StepBuilder.md)（#288–#291）。Samples 待 sibling；async / DI 为 Phase 2+ | [~] |
+| 2 | **Builder**（Step Builder） | **MVP 完成**：`[GenerateBuilder]` / `[BuilderStep]` / `[BuilderAssemble]` + 泛型 type-state `{Holder}Builder`（[ADR-010](adr/ADR-010-step-builder-type-state-markers.md)）+ DP078–DP086 + [Design Doc](design/StepBuilder.md)（#288–#291）+ Samples [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23) / [PR#24](https://github.com/Skymly/DesignPatterns.Samples/pull/24)。Spec [#287](https://github.com/Skymly/DesignPatterns/issues/287)。Phase 2+：async / DI / step validation | [x] |
 | 3 | **Fork–Join Work Graph** | 属性声明的工作 DAG；生成器校验环 / 孤儿依赖并生成拓扑波次编排 | [ ] |
 
 #### 观望（已过硬门槛，未进 Top-3）
@@ -244,3 +244,4 @@ State 转换表 v1 已于 0.1.0-preview4 发布；v2（guard 委托、DI 集成�
 - 发版 `0.2.2`：含 DP062 Singleton captive dependency 诊断（tag `v0.2.2`，稳定版）。
 - F5+ Composite 树 schema 校验：`[CompositeSchema(MaxDepth, MaxNodes)]` 契约级约束 + `[CompositePart(AllowedChildTypes)]` 节点级约束 + DP063（max depth exceeded Warning）/ DP064（child type not allowed Error）/ DP065（node count exceeded Warning）。见 [ADR-007](adr/ADR-007-composite-tree-schema-validation.md)。
 - 文档体系精简：移除 RFC / Spec / Plan / Review 仓内类型；Spec 合入 Design Doc；任务与审查改用 GitHub Issue / PR。见 [DOCUMENTATION.md](DOCUMENTATION.md)。
+- F3 Step Builder MVP：`[GenerateBuilder]` / `[BuilderStep]` / `[BuilderAssemble]` + type-state `{Holder}Builder`（ADR-010）+ DP078–DP086 + Design Doc（#288–#291）+ Samples [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23)；Spec [#287](https://github.com/Skymly/DesignPatterns/issues/287)。
