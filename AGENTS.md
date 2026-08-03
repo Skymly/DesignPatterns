@@ -361,6 +361,8 @@ git push origin v0.1.0-preview3
 
 ## Agent skills（mattpocock/skills）
 
+技能本体（含 `SKILL.md`）：[`.agents/skills/`](.agents/skills/) — 供 Cursor Cloud Agent 与其他兼容客户端从仓库发现；`skills-lock.json` 锁定来源与哈希。更新：`npx skills@latest update`（或 `npx skills@latest add mattpocock/skills --skill '*' --agent cursor -y`）。
+
 配置目录：[docs/agents/](docs/agents/)（`issue-tracker.md`、`triage-labels.md`、`domain.md`）。`/to-tickets`、`/to-spec`、`/triage`、`/wayfinder`、`/qa` 须遵守其中的 Issue 路由。
 
 ### Sibling Issue 路由
