@@ -19,7 +19,8 @@
 | [ADR-007](ADR-007-composite-tree-schema-validation.md) | Composite tree schema validation | Accepted | 2026-07-07 | — |
 | [ADR-008](ADR-008-singleton-lifecycle-diagnostics.md) | Singleton lifecycle diagnostics | Accepted | 2026-07-08 | — |
 | [ADR-009](ADR-009-command-router-pipeline-onion.md) | Command Router pipeline uses Chain-like next onion | Accepted | 2026-07-28 | #264 / #275–#277 |
+| [ADR-010](ADR-010-step-builder-type-state-markers.md) | Step Builder required completeness via generic type-state markers | Accepted | 2026-08-03 | #287 / #288–#291 |
 
 ## 下一个可用编号
 
-**ADR-010**
+**ADR-011**
