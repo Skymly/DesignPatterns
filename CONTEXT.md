@@ -15,3 +15,7 @@ _Avoid_: Decorator (for this capability), middleware (ambiguous), open-generic g
 **Terminal handler**:
 The single `ICommandHandler` registered for a command type; the innermost stage of the command pipeline onion.
 _Avoid_: subscriber, strategy
+
+**DI registration map**:
+A compile-time type→lifetime view of explicit MSDI/Autofac registrations plus attributed `RegisterDi` expansions, including Singleton factory-delegate entries.
+_Avoid_: IServiceCollection snapshot, container dump, RegisterDi argument-pair check (DP060/061)
