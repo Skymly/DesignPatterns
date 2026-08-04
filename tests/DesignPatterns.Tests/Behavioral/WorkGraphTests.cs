@@ -89,6 +89,18 @@ public sealed class WorkGraphTests
     }
 
     [Fact]
+    public void Build_WhenDependsOnNullOrWhitespace_Throws()
+    {
+        var nullDep = Assert.Throws<InvalidWorkGraphException>(() =>
+            new WorkGraphBuilder<WorkContext>().Add("A", new NoOpStep(), new string[] { null! }).Build());
+        Assert.Contains("A", nullDep.Message, StringComparison.Ordinal);
+
+        var blankDep = Assert.Throws<InvalidWorkGraphException>(() =>
+            new WorkGraphBuilder<WorkContext>().Add("A", new NoOpStep(), " ").Build());
+        Assert.Contains("A", blankDep.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Build_WhenCycle_Throws()
     {
         var builder = new WorkGraphBuilder<WorkContext>()

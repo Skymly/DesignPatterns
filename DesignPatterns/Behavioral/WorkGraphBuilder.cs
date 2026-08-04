@@ -69,6 +69,12 @@ public sealed class WorkGraphBuilder<TContext>
         {
             foreach (var dependency in registration.DependsOn)
             {
+                if (string.IsNullOrWhiteSpace(dependency))
+                {
+                    throw new InvalidWorkGraphException(
+                        $"Step '{registration.Id}' has a null or whitespace DependsOn entry. Use a registered step id.");
+                }
+
                 if (string.Equals(dependency, registration.Id, StringComparison.Ordinal))
                 {
                     throw new InvalidWorkGraphException(
