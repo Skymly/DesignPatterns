@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Peer-presence Unregistered\* base**: extract `UnregisteredPayloadPeerAnalyzerBase` for DP024 / DP044 / DP072; `UnregisteredHandlerAnalyzer`, `UnregisteredEventHandlerAnalyzer`, and `UnregisteredCommandHandlerAnalyzer` become thin adapters supplying attribute-peer and declared-peer extraction. Strategy/Factory contract-peer base unchanged. Diagnostic behaviour frozen (including no `IStreamCommandHandler` peer-presence).
 - **DI registration map consumer seam**: `CaptiveDependencyAnalyzer` and `SingletonLifecycleAnalyzer` obtain the map only via `DiRegistrationMap.Build(Compilation)` at compilation analysis time; incremental `DiRegistrationMapBuilder` wiring is a private implementation detail of `Build`. Diagnostic behaviour for DP062/066/068–071 is unchanged. `Build` skips generated syntax trees (`.g.cs` / auto-generated headers) so visibility matches the prior `RegisterSyntaxNodeAction` + `GeneratedCodeAnalysisFlags.None` path.
 
 ## [0.2.4-preview1] - 2026-08-03

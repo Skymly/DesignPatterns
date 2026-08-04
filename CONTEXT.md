@@ -19,3 +19,7 @@ _Avoid_: subscriber, strategy
 **DI registration map**:
 A compile-time type→lifetime view of explicit MSDI/Autofac registrations plus attributed `RegisterDi` expansions, including Singleton factory-delegate entries.
 _Avoid_: IServiceCollection snapshot, container dump, RegisterDi argument-pair check (DP060/061)
+
+**Peer-presence registration**:
+A compile-time rule that only requires an unannotated implementation to register when a peer (event, command, or handler context) is already registered elsewhere in the compilation.
+_Avoid_: contract-peer unregistered check (Strategy/Factory: implements a registered contract but lacks the attribute)

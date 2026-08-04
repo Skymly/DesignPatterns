@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -9,96 +7,36 @@ namespace DesignPatterns.Analyzers;
 
 /// <summary>
 /// Reports concrete command handler implementations that implement <c>ICommandHandler&lt;TCommand&gt;</c>
-/// (or <c>ICommandHandler&lt;TCommand, TResult&gt;</c>) for a registered command type but lack <c>[RegisterCommandHandler]</c>.
+/// (or <c>ICommandHandler&lt;TCommand, TResult&gt;</c>) for a registered command type but lack
+/// <c>[RegisterCommandHandler]</c>.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class UnregisteredCommandHandlerAnalyzer : DiagnosticAnalyzer
+public sealed class UnregisteredCommandHandlerAnalyzer : UnregisteredPayloadPeerAnalyzerBase
 {
-    private static readonly DiagnosticDescriptor Rule =
+    private static readonly DiagnosticDescriptor RuleDefinition =
         DesignPatternsDiagnosticDescriptors.CommandHandlerUnregisteredImplementation;
 
-    /// <inheritdoc />
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(Rule);
+    protected override DiagnosticDescriptor Rule => RuleDefinition;
 
-    /// <inheritdoc />
-    public override void Initialize(AnalysisContext context)
+    protected override IEnumerable<INamedTypeSymbol> GetPeersFromRegistrationAttributes(
+        INamedTypeSymbol typeSymbol)
     {
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-        context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(OnCompilationStart);
-    }
-
-    private static void OnCompilationStart(CompilationStartAnalysisContext context)
-    {
-        var registeredCommandTypes = CollectRegisteredCommandTypes(context.Compilation);
-        if (registeredCommandTypes.IsEmpty)
+        foreach (var attribute in typeSymbol.GetAttributes())
         {
-            return;
-        }
-
-        context.RegisterSymbolAction(
-            symbolContext => AnalyzeNamedType(symbolContext, registeredCommandTypes),
-            SymbolKind.NamedType);
-    }
-
-    private static void AnalyzeNamedType(SymbolAnalysisContext context, ImmutableHashSet<INamedTypeSymbol> registeredCommandTypes)
-    {
-        if (context.Symbol is not INamedTypeSymbol typeSymbol)
-        {
-            return;
-        }
-
-        if (typeSymbol.TypeKind != TypeKind.Class || typeSymbol.IsAbstract)
-        {
-            return;
-        }
-
-        if (typeSymbol.DeclaredAccessibility == Accessibility.Private && typeSymbol.ContainingType is not null)
-        {
-            return;
-        }
-
-        foreach (var commandType in GetCommandHandlerCommandTypes(typeSymbol))
-        {
-            if (!registeredCommandTypes.Contains(commandType))
+            if (!CommandHandlerAnalysisConstants.IsRegisterCommandHandlerAttribute(attribute.AttributeClass))
             {
                 continue;
             }
 
-            if (HasRegisterCommandHandlerForCommandType(typeSymbol, commandType))
+            var commandType = TryGetCommandTypeFromAttribute(attribute);
+            if (commandType is not null)
             {
-                continue;
+                yield return commandType;
             }
-
-            var location = typeSymbol.Locations.FirstOrDefault() ?? Location.None;
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                location,
-                typeSymbol.Name,
-                commandType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
         }
     }
 
-    private static ImmutableHashSet<INamedTypeSymbol> CollectRegisteredCommandTypes(Compilation compilation)
-    {
-        var builder = ImmutableHashSet.CreateBuilder<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-
-        foreach (var assembly in AnalyzerSymbolHelper.GetAssembliesInCompilation(compilation))
-        {
-            foreach (var typeSymbol in AnalyzerSymbolHelper.GetAllTypes(assembly.GlobalNamespace))
-            {
-                foreach (var commandType in GetRegisteredCommandTypesFromType(typeSymbol))
-                {
-                    builder.Add(commandType);
-                }
-            }
-        }
-
-        return builder.ToImmutable();
-    }
-
-    private static IEnumerable<INamedTypeSymbol> GetCommandHandlerCommandTypes(INamedTypeSymbol typeSymbol)
+    protected override IEnumerable<INamedTypeSymbol> GetDeclaredPeers(INamedTypeSymbol typeSymbol)
     {
         foreach (var iface in typeSymbol.AllInterfaces)
         {
@@ -118,27 +56,6 @@ public sealed class UnregisteredCommandHandlerAnalyzer : DiagnosticAnalyzer
             }
 
             if (iface.TypeArguments[0] is INamedTypeSymbol commandType)
-            {
-                yield return commandType;
-            }
-        }
-    }
-
-    private static bool HasRegisterCommandHandlerForCommandType(INamedTypeSymbol typeSymbol, INamedTypeSymbol commandType) =>
-        GetRegisteredCommandTypesFromType(typeSymbol).Any(
-            registeredCommand => SymbolEqualityComparer.Default.Equals(registeredCommand, commandType));
-
-    private static IEnumerable<INamedTypeSymbol> GetRegisteredCommandTypesFromType(INamedTypeSymbol typeSymbol)
-    {
-        foreach (var attribute in typeSymbol.GetAttributes())
-        {
-            if (!CommandHandlerAnalysisConstants.IsRegisterCommandHandlerAttribute(attribute.AttributeClass))
-            {
-                continue;
-            }
-
-            var commandType = TryGetCommandTypeFromAttribute(attribute);
-            if (commandType is not null)
             {
                 yield return commandType;
             }
