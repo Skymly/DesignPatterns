@@ -5,8 +5,6 @@ using System.Linq;
 using DesignPatterns.Analyzers.Di;
 using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace DesignPatterns.Analyzers;
@@ -35,47 +33,12 @@ public sealed class SingletonLifecycleAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(OnCompilationStart);
+        context.RegisterCompilationAction(AnalyzeCompilation);
     }
 
-    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    private static void AnalyzeCompilation(CompilationAnalysisContext context)
     {
-        var attributedTypes = AttributedRegistration.CollectByCategory(context.Compilation);
-        var mapBuilder = new DiRegistrationMapBuilder(attributedTypes);
-
-        context.RegisterSyntaxNodeAction(
-            syntaxContext => CollectRegistration(syntaxContext, mapBuilder),
-            SyntaxKind.InvocationExpression);
-
-        context.RegisterCompilationEndAction(
-            endContext => Analyze(endContext, mapBuilder));
-    }
-
-    private static void CollectRegistration(
-        SyntaxNodeAnalysisContext context,
-        DiRegistrationMapBuilder mapBuilder)
-    {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        var methodName = memberAccess.Name.Identifier.ValueText;
-
-        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd"
-            or "RegisterType" or "Register" or "RegisterDi")
-        {
-            mapBuilder.TryCollect(invocation, context.SemanticModel);
-        }
-    }
-
-    private static void Analyze(
-        CompilationAnalysisContext context,
-        DiRegistrationMapBuilder mapBuilder)
-    {
-        var map = mapBuilder.Build();
+        var map = DiRegistrationMap.Build(context.Compilation);
         var singletonRegistrations = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var pair in map.Lifetimes)
         {

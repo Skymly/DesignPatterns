@@ -5,7 +5,6 @@ using System.Linq;
 using DesignPatterns.Analyzers.Di;
 using DesignPatterns.Diagnostics;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -35,59 +34,15 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterCompilationStartAction(OnCompilationStart);
+        context.RegisterCompilationAction(AnalyzeCompilation);
     }
 
-    private static void OnCompilationStart(CompilationStartAnalysisContext context)
+    private static void AnalyzeCompilation(CompilationAnalysisContext context)
     {
-        var attributedTypes = AttributedRegistration.CollectByCategory(context.Compilation);
-        var mapBuilder = new DiRegistrationMapBuilder(attributedTypes);
-
-        context.RegisterSyntaxNodeAction(
-            syntaxContext => CollectRegistration(syntaxContext, mapBuilder),
-            SyntaxKind.InvocationExpression);
-
-        context.RegisterCompilationEndAction(
-            endContext => AnalyzeRegistrations(endContext, mapBuilder));
-    }
-
-    private static void CollectRegistration(
-        SyntaxNodeAnalysisContext context,
-        DiRegistrationMapBuilder mapBuilder)
-    {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-
-        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess)
-        {
-            return;
-        }
-
-        var methodName = memberAccess.Name.Identifier.ValueText;
-
-        if (methodName is "AddSingleton" or "AddScoped" or "AddTransient" or "TryAdd"
-            or "RegisterType" or "Register" or "RegisterDi")
-        {
-            mapBuilder.TryCollect(invocation, context.SemanticModel);
-        }
-    }
-
-    private static void AnalyzeRegistrations(
-        CompilationAnalysisContext context,
-        DiRegistrationMapBuilder mapBuilder)
-    {
-        var map = mapBuilder.Build();
+        var map = DiRegistrationMap.Build(context.Compilation);
         if (map.Entries.Count == 0 && map.FactoryDelegates.Count == 0)
         {
             return;
-        }
-
-        // Build the registration map: type → lifetime (last wins).
-        var lifetimeMap = new Dictionary<INamedTypeSymbol, Lifetime>(
-            SymbolEqualityComparer.Default);
-
-        foreach (var pair in map.Lifetimes)
-        {
-            lifetimeMap[pair.Key] = pair.Value;
         }
 
         // DP062: Singleton constructor analysis for all map entries
@@ -99,13 +54,13 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            AnalyzeSingleton(context, reg.ImplementationType, reg.Invocation, lifetimeMap);
+            AnalyzeSingleton(context, reg.ImplementationType, reg.Invocation, map.Lifetimes);
         }
 
         // DP066: Singleton factory delegates collected on the map.
         foreach (var factory in map.FactoryDelegates)
         {
-            AnalyzeFactoryDelegate(context, factory, lifetimeMap);
+            AnalyzeFactoryDelegate(context, factory, map.Lifetimes);
         }
     }
 
@@ -120,7 +75,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeFactoryDelegate(
         CompilationAnalysisContext context,
         FactoryDelegateRegistration factory,
-        Dictionary<INamedTypeSymbol, Lifetime> lifetimeMap)
+        IReadOnlyDictionary<INamedTypeSymbol, Lifetime> lifetimeMap)
     {
         var semanticModel = factory.SemanticModel;
 
@@ -174,7 +129,7 @@ public sealed class CaptiveDependencyAnalyzer : DiagnosticAnalyzer
         CompilationAnalysisContext context,
         INamedTypeSymbol implType,
         InvocationExpressionSyntax invocation,
-        Dictionary<INamedTypeSymbol, Lifetime> lifetimeMap)
+        IReadOnlyDictionary<INamedTypeSymbol, Lifetime> lifetimeMap)
     {
         // Skip if not a class or struct (e.g. interface, delegate)
         if (implType.TypeKind is not (TypeKind.Class or TypeKind.Struct))

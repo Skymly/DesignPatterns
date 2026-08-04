@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **DI registration map consumer seam**: `CaptiveDependencyAnalyzer` and `SingletonLifecycleAnalyzer` obtain the map only via `DiRegistrationMap.Build(Compilation)` at compilation analysis time; incremental `DiRegistrationMapBuilder` wiring is a private implementation detail of `Build`. Diagnostic behaviour for DP062/066/068–071 is unchanged.
+
 ## [0.2.4-preview1] - 2026-08-03
 
 ### Added
