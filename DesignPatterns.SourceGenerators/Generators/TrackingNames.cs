@@ -74,4 +74,11 @@ internal static class TrackingNames
 
     public const string CommandPipelineBehaviorCombine = nameof(CommandPipelineBehaviorCombine);
     public const string CommandHandlerPipelineCombine = nameof(CommandHandlerPipelineCombine);
+
+    // WorkGraphGenerator
+    public const string WorkGraphHolderNonGenericTransform = nameof(WorkGraphHolderNonGenericTransform);
+    public const string WorkGraphHolderGenericTransform = nameof(WorkGraphHolderGenericTransform);
+    public const string WorkStepTransform = nameof(WorkStepTransform);
+    public const string WorkGraphHolderCombine = nameof(WorkGraphHolderCombine);
+    public const string WorkGraphCombine = nameof(WorkGraphCombine);
 }
