@@ -23,3 +23,11 @@ _Avoid_: IServiceCollection snapshot, container dump, RegisterDi argument-pair c
 **Peer-presence registration**:
 A compile-time rule that only requires an unannotated implementation to register when a peer (event, command, or handler context) is already registered elsewhere in the compilation.
 _Avoid_: contract-peer unregistered check (Strategy/Factory: implements a registered contract but lacks the attribute)
+
+**Fork–Join Work Graph**:
+An in-process async DAG of work steps that share one `TContext`, where edges are readiness dependencies only (not typed payload channels), executed in topological waves with fail-fast cancellation.
+_Avoid_: Channel Pipeline, Composite parallel traversal, TPL Dataflow, Step Builder (construction completeness)
+
+**Work step**:
+A type implementing `IWorkStep<TContext>` with an explicit string id and optional `DependsOn` readiness edges on a named work-graph holder.
+_Avoid_: command handler, pipeline stage, channel block

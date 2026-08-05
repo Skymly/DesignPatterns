@@ -18,3 +18,4 @@
 | Command Router | [CommandRouter.md](CommandRouter.md) | — |
 | State Transition Table | [StateTransitionTable.md](StateTransitionTable.md) | [ADR-005](../adr/ADR-005-state-transition-table.md) |
 | Step Builder | [StepBuilder.md](StepBuilder.md) | [ADR-010](../adr/ADR-010-step-builder-type-state-markers.md) |
+| Fork–Join Work Graph | [WorkGraph.md](WorkGraph.md) | —（对照 [ADR-006](../adr/ADR-006-composite-parallel-traversal.md)） |
