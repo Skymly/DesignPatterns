@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Work Graph generator**: `[WorkGraph]` / `[WorkGraph<TContext>]` + `[WorkStep]` drive `WorkGraphGenerator`, emitting `{Holder}WorkStepKeys` and `{Holder}WorkGraph.Create(resolver|dictionary)` that fills `WorkGraphBuilder`. Reports **DP087–DP092** (cycle, unknown DependsOn, duplicate id, self-dependency, unreachable Warning, contract mismatch); no MVP DI/Autofac emission ([#311](https://github.com/Skymly/DesignPatterns/issues/311), Spec [#308](https://github.com/Skymly/DesignPatterns/issues/308)).
 - **Work Graph diagnostic IDs**: reserved **DP087–DP092** for the upcoming Work Graph generator (dependency cycle, unknown DependsOn, duplicate step id, self-dependency, unreachable step Warning, contract/TContext mismatch); no unregistered-`IWorkStep` Analyzer in MVP; DP067–DP071 remain ADR-008-only ([#310](https://github.com/Skymly/DesignPatterns/issues/310), Spec [#308](https://github.com/Skymly/DesignPatterns/issues/308)).
 
 ### Changed

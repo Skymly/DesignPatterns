@@ -1,0 +1,14 @@
+﻿[
+  {
+    Id: DP087,
+    Message: Work graph 'CycleGraph' contains a cycle involving step id(s): a, b. Remove or reassign the cyclic DependsOn edge(s).
+  },
+  {
+    Id: DP091,
+    Message: Step 'a' on work graph 'CycleGraph' is unreachable from any root (a step with no DependsOn). Connect it via DependsOn or remove the orphaned step. Multi-root graphs remain valid.
+  },
+  {
+    Id: DP091,
+    Message: Step 'b' on work graph 'CycleGraph' is unreachable from any root (a step with no DependsOn). Connect it via DependsOn or remove the orphaned step. Multi-root graphs remain valid.
+  }
+]

@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP090,
+    Message: Step 'loop' on work graph 'SelfGraph' declares a self-dependency. Remove 'loop' from its DependsOn list.
+  }
+]
