@@ -280,6 +280,29 @@ public sealed class WorkGraphGeneratorTests
     }
 
     [Fact]
+    public Task EmitsCreateThatRejectsEmptyCatalogAtRuntime()
+    {
+        const string source = """
+            using DesignPatterns.Behavioral;
+
+            namespace TestAssembly;
+
+            public sealed class Ctx { }
+
+            [WorkGraph<Ctx>]
+            public static class EmptyGraph
+            {
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<WorkGraphGenerator>(
+            ("EmptyGraph.cs", source));
+
+        Assert.Empty(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
     public Task MultiRootGraphDoesNotWarnUnreachable()
     {
         const string source = """

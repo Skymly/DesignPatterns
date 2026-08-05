@@ -193,12 +193,6 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
             {
                 list.Add(s);
             }
-            else if (element.Value is string)
-            {
-                // Preserve blank entries so unknown/self validation can still see them as errors?
-                // Spec: null/whitespace DependsOn is invalid at runtime. Report as unknown with empty?
-                // Skip blanks here; blank ids are not registered step ids.
-            }
         }
 
         return list.ToArray();
@@ -287,12 +281,8 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
 
         foreach (var holder in holders.OrderBy(static h => h.HolderFullyQualifiedDisplayString, StringComparer.Ordinal))
         {
-            if (!stepsByHolder.TryGetValue(holder.HolderFullyQualifiedDisplayString, out var steps)
-                || steps.Count == 0)
-            {
-                // Empty catalog: no Keys/Create emission (runtime Build still rejects empty).
-                continue;
-            }
+            stepsByHolder.TryGetValue(holder.HolderFullyQualifiedDisplayString, out var steps);
+            steps ??= new List<WorkStepInfo>();
 
             if (!TryBuildEmitModel(context, holder, steps, out var model))
             {
@@ -403,6 +393,7 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
         // Warnings alone do not block emission; errors do.
         // Unreachable with a cycle is always accompanied by DP087 (error), so emission is blocked.
         // Pure unreachable without cycle cannot occur in a valid DAG — keep warning-only path emit-safe.
+        // Empty catalogs still emit Create so Build() rejects at runtime (Spec: empty → Create Error).
         if (hasError)
         {
             return false;
@@ -437,10 +428,13 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
         return true;
     }
 
-    private static HashSet<string> FindCyclicStepIds(Dictionary<string, WorkStepInfo> byId)
+    private static void BuildAdjacency(
+        Dictionary<string, WorkStepInfo> byId,
+        out Dictionary<string, int> remainingIndeegree,
+        out Dictionary<string, List<string>> successors)
     {
-        var remainingIndeegree = new Dictionary<string, int>(byId.Count, StringComparer.Ordinal);
-        var successors = new Dictionary<string, List<string>>(byId.Count, StringComparer.Ordinal);
+        remainingIndeegree = new Dictionary<string, int>(byId.Count, StringComparer.Ordinal);
+        successors = new Dictionary<string, List<string>>(byId.Count, StringComparer.Ordinal);
 
         foreach (var id in byId.Keys)
         {
@@ -452,12 +446,8 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
         {
             foreach (var dependency in registration.DependsOn)
             {
-                if (string.Equals(dependency, registration.StepId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!byId.ContainsKey(dependency))
+                if (string.Equals(dependency, registration.StepId, StringComparison.Ordinal)
+                    || !byId.ContainsKey(dependency))
                 {
                     continue;
                 }
@@ -466,6 +456,11 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
                 successors[dependency].Add(registration.StepId);
             }
         }
+    }
+
+    private static HashSet<string> FindCyclicStepIds(Dictionary<string, WorkStepInfo> byId)
+    {
+        BuildAdjacency(byId, out var remainingIndeegree, out var successors);
 
         var ready = new Queue<string>();
         foreach (var pair in remainingIndeegree)
@@ -508,25 +503,7 @@ public sealed class WorkGraphGenerator : IIncrementalGenerator
 
     private static HashSet<string> FindUnreachableStepIds(Dictionary<string, WorkStepInfo> byId)
     {
-        var successors = new Dictionary<string, List<string>>(byId.Count, StringComparer.Ordinal);
-        foreach (var id in byId.Keys)
-        {
-            successors[id] = new List<string>();
-        }
-
-        foreach (var registration in byId.Values)
-        {
-            foreach (var dependency in registration.DependsOn)
-            {
-                if (!byId.ContainsKey(dependency)
-                    || string.Equals(dependency, registration.StepId, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                successors[dependency].Add(registration.StepId);
-            }
-        }
+        BuildAdjacency(byId, out _, out var successors);
 
         // Roots: no known non-self DependsOn edges (unknown/self edges do not create predecessors).
         var roots = byId.Values
