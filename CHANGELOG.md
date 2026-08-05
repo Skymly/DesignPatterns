@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Work Graph diagnostic IDs**: reserved **DP087–DP092** for the upcoming Work Graph generator (dependency cycle, unknown DependsOn, duplicate step id, self-dependency, unreachable step Warning, contract/TContext mismatch); no unregistered-`IWorkStep` Analyzer in MVP; DP067–DP071 remain ADR-008-only ([#310](https://github.com/Skymly/DesignPatterns/issues/310), Spec [#308](https://github.com/Skymly/DesignPatterns/issues/308)).
+
 ### Changed
 
 - **Peer-presence Unregistered\* base**: extract `UnregisteredPayloadPeerAnalyzerBase` for DP024 / DP044 / DP072; `UnregisteredHandlerAnalyzer`, `UnregisteredEventHandlerAnalyzer`, and `UnregisteredCommandHandlerAnalyzer` become thin adapters supplying attribute-peer and declared-peer extraction. Strategy/Factory contract-peer base unchanged. Diagnostic behaviour frozen (including no `IStreamCommandHandler` peer-presence).

@@ -741,6 +741,56 @@ public static class DesignPatternsDiagnosticDescriptors
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
+    // Work Graph (DP087–DP092)
+
+    public static DiagnosticDescriptor WorkGraphCycle { get; } = Create(
+        DiagnosticIds.WorkGraphCycle,
+        "Work graph dependency cycle detected",
+        "Work graph '{0}' contains a cycle involving step id(s): {1}. Remove or reassign the cyclic DependsOn edge(s).",
+        "Work graph catalogs cannot contain cyclic DependsOn relationships.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor WorkGraphUnknownDependency { get; } = Create(
+        DiagnosticIds.WorkGraphUnknownDependency,
+        "Work graph DependsOn references unknown step id",
+        "Step '{0}' on work graph '{1}' depends on unknown step id '{2}'. Register a [WorkStep] with that id or remove it from DependsOn.",
+        "DependsOn must reference step ids declared on the same work graph holder.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor WorkGraphDuplicateStepId { get; } = Create(
+        DiagnosticIds.WorkGraphDuplicateStepId,
+        "Work graph duplicate step id",
+        "Step id '{0}' is declared more than once on work graph '{1}'. Rename one of the [WorkStep] Id values so each step id is unique.",
+        "Each work step id may appear at most once within a work graph catalog.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor WorkGraphSelfDependency { get; } = Create(
+        DiagnosticIds.WorkGraphSelfDependency,
+        "Work graph step declares a self-dependency",
+        "Step '{0}' on work graph '{1}' declares a self-dependency. Remove '{0}' from its DependsOn list.",
+        "A work step cannot depend on itself; self-dependencies are reported separately from general cycles.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor WorkGraphUnreachableStep { get; } = Create(
+        DiagnosticIds.WorkGraphUnreachableStep,
+        "Work graph step is unreachable",
+        "Step '{0}' on work graph '{1}' is unreachable from any root (a step with no DependsOn). Connect it via DependsOn or remove the orphaned step. Multi-root graphs remain valid.",
+        "Unreachable steps are Warning-level; multiple roots without DependsOn are intentional and valid.",
+        DiagnosticSeverity.Warning,
+        GeneratorCategory);
+
+    public static DiagnosticDescriptor WorkGraphContractMismatch { get; } = Create(
+        DiagnosticIds.WorkGraphContractMismatch,
+        "Work step does not match work graph context contract",
+        "Type '{0}' is marked [WorkStep] for work graph '{1}' but does not implement IWorkStep<{2}>. Implement IWorkStep<{2}> or fix the holder / attribute arguments.",
+        "Work step types must implement IWorkStep<TContext> for the holder [WorkGraph<TContext>] context type.",
+        DiagnosticSeverity.Error,
+        GeneratorCategory);
+
     private static DiagnosticDescriptor Create(
         string id,
         string title,
