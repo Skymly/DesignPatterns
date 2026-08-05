@@ -164,6 +164,10 @@ await generated.RunAsync(new PrepContext(), CancellationToken.None);
 2. 按 holder 聚合 catalog → 诊断 DP087–DP092
 3. 成功则发出 Keys + `Create` facade（空 catalog 亦发 `Create`）
 
+### 诊断检测逻辑
+
+见上表；归属均为 Generator。编译期图合法性可对照既有矩阵：Composite 环 / 孤儿（DP011/012 + schema）、State hierarchy（DP056–059）、Step Builder 偏序 / 未知引用（DP082/084）——本域对应 DP087–DP090 / DP091 / DP092，语义为 readiness DAG 而非树 schema 或构造偏序。
+
 ### 测试主缝
 
 1. `DesignPatterns.Tests` — `Build` 校验与 `RunAsync` 波次 / fail-fast
