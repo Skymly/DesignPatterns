@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP089,
+    Message: Step id 'same' is declared more than once on work graph 'DupGraph'. Rename one of the [WorkStep] Id values so each step id is unique.
+  }
+]

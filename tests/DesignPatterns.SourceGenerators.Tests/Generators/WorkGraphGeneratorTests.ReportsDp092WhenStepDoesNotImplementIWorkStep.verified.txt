@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP092,
+    Message: Type 'NotAStep' is marked [WorkStep] for work graph 'MismatchGraph' but does not implement IWorkStep<Ctx>. Implement IWorkStep<Ctx> or fix the holder / attribute arguments.
+  }
+]
