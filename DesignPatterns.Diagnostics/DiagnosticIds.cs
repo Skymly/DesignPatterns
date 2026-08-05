@@ -91,4 +91,10 @@ public static class DiagnosticIds
     public const string GenerateBuilderUnknownStepReference = "DP084";
     public const string GenerateBuilderInvalidHolder = "DP085";
     public const string GenerateBuilderAssembleContractMismatch = "DP086";
+    public const string WorkGraphCycle = "DP087";
+    public const string WorkGraphUnknownDependency = "DP088";
+    public const string WorkGraphDuplicateStepId = "DP089";
+    public const string WorkGraphSelfDependency = "DP090";
+    public const string WorkGraphUnreachableStep = "DP091";
+    public const string WorkGraphContractMismatch = "DP092";
 }

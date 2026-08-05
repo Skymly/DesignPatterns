@@ -177,12 +177,18 @@ dotnet test DesignPatterns.slnx -c Release
 | DP084 | GenerateBuilder 未知步骤引用（生成器；After/Before 指向不存在的步骤） |
 | DP085 | GenerateBuilder holder 非法（生成器；`[GenerateBuilder]` 目标类型不合法） |
 | DP086 | GenerateBuilder 装配契约不匹配（生成器；assemble 签名/重复标注非法） |
+| DP087 | Work Graph 依赖环（生成器；DependsOn 形成 cycle） |
+| DP088 | Work Graph 未知 DependsOn（生成器；引用未声明的 step id） |
+| DP089 | Work Graph 重复 step id（生成器；同一 holder 下 Id 重复） |
+| DP090 | Work Graph 自依赖（生成器；step DependsOn 自身；与 DP087 分开） |
+| DP091 | Work Graph 不可达步骤（生成器；Warning；多根合法，孤立步告警） |
+| DP092 | Work Graph 契约 / TContext 不匹配（生成器；`[WorkStep]` 未实现 `IWorkStep<TContext>`） |
 
 常量：[`DesignPatterns.Diagnostics/DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)。规则表：[`DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 
 诊断 ID 规范（**本表为唯一登记源**，其他文档不得另立分类）：
 
-- 下一个可用 ID：**DP087**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
+- 下一个可用 ID：**DP093**；ID 一经发布不复用、不改语义（DP067–DP071 专属 [ADR-008](docs/adr/ADR-008-singleton-lifecycle-diagnostics.md) Singleton 生命周期语义，不得改派）。
 - 新增 / 修改诊断必须同步 [`DiagnosticIds.cs`](DesignPatterns.Diagnostics/DiagnosticIds.cs)、[`DesignPatternsDiagnosticDescriptors.cs`](DesignPatterns.Diagnostics/DesignPatternsDiagnosticDescriptors.cs)（经 Compile Link 编入 SourceGenerators / Analyzers）与 [`AnalyzerReleases.Unshipped.md`](DesignPatterns.SourceGenerators/AnalyzerReleases.Unshipped.md)。
 - 归属：DP006 / DP023 / DP024 / DP025 / DP033 / DP036 / DP044 / DP060 / DP061 / DP062 / DP066 / DP068 / DP069 / DP070 / DP071 / DP072 属 **Analyzer**；其余属**生成器**。
 - 文案：`messageFormat` 须含可操作建议；`description` 供 IDE 悬停；`helpLinkUri` 指向 [`DesignPatterns.Docs` diagnostics 页](https://skymly.github.io/DesignPatterns.Docs/diagnostics)（`#dp###` 片段，见 [`DiagnosticHelpLinks.cs`](DesignPatterns.Diagnostics/DiagnosticHelpLinks.cs)）。

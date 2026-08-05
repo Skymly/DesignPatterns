@@ -88,3 +88,9 @@ DP083    | DesignPatterns.Generators | Error    | GenerateBuilder duplicate step
 DP084    | DesignPatterns.Generators | Error    | GenerateBuilder After/Before references unknown step
 DP085    | DesignPatterns.Generators | Error    | GenerateBuilder holder is invalid
 DP086    | DesignPatterns.Generators | Error    | GenerateBuilder assemble method contract is invalid
+DP087    | DesignPatterns.Generators | Error    | Work graph dependency cycle detected
+DP088    | DesignPatterns.Generators | Error    | Work graph DependsOn references unknown step id
+DP089    | DesignPatterns.Generators | Error    | Work graph duplicate step id
+DP090    | DesignPatterns.Generators | Error    | Work graph step declares a self-dependency
+DP091    | DesignPatterns.Generators | Warning  | Work graph step is unreachable
+DP092    | DesignPatterns.Generators | Error    | Work step does not match work graph context contract
