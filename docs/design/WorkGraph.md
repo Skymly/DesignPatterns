@@ -238,12 +238,12 @@ await generated.RunAsync(new PrepContext(), CancellationToken.None);
 - **无** `TContext` isolate/merge 框架
 - **无** 类型化 payload 边
 
-Samples（request-prep）落在 sibling [DesignPatterns.Samples](https://github.com/Skymly/DesignPatterns.Samples)，不在本仓 Docs PR。
+Request-prep 示例已落地于 sibling [DesignPatterns.Samples#25](https://github.com/Skymly/DesignPatterns.Samples/issues/25) / [PR#28](https://github.com/Skymly/DesignPatterns.Samples/pull/28)。
 
 ## 参考
 
 - Spec：[Fork–Join Work Graph (#308)](https://github.com/Skymly/DesignPatterns/issues/308)
-- 落地：#309 Runtime → #310 Diagnostics（DP087–DP092）→ #311 SourceGenerators → #312 Docs → Samples（sibling）
+- 落地：#309 Runtime → #310 Diagnostics（DP087–DP092）→ #311 SourceGenerators → #312 Docs → Samples [DesignPatterns.Samples#25](https://github.com/Skymly/DesignPatterns.Samples/issues/25)
 - Wayfinder：[#300](https://github.com/Skymly/DesignPatterns/issues/300) / 准入地图 [#244](https://github.com/Skymly/DesignPatterns/issues/244)
 - [ADR-006](../adr/ADR-006-composite-parallel-traversal.md) — Composite 同层并行（对照，非依赖）
 - [docs/ROADMAP.md](../ROADMAP.md) F3 Top-3
