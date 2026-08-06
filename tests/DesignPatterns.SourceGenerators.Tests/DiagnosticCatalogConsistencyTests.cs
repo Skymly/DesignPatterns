@@ -13,8 +13,12 @@ namespace DesignPatterns.SourceGenerators.Tests;
 public sealed class DiagnosticCatalogConsistencyTests
 {
     private static readonly ImmutableArray<DiagnosticDescriptor> Catalog = BuildCatalog();
+
+    // Group first so duplicate ids surface via the dedicated Fact instead of type-init ArgumentException.
     private static readonly ImmutableDictionary<string, DiagnosticDescriptor> CatalogById =
-        Catalog.ToImmutableDictionary(d => d.Id, StringComparer.Ordinal);
+        Catalog
+            .GroupBy(d => d.Id, StringComparer.Ordinal)
+            .ToImmutableDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
 
     private static readonly ImmutableHashSet<string> DiagnosticIdConstants = BuildDiagnosticIdConstants();
 
@@ -32,7 +36,7 @@ public sealed class DiagnosticCatalogConsistencyTests
         get
         {
             var data = new TheoryData<string>();
-            foreach (var id in Catalog.Select(d => d.Id).OrderBy(id => id, StringComparer.Ordinal))
+            foreach (var id in CatalogById.Keys.OrderBy(id => id, StringComparer.Ordinal))
             {
                 data.Add(id);
             }
