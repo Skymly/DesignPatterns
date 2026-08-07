@@ -29,5 +29,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\DesignPatterns.SourceGenerators\AnalyzerReleases.Unshipped.md"
+                      LogicalName="AnalyzerReleases.SourceGenerators.Unshipped.md" />
+    <EmbeddedResource Include="..\..\DesignPatterns.Analyzers\AnalyzerReleases.Shipped.md"
+                      LogicalName="AnalyzerReleases.Analyzers.Shipped.md" />
+    <EmbeddedResource Include="..\..\DesignPatterns.Analyzers\AnalyzerReleases.Unshipped.md"
+                      LogicalName="AnalyzerReleases.Analyzers.Unshipped.md" />
+  </ItemGroup>
+
 </Project>
 
