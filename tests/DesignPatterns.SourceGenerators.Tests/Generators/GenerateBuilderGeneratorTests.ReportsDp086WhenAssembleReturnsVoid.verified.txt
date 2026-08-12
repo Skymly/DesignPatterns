@@ -1,6 +1,6 @@
 ﻿[
   {
     Id: DP086,
-    Message: Method 'Assemble' on holder 'VoidAssembleSchema' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning a non-void product type). Fix the signature or remove duplicate [BuilderAssemble] attributes.
+    Message: Method 'Assemble' on holder 'VoidAssembleSchema' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning sync product T, or async Task<T> / ValueTask<T>; not void, bare Task/ValueTask, or multiple CancellationToken parameters). Fix the signature or remove duplicate [BuilderAssemble] attributes.
   }
 ]
