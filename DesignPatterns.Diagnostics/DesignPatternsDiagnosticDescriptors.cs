@@ -736,8 +736,8 @@ public static class DesignPatternsDiagnosticDescriptors
     public static DiagnosticDescriptor GenerateBuilderAssembleContractMismatch { get; } = Create(
         DiagnosticIds.GenerateBuilderAssembleContractMismatch,
         "GenerateBuilder assemble method contract is invalid",
-        "Method '{0}' on holder '{1}' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning a non-void product type). Fix the signature or remove duplicate [BuilderAssemble] attributes.",
-        "The assemble method is the sole product factory for the generated builder and must return the product type.",
+        "Method '{0}' on holder '{1}' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning sync product T, or async Task<T> / ValueTask<T>; not void, bare Task/ValueTask, or multiple CancellationToken parameters). Fix the signature or remove duplicate [BuilderAssemble] attributes.",
+        "The assemble method is the sole product factory for the generated builder. Return sync product type T, or async Task<T>/ValueTask<T>. Reject void, bare Task/ValueTask, duplicate [BuilderAssemble], and more than one CancellationToken.",
         DiagnosticSeverity.Error,
         GeneratorCategory);
 
