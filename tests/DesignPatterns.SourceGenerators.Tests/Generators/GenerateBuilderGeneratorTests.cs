@@ -3,7 +3,7 @@ using DesignPatterns.SourceGenerators.Generators;
 namespace DesignPatterns.SourceGenerators.Tests.Generators;
 
 /// <summary>
-/// Seam: generated <c>{Holder}Builder</c> public API and schema diagnostics (issue #290).
+/// Seam: generated <c>{Holder}Builder</c> public API and schema diagnostics (issues #290, #326).
 /// </summary>
 public sealed class GenerateBuilderGeneratorTests
 {
@@ -56,6 +56,94 @@ public sealed class GenerateBuilderGeneratorTests
 
         var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
             ("HttpRequestSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesBuildAsyncWhenAssembleReturnsTaskOfT()
+    {
+        const string source = """
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class AsyncHttpRequestSchema
+            {
+                [BuilderStep]
+                public static void WithUrl(string url)
+                {
+                }
+
+                [BuilderAssemble]
+                public static Task<string> Assemble(string url) =>
+                    Task.FromResult(url);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("AsyncHttpRequestSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task GeneratesBuildAsyncWhenAssembleReturnsValueTaskOfT()
+    {
+        const string source = """
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class ValueTaskHttpRequestSchema
+            {
+                [BuilderStep]
+                public static void WithUrl(string url)
+                {
+                }
+
+                [BuilderAssemble]
+                public static ValueTask<string> Assemble(string url) =>
+                    new ValueTask<string>(url);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("ValueTaskHttpRequestSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
+    }
+
+    [Fact]
+    public Task ForwardsCancellationTokenFromBuildAsyncToAssemble()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class CancellableAssembleSchema
+            {
+                [BuilderStep]
+                public static void WithUrl(string url)
+                {
+                }
+
+                [BuilderAssemble]
+                public static Task<string> Assemble(string url, CancellationToken cancellationToken) =>
+                    Task.FromResult(url);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("CancellableAssembleSchema.cs", source));
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratedSources(runResult));
     }
@@ -352,6 +440,127 @@ public sealed class GenerateBuilderGeneratorTests
 
         var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
             ("VoidAssembleSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp086WhenAssembleReturnsBareTask()
+    {
+        const string source = """
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class BareTaskAssembleSchema
+            {
+                [BuilderStep]
+                public static void WithName(string name)
+                {
+                }
+
+                [BuilderAssemble]
+                public static Task Assemble(string name) =>
+                    Task.CompletedTask;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("BareTaskAssembleSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp086WhenAssembleReturnsBareValueTask()
+    {
+        const string source = """
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class BareValueTaskAssembleSchema
+            {
+                [BuilderStep]
+                public static void WithName(string name)
+                {
+                }
+
+                [BuilderAssemble]
+                public static ValueTask Assemble(string name) =>
+                    default;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("BareValueTaskAssembleSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp086WhenAssembleIsDuplicated()
+    {
+        const string source = """
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class DuplicateAssembleSchema
+            {
+                [BuilderStep]
+                public static void WithName(string name)
+                {
+                }
+
+                [BuilderAssemble]
+                public static string Assemble(string name) => name;
+
+                [BuilderAssemble]
+                public static string AssembleAsync(string name) => name;
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("DuplicateAssembleSchema.cs", source));
+
+        return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
+    }
+
+    [Fact]
+    public Task ReportsDp086WhenAssembleHasMultipleCancellationTokens()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using DesignPatterns.Creational;
+
+            namespace TestAssembly;
+
+            [GenerateBuilder]
+            public static class MultipleCancellationTokenSchema
+            {
+                [BuilderStep]
+                public static void WithUrl(string url)
+                {
+                }
+
+                [BuilderAssemble]
+                public static Task<string> Assemble(
+                    string url,
+                    CancellationToken first,
+                    CancellationToken second) =>
+                    Task.FromResult(url);
+            }
+            """;
+
+        var runResult = SourceGeneratorTestContext.Run<GenerateBuilderGenerator>(
+            ("MultipleCancellationTokenSchema.cs", source));
 
         return Verifier.Verify(SourceGeneratorTestContext.GetGeneratorDiagnostics(runResult));
     }
