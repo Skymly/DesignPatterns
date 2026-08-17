@@ -1,0 +1,6 @@
+﻿[
+  {
+    Id: DP086,
+    Message: Method 'Assemble' on holder 'BareValueTaskAssembleSchema' is marked [BuilderAssemble] but does not satisfy the assemble contract (exactly one assemble method returning sync product T, or async Task<T> / ValueTask<T>; not void, bare Task/ValueTask, or multiple CancellationToken parameters). Fix the signature or remove duplicate [BuilderAssemble] attributes.
+  }
+]

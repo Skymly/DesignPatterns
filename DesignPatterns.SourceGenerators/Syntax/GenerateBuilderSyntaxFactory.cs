@@ -182,8 +182,9 @@ internal static class GenerateBuilderSyntaxFactory
         string stateType,
         string completeBuilderType)
     {
+        var exitName = model.AssembleIsAsync ? "BuildAsync" : "Build";
         sb.Append(indent).AppendLine("/// <summary>");
-        sb.Append(indent).AppendLine($"/// Step and Build extensions for {model.BuilderName}.");
+        sb.Append(indent).AppendLine($"/// Step and {exitName} extensions for {model.BuilderName}.");
         sb.Append(indent).AppendLine("/// </summary>");
         sb.Append(indent).AppendLine("[global::System.CodeDom.Compiler.GeneratedCode(\"DesignPatterns.SourceGenerators\", \"1.0\")]");
         sb.Append(indent).AppendLine($"public static class {model.BuilderName}Extensions");
@@ -361,18 +362,28 @@ internal static class GenerateBuilderSyntaxFactory
     {
         var stepByMethod = steps.ToDictionary(static s => s.MethodName, StringComparer.Ordinal);
 
+        var signature = model.AssembleIsAsync
+            ? $"    public static {model.ProductTypeDisplay} BuildAsync(this {completeBuilderType} builder, global::System.Threading.CancellationToken cancellationToken = default)"
+            : $"    public static {model.ProductTypeDisplay} Build(this {completeBuilderType} builder)";
+
         sb.Append(indent).AppendLine("    /// <summary>");
         sb.Append(indent).AppendLine($"    /// Builds the product by invoking {model.HolderName}.{model.AssembleMethodName}.");
         sb.Append(indent).AppendLine("    /// </summary>");
-        sb.Append(indent).AppendLine(
-            $"    public static {model.ProductTypeDisplay} Build(this {completeBuilderType} builder)");
+        sb.Append(indent).AppendLine(signature);
         sb.Append(indent).AppendLine("    {");
         sb.Append(indent).AppendLine("        var state = builder.State;");
 
         var args = new List<string>();
         foreach (var parameter in model.AssembleParameters)
         {
-            if (!stepByMethod.TryGetValue(parameter.BoundStepMethodName, out var step))
+            if (parameter.IsCancellationToken)
+            {
+                args.Add("cancellationToken");
+                continue;
+            }
+
+            if (parameter.BoundStepMethodName is null
+                || !stepByMethod.TryGetValue(parameter.BoundStepMethodName, out var step))
             {
                 args.Add("default");
                 continue;
