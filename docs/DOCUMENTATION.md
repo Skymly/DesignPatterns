@@ -67,7 +67,7 @@ docs/
 ├── DOCUMENTATION.md
 ├── README.md
 ├── ROADMAP.md
-├── agents/                 ← mattpocock/skills 配置（Issue 路由 / triage）
+├── agents/                 ← 本机 skills 的 Issue 路由 / triage 配置
 │   ├── issue-tracker.md
 │   ├── triage-labels.md
 │   └── domain.md
