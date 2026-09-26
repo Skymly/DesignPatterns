@@ -177,7 +177,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP083 | GenerateBuilder 重复步骤（生成器；同名 `[BuilderStep]` 重复） |
 | DP084 | GenerateBuilder 未知步骤引用（生成器；After/Before 指向不存在的步骤） |
 | DP085 | GenerateBuilder holder 非法（生成器；`[GenerateBuilder]` 目标类型不合法） |
-| DP086 | GenerateBuilder 装配契约不匹配（生成器；assemble 签名/重复标注非法） |
+| DP086 | GenerateBuilder 装配契约不匹配（生成器；恰好一个 assemble，返回同步 `T` 或 `Task<T>`/`ValueTask<T>`；拒绝 void、裸 `Task`/`ValueTask`、多个 `CancellationToken`、重复标注） |
 | DP087 | Work Graph 依赖环（生成器；DependsOn 形成 cycle） |
 | DP088 | Work Graph 未知 DependsOn（生成器；引用未声明的 step id） |
 | DP089 | Work Graph 重复 step id（生成器；同一 holder 下 Id 重复） |
