@@ -217,7 +217,7 @@ await generated.RunAsync(new PrepContext(), CancellationToken.None);
 | | Work Graph | Step Builder |
 |---|---|---|
 | 证明对象 | 执行就绪 DAG | 构造步完备（type-state） |
-| 时间 | `RunAsync` 运行时波次 | `Build()` 前编译期门闩 |
+| 时间 | `RunAsync` 运行时波次 | `Build()` / `BuildAsync` 前编译期门闩 |
 
 ### vs Command Router
 

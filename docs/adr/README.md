@@ -20,7 +20,8 @@
 | [ADR-008](ADR-008-singleton-lifecycle-diagnostics.md) | Singleton lifecycle diagnostics | Accepted | 2026-07-08 | — |
 | [ADR-009](ADR-009-command-router-pipeline-onion.md) | Command Router pipeline uses Chain-like next onion | Accepted | 2026-07-28 | #264 / #275–#277 |
 | [ADR-010](ADR-010-step-builder-type-state-markers.md) | Step Builder required completeness via generic type-state markers | Accepted | 2026-08-03 | #287 / #288–#291 |
+| [ADR-011](ADR-011-step-builder-async-assemble.md) | Step Builder async assemble exits through BuildAsync | Accepted | 2026-09-26 | #324 / #325–#327 |
 
 ## 下一个可用编号
 
-**ADR-011**
+**ADR-012**

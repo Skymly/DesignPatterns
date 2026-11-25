@@ -96,20 +96,23 @@ public sealed class GenerateBuilderGenerator : IIncrementalGenerator
             return Result<GenerateBuilderModel>.Failure(diagnostics);
         }
 
+        var compilation = context.SemanticModel.Compilation;
+        var assembleMethod = assembleMethods[0];
         if (assembleMethods.Count > 1
-            || assembleMethods[0].ReturnsVoid
-            || assembleMethods[0].ReturnType.SpecialType == SpecialType.System_Void)
+            || assembleMethod.ReturnsVoid
+            || assembleMethod.ReturnType.SpecialType == SpecialType.System_Void
+            || IsBareTaskOrValueTask(assembleMethod.ReturnType, compilation)
+            || CountCancellationTokens(assembleMethod, compilation) > 1)
         {
-            var assemble = assembleMethods[0];
             diagnostics.Add(new DiagnosticInfo(
                 DesignPatternsDiagnosticDescriptors.GenerateBuilderAssembleContractMismatch,
-                new LocationInfo(assemble.Locations.FirstOrDefault()),
-                assemble.Name,
+                new LocationInfo(assembleMethod.Locations.FirstOrDefault()),
+                assembleMethod.Name,
                 holder.Name));
             return Result<GenerateBuilderModel>.Failure(diagnostics);
         }
 
-        var assembleMethod = assembleMethods[0];
+        var assembleIsAsync = IsAsyncAssembleReturn(assembleMethod.ReturnType, compilation);
         if (!assembleMethod.IsStatic)
         {
             // Generated code lives in the consumer assembly, so the ctor must be accessible.
@@ -182,8 +185,20 @@ public sealed class GenerateBuilderGenerator : IIncrementalGenerator
         ValidatePartialOrder(holder.Name, steps, diagnostics);
 
         var assembleParameters = new List<BuilderAssembleParameterModel>();
+        var cancellationTokenType = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
         foreach (var parameter in assembleMethod.Parameters)
         {
+            if (assembleIsAsync
+                && cancellationTokenType is not null
+                && SymbolEqualityComparer.Default.Equals(parameter.Type, cancellationTokenType))
+            {
+                assembleParameters.Add(new BuilderAssembleParameterModel(
+                    parameter.Name,
+                    boundStepMethodName: null,
+                    isCancellationToken: true));
+                continue;
+            }
+
             var match = FindStepForParameter(parameter.Name, steps);
             if (match is null)
             {
@@ -212,6 +227,7 @@ public sealed class GenerateBuilderGenerator : IIncrementalGenerator
             holder.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             namespaceName,
             assembleMethod.IsStatic,
+            assembleIsAsync,
             assembleMethod.Name,
             assembleMethod.ReturnType.ToDisplayString(TypeDisplayFormat),
             new EquatableArray<BuilderStepModel>(steps.ToArray()),
@@ -253,6 +269,54 @@ public sealed class GenerateBuilderGenerator : IIncrementalGenerator
         }
 
         return true;
+    }
+
+    private static bool IsBareTaskOrValueTask(ITypeSymbol returnType, Compilation compilation)
+    {
+        if (returnType is not INamedTypeSymbol namedReturn || namedReturn.IsGenericType)
+        {
+            return false;
+        }
+
+        var original = namedReturn.OriginalDefinition;
+        var task = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+        var valueTask = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+        return (task is not null && SymbolEqualityComparer.Default.Equals(original, task))
+            || (valueTask is not null && SymbolEqualityComparer.Default.Equals(original, valueTask));
+    }
+
+    private static int CountCancellationTokens(IMethodSymbol method, Compilation compilation)
+    {
+        var cancellationTokenType = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+        if (cancellationTokenType is null)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        foreach (var parameter in method.Parameters)
+        {
+            if (SymbolEqualityComparer.Default.Equals(parameter.Type, cancellationTokenType))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static bool IsAsyncAssembleReturn(ITypeSymbol returnType, Compilation compilation)
+    {
+        if (returnType is not INamedTypeSymbol namedReturn)
+        {
+            return false;
+        }
+
+        var taskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+        var valueTaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        var original = namedReturn.OriginalDefinition;
+        return (taskOfT is not null && SymbolEqualityComparer.Default.Equals(original, taskOfT))
+            || (valueTaskOfT is not null && SymbolEqualityComparer.Default.Equals(original, valueTaskOfT));
     }
 
     private static bool HasAttribute(IMethodSymbol method, string metadataName) =>

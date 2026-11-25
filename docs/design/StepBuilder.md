@@ -1,12 +1,12 @@
 # Design Doc: Step Builder
 
 > **版本**：v0.2.4-preview1
-> **关联 ADR**：[ADR-010](../adr/ADR-010-step-builder-type-state-markers.md)
-> **关联 Issue**：[#287](https://github.com/Skymly/DesignPatterns/issues/287)（Spec）、[#291](https://github.com/Skymly/DesignPatterns/issues/291)（本 Design Doc）；落地 #288–#290
+> **关联 ADR**：[ADR-010](../adr/ADR-010-step-builder-type-state-markers.md)（type-state）、[ADR-011](../adr/ADR-011-step-builder-async-assemble.md)（async assemble）
+> **关联 Issue**：[#287](https://github.com/Skymly/DesignPatterns/issues/287)（MVP Spec）、[#291](https://github.com/Skymly/DesignPatterns/issues/291)（MVP Design Doc）；落地 #288–#290。Phase 2 async：[#324](https://github.com/Skymly/DesignPatterns/issues/324)（Spec）、[#327](https://github.com/Skymly/DesignPatterns/issues/327)（本页同步）；落地 #325–#326
 
 ## 概述
 
-**Step Builder**（模式域名：**Builder**）提供声明式、分步构造产品的编译期胶水：schema 写在独立 **holder** 上，生成器发出带泛型 type-state 的 `{Holder}Builder`，使**缺必填步时 `Build()` 不可调用**。可选步、互斥组与偏序约束由诊断与生成 fluent 方法内的运行时检查覆盖。
+**Step Builder**（模式域名：**Builder**）提供声明式、分步构造产品的编译期胶水：schema 写在独立 **holder** 上，生成器发出带泛型 type-state 的 `{Holder}Builder`，使**缺必填步时 `Build()` / `BuildAsync` 不可调用**。可选步、互斥组与偏序约束由诊断与生成 fluent 方法内的运行时检查覆盖。
 
 文档用 **Step Builder** 称呼本域，以区别于库内既有的注册/装配 `*Builder`（`FactoryRegistryBuilder`、`CommandRouterBuilder`、`TransitionTableBuilder`、`DecoratorStackBuilder`、`CompositeTreeBuilder` 等）——那些组装的是注册表 / 管道 / 转换表，**不**证明产品构造步骤完备性。
 
@@ -17,7 +17,7 @@
 3. 产品物化留在用户 `[BuilderAssemble]`：生成器只门闩 + 传参，不发明映射
 4. 默认可任意顺序应用步骤；可选 `After` / `Before` 与 `MutexGroup`
 5. 每步至多一次；必填步 ≤ 8；可选步不计入上限、不占 type 参数
-6. MVP 同步、无 DI/Autofac、双 TFM（netstandard2.0 + net8.0）
+6. 出口二选一：同步 assemble → `Build()`，`Task<T>` / `ValueTask<T>` assemble → `BuildAsync`（[ADR-011](../adr/ADR-011-step-builder-async-assemble.md)）；无 DI/Autofac；双 TFM（netstandard2.0 + net8.0）
 
 ## API 面
 
@@ -61,8 +61,11 @@ public static class BuilderStepState
 
 - Holder：非泛型 `class`（可为 `static`），可访问性为 public / internal（含嵌套链），由 `[GenerateBuilder]` 标注
 - 步骤方法：签名即 schema（方法体可空）；推荐 `WithX(...)` 命名，便于参数绑定剥离 `With` 前缀
-- 装配：恰好一个 `[BuilderAssemble]`，返回非 void 产品类型；参数按名绑定到步骤（`WithUrl` → `url` / `Url` / `withUrl`，大小写不敏感回退）
-- 产品类型 = assemble 返回类型（**不**在 `[GenerateBuilder]` 上重复声明）
+- 装配：恰好一个 `[BuilderAssemble]`；参数按名绑定到步骤（`WithUrl` → `url` / `Url` / `withUrl`，大小写不敏感回退）
+  - 同步：返回产品类型 `T`（非 void）→ 只生成 `Build()`
+  - 异步：返回 BCL `Task<T>` 或 `ValueTask<T>` → 只生成 `BuildAsync`；**产品类型仍是内层 `T`**，任务只是传输
+  - async 时至多一个 `CancellationToken`（按类型识别，不要求参数名）；不参与步名绑定，由 `BuildAsync` 按签名位置转发。零个 token 合法
+- 产品类型**不**在 `[GenerateBuilder]` 上重复声明。同步时产品类型 = assemble 返回类型；async 时产品类型 = 任务的类型参数 `T`（[ADR-011](../adr/ADR-011-step-builder-async-assemble.md)）
 - 可直接调用 assemble，绕过生成 fluent 类型
 
 ### 生成器产出
@@ -74,9 +77,9 @@ public static class BuilderStepState
 | `{Holder}Builder`（静态入口） | `Create()` → 全 `NotSet` 的初始 builder |
 | `{Holder}Builder<TStep…>` | 仅**必填**步对应类型参数 |
 | `{Holder}BuilderState`（internal） | 捕获步值、`*Set` 标志、`AppliedOrder` |
-| `{Holder}BuilderExtensions` | 步进扩展方法 + 门闩后的 `Build()` |
+| `{Holder}BuilderExtensions` | 步进扩展方法 + 门闩后的 `Build()` 或 `BuildAsync` |
 
-`Build()` 仅在全部必填类型参数为 `BuilderStepState.Set` 时作为扩展方法存在，内部调用 holder 的 assemble，未设置的可选步以 null 兼容实参传入。
+出口与 assemble 签名互斥（[ADR-011](../adr/ADR-011-step-builder-async-assemble.md)）：同步 `T` 只生成 `Build()`；`Task<T>` / `ValueTask<T>` 只生成 `BuildAsync(CancellationToken cancellationToken = default)`，返回类型跟随 assemble。两者都只在全部必填类型参数为 `BuilderStepState.Set` 时作为扩展方法存在，内部直接 `return` holder 的 assemble（不包 async 状态机）。未设置的可选步以 null 兼容实参传入。assemble 声明了 `CancellationToken` 时，`BuildAsync` 的 token 按该参数位置转发；未声明则接受 token 但不转发。自定义 awaitable 不是 async 出口，仍走 `Build()`。
 
 示例（示意）：
 
@@ -113,11 +116,34 @@ var request = HttpRequestSchemaBuilder.Create()
     .Build();
 ```
 
+同一 holder **不能**再标第二个 `[BuilderAssemble]`。把同步装配换成 async 后，生成器不再发出 `Build()`：
+
+```csharp
+[BuilderAssemble]
+public static Task<HttpRequest> AssembleAsync(
+    string url,
+    string method,
+    string? header,
+    string? bearerToken,
+    string? basicAuth,
+    CancellationToken cancellationToken = default) =>
+    LoadAsync(url, method, header, bearerToken, basicAuth, cancellationToken);
+
+var request = await HttpRequestSchemaBuilder.Create()
+    .WithUrl("https://example.com")
+    .WithMethod("GET")
+    .WithBearerToken("…")
+    .BuildAsync();
+```
+
+`ValueTask<HttpRequest>` 同理，`BuildAsync` 返回 `ValueTask<HttpRequest>`。assemble 可以不声明 `CancellationToken`；`BuildAsync` 仍始终接受 token（默认 `default`），此时不转发。产品类型仍是 `HttpRequest`。
+
 ## 证明模型
 
 | 约束 | 机制 |
 |------|------|
-| 必填步齐全 | 泛型 type-state；缺步则无 `Build()`（ADR-010） |
+| 必填步齐全 | 泛型 type-state；缺步则无 `Build()` / `BuildAsync`（ADR-010） |
+| 装配出口 | 同步 `T` → 仅 `Build()`；`Task<T>` / `ValueTask<T>` → 仅 `BuildAsync`（ADR-011） |
 | 必填步数量 | ≤ 8；超额 **DP078**；可选步不计 |
 | 步至多一次 | 必填：应用后该步扩展从 `NotSet` 接收端消失；可选：再应用抛 `InvalidOperationException` |
 | 互斥组 | Schema：≥2 个**必填**同组 → **DP081**；应用时同组已设 → `InvalidOperationException` |
@@ -134,15 +160,15 @@ var request = HttpRequestSchemaBuilder.Create()
 |----|----------|------------------|
 | **DP078** | 必填 `[BuilderStep]` > 8 | 将多余步标 `Required = false` 或拆分 holder |
 | **DP079** | 有 `[GenerateBuilder]` 无 `[BuilderAssemble]` | 添加返回产品的装配方法 |
-| **DP080** | assemble 参数名绑不到任何步骤 | 重命名参数或补步骤 |
+| **DP080** | assemble 参数名绑不到任何步骤（async `CancellationToken` 除外，见 ADR-011） | 重命名参数或补步骤 |
 | **DP081** | 同一 `MutexGroup` 内 ≥2 个必填步 | 至多保留一个必填，或移出组 / 改为可选 |
 | **DP082** | `After`/`Before` 约束成环 | 修正偏序元数据 |
 | **DP083** | 同名步骤重复（含 `With` 剥离后冲突） | 重命名使步名唯一 |
 | **DP084** | `After`/`Before` 指向不存在的步骤 | 使用 `nameof` 兄弟步或删除约束 |
 | **DP085** | holder 非法（非 class、泛型、不可访问等） | 改为可托管步骤的非泛型 class |
-| **DP086** | assemble 契约非法（重复标注、void、不可访问实例装配等） | 修正签名或去掉重复标注 |
+| **DP086** | assemble 契约非法：重复标注、void、裸 `Task`/`ValueTask`、多个 `CancellationToken`、不可访问实例装配等 | 恰好一个 assemble，返回同步 `T` 或 `Task<T>`/`ValueTask<T>`，至多一个 `CancellationToken` |
 
-无本域 Analyzer / CodeFix（MVP）。
+无本域 Analyzer / CodeFix。
 
 ## 不变量 / 兼容基线
 
@@ -163,10 +189,10 @@ var request = HttpRequestSchemaBuilder.Create()
 `GenerateBuilderGenerator`（`IIncrementalGenerator`）：
 
 1. 收集 `[GenerateBuilder]` holder → 校验可访问性 / 非泛型（失败 → DP085）
-2. 收集 `[BuilderStep]` / `[BuilderAssemble]` → 缺装配 DP079；契约失败 DP086；重复步 DP083
+2. 收集 `[BuilderStep]` / `[BuilderAssemble]` → 缺装配 DP079；契约失败 DP086（含裸 `Task`/`ValueTask`、多个 `CancellationToken`、重复装配）；重复步 DP083
 3. 必填计数、互斥 schema、偏序图 → DP078 / DP081 / DP082 / DP084
 4. assemble 参数绑定 → DP080
-5. 成功则发出入口类型、泛型 builder、state、扩展方法（含运行时互斥/偏序/至多一次检查）
+5. 成功则发出入口类型、泛型 builder、state、扩展方法（含运行时互斥/偏序/至多一次检查）。同步 assemble 发 `Build()`；async assemble 发 `BuildAsync`，直接返回 assemble 调用
 
 ### 诊断检测逻辑
 
@@ -189,6 +215,14 @@ var request = HttpRequestSchemaBuilder.Create()
 ### 为何必填上限 8
 
 泛型 arity 与可读性边界；超额应拆分 schema 或降级为可选（DP078）。
+
+### 为何 async 只在装配出口，且与 `Build()` 互斥
+
+type-state 证明的是必填步已应用，不证明步骤本身可等待（[ADR-010](../adr/ADR-010-step-builder-type-state-markers.md)）。把 async 限制在唯一 `[BuilderAssemble]` 上，避免 fluent 链变成 `Task<Builder>`。一个 holder 只有一个装配方法，签名即出口：同步 `T` 只生成 `Build()`，`Task<T>` / `ValueTask<T>` 只生成 `BuildAsync`。再发明一个会阻塞的 `Build()` 会让调用方误以为存在同步产品（[ADR-011](../adr/ADR-011-step-builder-async-assemble.md)）。
+
+### 为何产品类型是内层 `T`
+
+调用方要构造的是产品（例如 `HttpRequest`），不是 `Task<HttpRequest>`。任务类型只决定 `BuildAsync` 的传输（`Task` 还是 `ValueTask`）。生成器直接返回 assemble 的任务，不包一层 async 状态机。
 
 ## 与生态的边界
 
@@ -213,28 +247,32 @@ var request = HttpRequestSchemaBuilder.Create()
 
 ### vs 手写 fluent builder
 
-手写可任意设计阶段接口；本域用属性 + 生成器换取统一诊断与 type-state，代价是必填上限与 MVP 同步-only。
+手写可任意设计阶段接口；本域用属性 + 生成器换取统一诊断与 type-state，代价是必填上限，以及同步 `Build()` 与 `BuildAsync` 互斥。
 
 ### vs Decorator / Chain
 
 非服务契约叠层或请求管道；仅构造期。
 
-## 已知局限（非目标 / Phase 2+）
+## 已知局限（非目标）
 
-- **无** MVP async assemble / `Build`
-- **无** MVP MSDI / Autofac / `FromServices` 步进注入
+- **无** async `[BuilderStep]` / 可等待 fluent 链
+- **无** async assemble 上的 sync-over-async `Build()`
+- **无** 自定义 awaitable 的 `BuildAsync`（仅 BCL `Task<T>` / `ValueTask<T>`；裸 `Task` / `ValueTask` 为 DP086）
+- **无** MSDI / Autofac / `FromServices` 步进注入
+- **无** 步骤参数校验诊断
 - **无** Director 框架或厚 GoF Director 层次
 - **无** 互斥的 type-state 擦除（仅诊断 + 运行时拒绝）
 - **无** Analyzer 主门闩或 interface-per-subset 默认编码
 - **无** 合并/重命名既有注册 `*Builder` API
 
-HTTP 请求示例已落地于 sibling [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23) / [PR#24](https://github.com/Skymly/DesignPatterns.Samples/pull/24)。
+同步 HTTP 请求示例已落地于 sibling [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23) / [PR#24](https://github.com/Skymly/DesignPatterns.Samples/pull/24)。`BuildAsync` 示例仍待 [DesignPatterns.Samples#29](https://github.com/Skymly/DesignPatterns.Samples/issues/29)。
 
 ## 参考
 
-- [ADR-010](../adr/ADR-010-step-builder-type-state-markers.md) — type-state + 必填上限 8
-- Spec：[Builder / Step Builder (#287)](https://github.com/Skymly/DesignPatterns/issues/287)
-- 落地：#288 Runtime → #289 Diagnostics（DP078–DP086）→ #290 SourceGenerators → #291 Docs → Samples [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23)
+- [ADR-010](../adr/ADR-010-step-builder-type-state-markers.md) — type-state + 必填上限 8（不因 async 取代）
+- [ADR-011](../adr/ADR-011-step-builder-async-assemble.md) — async assemble 出口 / `BuildAsync`
+- Spec：[Builder / Step Builder (#287)](https://github.com/Skymly/DesignPatterns/issues/287)；Phase 2 async [#324](https://github.com/Skymly/DesignPatterns/issues/324)
+- 落地：#288 Runtime → #289 Diagnostics（DP078–DP086）→ #290 SourceGenerators → #291 Docs → Samples [DesignPatterns.Samples#23](https://github.com/Skymly/DesignPatterns.Samples/issues/23)。Phase 2：#325 Diagnostics（DP086 文案）→ #326 SourceGenerators → #327 Docs
 - [docs/ROADMAP.md](../ROADMAP.md) F3 Top-2
 - [AGENTS.md](../../AGENTS.md) — 模式摘要与诊断表
 - [FactoryRegistry.md](FactoryRegistry.md) — 注册 `FactoryRegistryBuilder` 对照

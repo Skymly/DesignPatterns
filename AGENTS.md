@@ -177,7 +177,7 @@ dotnet test DesignPatterns.slnx -c Release
 | DP083 | GenerateBuilder 重复步骤（生成器；同名 `[BuilderStep]` 重复） |
 | DP084 | GenerateBuilder 未知步骤引用（生成器；After/Before 指向不存在的步骤） |
 | DP085 | GenerateBuilder holder 非法（生成器；`[GenerateBuilder]` 目标类型不合法） |
-| DP086 | GenerateBuilder 装配契约不匹配（生成器；assemble 签名/重复标注非法） |
+| DP086 | GenerateBuilder 装配契约不匹配（生成器；恰好一个 assemble，返回同步 `T` 或 `Task<T>`/`ValueTask<T>`；拒绝 void、裸 `Task`/`ValueTask`、多个 `CancellationToken`、重复标注） |
 | DP087 | Work Graph 依赖环（生成器；DependsOn 形成 cycle） |
 | DP088 | Work Graph 未知 DependsOn（生成器；引用未声明的 step id） |
 | DP089 | Work Graph 重复 step id（生成器；同一 holder 下 Id 重复） |
@@ -366,9 +366,9 @@ git push origin v0.1.0-preview3
 
 ---
 
-## Agent skills（mattpocock/skills）
+## Agent skills
 
-技能本体（含 `SKILL.md`）：[`.agents/skills/`](.agents/skills/) — 供 Cursor Cloud Agent 与其他兼容客户端从仓库发现；`skills-lock.json` 锁定来源与哈希。更新：`npx skills@latest update`（或 `npx skills@latest add mattpocock/skills --skill '*' --agent cursor -y`）。
+本仓库**不内置** Skills。代理只使用维护者本机技能（通常为 `~/.agents/skills` / Cursor 用户技能），不要再往本仓拷贝 `.agents/skills` 或 `skills-lock.json`。
 
 配置目录：[docs/agents/](docs/agents/)（`issue-tracker.md`、`triage-labels.md`、`domain.md`）。`/to-tickets`、`/to-spec`、`/triage`、`/wayfinder`、`/qa` 须遵守其中的 Issue 路由。
 

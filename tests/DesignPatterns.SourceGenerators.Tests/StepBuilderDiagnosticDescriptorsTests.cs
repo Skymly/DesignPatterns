@@ -145,13 +145,20 @@ public sealed class StepBuilderDiagnosticDescriptorsTests
     public void Assemble_contract_mismatch_descriptor_is_generator_error_with_actionable_message()
     {
         var descriptor = DesignPatternsDiagnosticDescriptors.GenerateBuilderAssembleContractMismatch;
+        var message = descriptor.MessageFormat.ToString();
+        var description = descriptor.Description.ToString();
 
         Assert.Equal(DiagnosticIds.GenerateBuilderAssembleContractMismatch, descriptor.Id);
         Assert.Equal(DiagnosticSeverity.Error, descriptor.DefaultSeverity);
         Assert.Equal("DesignPatterns.Generators", descriptor.Category);
         Assert.Equal(DiagnosticHelpLinks.For(descriptor.Id), descriptor.HelpLinkUri);
-        Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()));
-        Assert.Contains("[BuilderAssemble]", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
-        Assert.Contains("{0}", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Assert.False(string.IsNullOrWhiteSpace(description));
+        Assert.Contains("[BuilderAssemble]", message, StringComparison.Ordinal);
+        Assert.Contains("{0}", message, StringComparison.Ordinal);
+        Assert.Contains("{1}", message, StringComparison.Ordinal);
+        Assert.Contains("Task<T>", message, StringComparison.Ordinal);
+        Assert.Contains("ValueTask<T>", message, StringComparison.Ordinal);
+        Assert.Contains("Task<T>", description, StringComparison.Ordinal);
+        Assert.Contains("ValueTask<T>", description, StringComparison.Ordinal);
     }
 }

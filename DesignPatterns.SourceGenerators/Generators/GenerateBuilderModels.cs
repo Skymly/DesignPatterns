@@ -69,18 +69,24 @@ internal readonly struct BuilderStepModel : IEquatable<BuilderStepModel>
 
 internal readonly struct BuilderAssembleParameterModel : IEquatable<BuilderAssembleParameterModel>
 {
-    public BuilderAssembleParameterModel(string parameterName, string boundStepMethodName)
+    public BuilderAssembleParameterModel(
+        string parameterName,
+        string? boundStepMethodName,
+        bool isCancellationToken = false)
     {
         ParameterName = parameterName;
         BoundStepMethodName = boundStepMethodName;
+        IsCancellationToken = isCancellationToken;
     }
 
     public string ParameterName { get; }
-    public string BoundStepMethodName { get; }
+    public string? BoundStepMethodName { get; }
+    public bool IsCancellationToken { get; }
 
     public bool Equals(BuilderAssembleParameterModel other) =>
         string.Equals(ParameterName, other.ParameterName, StringComparison.Ordinal)
-        && string.Equals(BoundStepMethodName, other.BoundStepMethodName, StringComparison.Ordinal);
+        && string.Equals(BoundStepMethodName, other.BoundStepMethodName, StringComparison.Ordinal)
+        && IsCancellationToken == other.IsCancellationToken;
 
     public override bool Equals(object? obj) => obj is BuilderAssembleParameterModel other && Equals(other);
 
@@ -88,8 +94,9 @@ internal readonly struct BuilderAssembleParameterModel : IEquatable<BuilderAssem
     {
         unchecked
         {
-            return (StringComparer.Ordinal.GetHashCode(ParameterName ?? string.Empty) * 31)
-                + StringComparer.Ordinal.GetHashCode(BoundStepMethodName ?? string.Empty);
+            var hash = StringComparer.Ordinal.GetHashCode(ParameterName ?? string.Empty);
+            hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(BoundStepMethodName ?? string.Empty);
+            return (hash * 31) + IsCancellationToken.GetHashCode();
         }
     }
 }
@@ -101,6 +108,7 @@ internal sealed class GenerateBuilderModel : IEquatable<GenerateBuilderModel>
         string holderFullyQualifiedName,
         string? namespaceName,
         bool assembleIsStatic,
+        bool assembleIsAsync,
         string assembleMethodName,
         string productTypeDisplay,
         EquatableArray<BuilderStepModel> steps,
@@ -111,6 +119,7 @@ internal sealed class GenerateBuilderModel : IEquatable<GenerateBuilderModel>
         HolderFullyQualifiedName = holderFullyQualifiedName;
         NamespaceName = namespaceName;
         AssembleIsStatic = assembleIsStatic;
+        AssembleIsAsync = assembleIsAsync;
         AssembleMethodName = assembleMethodName;
         ProductTypeDisplay = productTypeDisplay;
         Steps = steps;
@@ -122,6 +131,7 @@ internal sealed class GenerateBuilderModel : IEquatable<GenerateBuilderModel>
     public string HolderFullyQualifiedName { get; }
     public string? NamespaceName { get; }
     public bool AssembleIsStatic { get; }
+    public bool AssembleIsAsync { get; }
     public string AssembleMethodName { get; }
     public string ProductTypeDisplay { get; }
     public EquatableArray<BuilderStepModel> Steps { get; }
@@ -141,6 +151,7 @@ internal sealed class GenerateBuilderModel : IEquatable<GenerateBuilderModel>
             && string.Equals(HolderFullyQualifiedName, other.HolderFullyQualifiedName, StringComparison.Ordinal)
             && string.Equals(NamespaceName, other.NamespaceName, StringComparison.Ordinal)
             && AssembleIsStatic == other.AssembleIsStatic
+            && AssembleIsAsync == other.AssembleIsAsync
             && string.Equals(AssembleMethodName, other.AssembleMethodName, StringComparison.Ordinal)
             && string.Equals(ProductTypeDisplay, other.ProductTypeDisplay, StringComparison.Ordinal)
             && Steps.Equals(other.Steps)
@@ -158,6 +169,7 @@ internal sealed class GenerateBuilderModel : IEquatable<GenerateBuilderModel>
             hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(HolderFullyQualifiedName ?? string.Empty);
             hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(NamespaceName ?? string.Empty);
             hash = (hash * 31) + AssembleIsStatic.GetHashCode();
+            hash = (hash * 31) + AssembleIsAsync.GetHashCode();
             hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(AssembleMethodName ?? string.Empty);
             hash = (hash * 31) + StringComparer.Ordinal.GetHashCode(ProductTypeDisplay ?? string.Empty);
             hash = (hash * 31) + Steps.GetHashCode();
